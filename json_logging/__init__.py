@@ -213,7 +213,7 @@ class JSONRequestLogFormatter(logging.Formatter):
             "request_received_at": record.request_info.request_received_at,
             "response_time_ms": record.request_info.response_time_ms,
             "response_status": record.request_info.response_status,
-            "response_size_b": record.request_info.response_content_type,
+            "response_size_b": record.request_info.response_size_b,
             "response_content_type": record.request_info.response_content_type,
             "response_sent_at": record.request_info.response_sent_at}
         return JSON_SERIALIZER(json_log_object)

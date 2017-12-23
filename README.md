@@ -18,7 +18,7 @@ If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-
 # 1. Features
 1. Lightweight, no dependencies. Tested with Python 2.7 & 3.5.
 2. 100% compatible with **logging** module. Minimal configuration needed.
-3. Emit JSON logs [\[0\]](#0-full-logging-format-references) 
+3. Emit JSON logs, see here for what kind of log will be emitted. [\[0\]](#0-full-logging-format-references) 
 4. Support **correlation-id** [\[1\]](#1-what-is-correlation-idrequest-id)
 5. Support request instrumentation. Built in support for [Flask](http://flask.pocoo.org/) & [Sanic](http://flask.pocoo.org/). Extensible to support others.
 6. Support adding extra properties to JSON log object.
@@ -169,6 +169,54 @@ pip3 install .
 ```
 # 7. References
 ## [0] Full logging format references
+2 types of logging statement will be emmited by this library:
+- Application log: normal logging statement
+e.g.:
+```
+{
+	"type": "log",
+	"written_at": "2017-12-23T16:55:37.280Z",
+	"written_ts": 1514048137280721000,
+	"component_id": "1d930c0xd-19-s3213",
+	"component_name": "ny-component_name",
+	"component_instance": 0,
+	"logger": "test logger",
+	"thread": "MainThread",
+	"level": "INFO",
+	"line_no": 22,
+	"correlation_id": "1975a02e-e802-11e7-8971-28b2bd90b19a",
+	"extra_property": "extra_value"
+}
+```
+- Request log: request instrumentation logging statement which recorded request information such as response time, request size, etc.
+```
+{
+	"type": "request",
+	"written_at": "2017-12-23T16:55:37.280Z",
+	"written_ts": 1514048137280721000,
+	"component_id": "-",
+	"component_name": "-",
+	"component_instance": 0,
+	"correlation_id": "1975a02e-e802-11e7-8971-28b2bd90b19a",
+	"remote_user": "user_a",
+	"request": "/index.html",
+	"referer": "-",
+	"x_forwarded_for": "-",
+	"protocol": "HTTP/1.1",
+	"method": "GET",
+	"remote_ip": "127.0.0.1",
+	"request_size_b": 1234,
+	"remote_host": "127.0.0.1",
+	"remote_port": 50160,
+	"request_received_at": "2017-12-23T16:55:37.280Z",
+	"response_time_ms": 0,
+	"response_status": 200,
+	"response_size_b": "122",
+	"response_content_type": "text/html; charset=utf-8",
+	"response_sent_at": "2017-12-23T16:55:37.280Z"
+}
+```
+See following tables for detail format explanation:
 - Common field 
 
 Field | Description | Format | Example
@@ -176,9 +224,8 @@ Field | Description | Format | Example
 written_at | The date when this log message was written. | ISO 8601 YYYY-MM-DDTHH:MM:SS.milliZ | 2017-12-23T15:14:02.208Z 
 written_ts | The timestamp in nano-second precision when this request metric message was written. | long number | 1456820553816849408
 correlation_id | The timestamp in nano-second precision when this request metric message was written. | string | db2d002e-2702-41ec-66f5-c002a80a3d3f
-type | Type of message. "logs" or "request"  | string | db2d002e-2702-41ec-66f5-c002a80a3d3f
-component_id | Uniquely identifies the software component that has processed the current
-request | string | 9e6f3ecf-def0-4baf-8fac-9339e61d5645
+type | Type of logging. "logs" or "request"  | string | 
+component_id | Uniquely identifies the software component that has processed the current request | string | 9e6f3ecf-def0-4baf-8fac-9339e61d5645
 component_name | A human-friendly name representing the software component | string | my-fancy-component 
 component_instance | Instance's index of horizontally scaled service  | string | 0
 
@@ -207,6 +254,7 @@ remote_host |  host name of the consumer (might be a proxy, might be the actual 
 remote_port | Which TCP port is used by the consumer to establish a connection to the remote producer. | string | 1234
 remote_user | The username associated with the request | string | user_name
 request_size_b | The size in bytes of the requesting entity or "body" (e.g., in case of POST requests). | long | 1234
+response_size_b | The size in bytes of the response entity | long | 1234
 response_status | The status code of the response. | long | 200
 response_content_type | The MIME type associated with the entity of the response if available/specified | long | application/json
 referer | For HTTP requests, identifies the address of the webpage (i.e. the URI or IRI) that linked to the resource being requested. | string |  /index.html
