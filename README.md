@@ -294,10 +294,13 @@ password=
 pypitest
 ```
 python setup.py sdist upload -r pypitest
+python setup.py bdist_wheel --universal upload -r pypitest
 pip3 install json_logging --index-url https://test.pypi.org/simple/ 
 ```
 pypi
 ```
 python setup.py sdist upload -r pypi
+python setup.py bdist_wheel --universal upload -r pypi
 pip3 install json_logging
 ```
+bdist_wheel --universal
