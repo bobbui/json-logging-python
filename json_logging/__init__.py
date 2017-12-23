@@ -19,6 +19,10 @@ EMPTY_VALUE = '-'
 CREATE_CORRELATION_ID_IF_NOT_EXISTS = True
 JSON_SERIALIZER = json.dumps
 CORRELATION_ID_HEADERS = ['X-Correlation-ID', 'X-Request-ID']
+COMPONENT_ID = EMPTY_VALUE
+COMPONENT_NAME = EMPTY_VALUE
+COMPONENT_INSTANCE_INDEX = 0
+
 _framework_support_map = {}
 _current_framework = None
 _logger = get_library_logger(__name__)
@@ -192,6 +196,9 @@ class JSONRequestLogFormatter(logging.Formatter):
             "type": "request",
             "written_at": util.iso_time_format(utcnow),
             "written_ts": util.epoch_nano_second(utcnow),
+            "component_id": COMPONENT_ID,
+            "component_name": COMPONENT_NAME,
+            "component_instance": COMPONENT_INSTANCE_INDEX,
             "correlation_id": _request_util.get_correlation_id(request),
             "remote_user": request_adapter.get_remote_user(request),
             "request": request_adapter.get_path(request),
@@ -220,13 +227,17 @@ class JSONLogFormatter(logging.Formatter):
     def format(self, record):
         utcnow = datetime.utcnow()
         json_log_object = {"type": "log",
+                           "written_at": util.iso_time_format(utcnow),
+                           "written_ts": util.epoch_nano_second(utcnow),
+                           "component_id": COMPONENT_ID,
+                           "component_name": COMPONENT_NAME,
+                           "component_instance": COMPONENT_INSTANCE_INDEX,
                            "logger": record.name,
                            "thread": record.threadName,
                            "level": record.levelname,
                            "line_no": record.lineno,
-                           "written_at": util.iso_time_format(utcnow),
-                           "written_ts": util.epoch_nano_second(utcnow),
-                           "msg": record.getMessage()}
+                           "msg": record.getMessage()
+                           }
 
         if hasattr(record, 'props'):
             json_log_object.update(record.props)
@@ -242,14 +253,16 @@ class JSONLogWebFormatter(logging.Formatter):
     def format(self, record):
         utcnow = datetime.utcnow()
         json_log_object = {"type": "log",
+                           "written_at": util.iso_time_format(utcnow),
+                           "written_ts": util.epoch_nano_second(utcnow),
+                           "component_id": COMPONENT_ID,
+                           "component_name": COMPONENT_NAME,
+                           "component_instance": COMPONENT_INSTANCE_INDEX,
                            "logger": record.name,
                            "thread": record.threadName,
                            "level": record.levelname,
                            "line_no": record.lineno,
-                           "written_at": util.iso_time_format(utcnow),
-                           "written_ts": util.epoch_nano_second(utcnow),
-                           "correlation_id": _request_util.get_correlation_id(),
-                           "msg": record.getMessage()}
+                           "correlation_id": _request_util.get_correlation_id()}
 
         if hasattr(record, 'props'):
             json_log_object.update(record.props)
