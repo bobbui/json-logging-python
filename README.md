@@ -3,18 +3,17 @@ Python logging library to emit JSON log that can be easily indexed and searchabl
 If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-logging-support](https://github.com/SAP/cf-python-logging-support) which I'm also original author and contributor.
 # Content
 1. [Features](#1-features)
-2. [Installation](#2-installation)
-3. [Usage](#3-usage)   
-   3.1 [Non-web application log](#311-non-web-application-log)  
-   3.2 [Web application log](#312-web-application-log)  
-   3.3 [Get current correlation-id](#321-get-current-correlation-id)  
-   3.4 [Log extra properties](#322-log-extra-properties)  
-   3.5 [Root logger](#323-root-logger)
-4. [Configuration](#4-configuration)  
-5. [Python References](#5-python-references)
-6. [Framework support plugin development](#6-framework-support-plugin-development)
-7. [FAQ & Troubleshooting](#7-faq--troubleshooting)
-8. [References](#8-references)
+2. [Usage](#3-usage)   
+   2.1 [Non-web application log](#21-non-web-application-log)  
+   2.2 [Web application log](#22-web-application-log)  
+   2.3 [Get current correlation-id](#23-get-current-correlation-id)  
+   2.4 [Log extra properties](#24-log-extra-properties)  
+   2.5 [Root logger](#25-root-logger)
+3. [Configuration](#3-configuration)  
+4. [Python References](#4-python-references)
+5. [Framework support plugin development](#5-framework-support-plugin-development)
+6. [FAQ & Troubleshooting](#6-faq--troubleshooting)
+7. [References](#7-references)
 
 # 1. Features
 1. Lightweight, no dependencies. Tested with Python 2.7 & 3.5.
