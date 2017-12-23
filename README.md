@@ -1,6 +1,7 @@
 # json-logging
 Python logging library to emit JSON log that can be easily indexed and searchable by logging infrastructure such as [ELK](https://www.elastic.co/webinars/introduction-elk-stack).  
-If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-logging-support](https://github.com/SAP/cf-python-logging-support) which I'm also original author and contributor.
+
+If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-logging-support](https://github.com/SAP/cf-python-logging-support) which I'm also original author and contributor. 
 # Content
 1. [Features](#1-features)
 2. [Usage](#2-usage)   
@@ -17,27 +18,28 @@ If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-
 
 # 1. Features
 1. Lightweight, no dependencies. Tested with Python 2.7 & 3.5.
-2. 100% compatible with **logging** module. Minimal configuration needed.
-3. Emit JSON logs, see here for what kind of log will be emitted. [\[0\]](#0-full-logging-format-references) 
+2. 100% compatible with built-in **logging** module. Minimal configuration needed.
+3. Emit JSON logs, see here for detailed log format. [\[0\]](#0-full-logging-format-references) 
 4. Support **correlation-id** [\[1\]](#1-what-is-correlation-idrequest-id)
-5. Support request instrumentation. Built in support for [Flask](http://flask.pocoo.org/) & [Sanic](http://flask.pocoo.org/). Extensible to support others.
-6. Support adding extra properties to JSON log object.
+5. Support request instrumentation. Built in support for [Flask](http://flask.pocoo.org/) & [Sanic](http://flask.pocoo.org/). Extensible to support others. Pull Request welcome to add other frameworks' support.
+6. Support inject arbitrary extra properties to JSON log message.
 
 # 2. Usage
-This library is very intrusive, once configured library will try to configure all loggers (existing and newly created) to emit log in JSON format.
 Install by running this command:
    > pip install json-logging  
+
+By default log will be emitted in normal format to ease the local development. To enable it on production set either json_logging.ENABLE_JSON_LOGGING or ENABLE_JSON_LOGGING environment variable to true.
    
-The most important method is **init(framework_name)**.
+To configure, call json_logging.init(framework_name). Once configured library will try to configure all loggers (existing and newly created) to emit log in JSON format. See each use case for more detail.
 
-TODO: update guide on how to use ELK stack to view log
-
+TODO: update guide on how to use ELK stack to view log  
 ## 2.1 Non-web application log
 This mode don't support **correlation-id**.
 ```python
 import json_logging, logging, sys
 
 # log is initialized without a web framework name
+json_logging.ENABLE_JSON_LOGGING = True
 json_logging.init()
 
 logger = logging.getLogger("test-logger")
@@ -54,6 +56,7 @@ logger.info("test logging statement")
 import datetime, logging, sys, json_logging, flask
 
 app = flask.Flask(__name__)
+json_logging.ENABLE_JSON_LOGGING = True
 json_logging.init(framework_name='flask')
 json_logging.init_request_instrument(app)
 
@@ -76,6 +79,7 @@ if __name__ == "__main__":
 import logging, sys, json_logging, sanic
 
 app = sanic.Sanic()
+json_logging.ENABLE_JSON_LOGGING = True
 json_logging.init(framework_name='sanic')
 json_logging.init_request_instrument(app)
 
