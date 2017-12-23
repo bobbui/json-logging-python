@@ -127,11 +127,10 @@ CORRELATION_ID_HEADERS | List of HTTP headers that will be used to look for corr
 EMPTY_VALUE | Default value when a logging record property is None |  '-'
 CORRELATION_ID_GENERATOR | function to generate unique correlation-id | uuid.uuid1
 JSON_SERIALIZER | function to encode object to JSON | json.dumps
-COMPONENT_ID | Uniquely identifies the software component that has processed the current
-request | EMPTY_VALUE
+COMPONENT_ID | Uniquely identifies the software component that has processed the current request | EMPTY_VALUE
 COMPONENT_NAME | A human-friendly name representing the software component | EMPTY_VALUE
 COMPONENT_INSTANCE_INDEX | Instance's index of horizontally scaled service | 0
-CREATE_CORRELATION_ID_IF_NOT_EXISTS |  Whether to generate an new correlation-id in case one is not present| True
+CREATE_CORRELATION_ID_IF_NOT_EXISTS |  Whether to generate a new correlation-id in case one is not present| True
 
 # 4. Python References
 
@@ -170,7 +169,8 @@ pip3 install .
 ```
 # 7. References
 ## [0] Full logging format references
-- Common field
+- Common field 
+
 Field | Description | Format | Example
  --- | --- | --- | ---
 written_at | The date when this log message was written. | ISO 8601 YYYY-MM-DDTHH:MM:SS.milliZ | 2017-12-23T15:14:02.208Z 
@@ -182,7 +182,8 @@ request | string | 9e6f3ecf-def0-4baf-8fac-9339e61d5645
 component_name | A human-friendly name representing the software component | string | my-fancy-component 
 component_instance | Instance's index of horizontally scaled service  | string | 0
 
-- application logs:  https://github.com/SAP/cf-java-logging-support/blob/master/cf-java-logging-support-core/beats/app-logs/docs/fields.asciidoc#exported-fields-app-logs
+- application logs
+
 Field | Description | Format | Example
  --- | --- | --- | ---
 msg | The actual message string passed to the logger.  | string | This is a log message
@@ -192,19 +193,20 @@ logger | The logger name that emits the log message.
  | string | requests-logger
 
 - request logs: 
+
 Field | Description | Format | Example
  --- | --- | --- | ---
-request | request path  that has been processed. | string | /get/api/v2
+request | request path that has been processed. | string | /get/api/v2
 request_received_at | The date when an incoming request was received by the producer.| ISO 8601 YYYY-MM-DDTHH:MM:SS.milliZ   The precision is in milliseconds. The timezone is UTC.  | 2015-01-24 14:06:05.071Z
 response_sent_at | The date when the response to an incoming request was sent to the consumer.  | ditto | 2015-01-24 14:06:05.071Z
 response_time_ms | How many milliseconds it took the producer to prepare the response.  | float | 43.476
-protocol | Which protocol was used to issue a request to a producer. In most cases, this will be HTTP (including a version specifier), but for outgoing requests reported by a producer it may contain other values. E.g. a database call via JDBC may report, e.g. "JDBC/1.2"  | string | HTTP/1.1
+protocol | Which protocol was used to issue a request to a producer. In most cases, this will be HTTP (including a version specifier), but for outgoing requests reported by a producer, it may contain other values. E.g. a database call via JDBC may report, e.g. "JDBC/1.2"  | string | HTTP/1.1
 method | The corresponding protocol method. | string | GET
 remote_ip |  IP address of the consumer (might be a proxy, might be the actual client) | string | 192.168.0.1
 remote_host |  host name of the consumer (might be a proxy, might be the actual client) | string | my.happy.host
 remote_port | Which TCP port is used by the consumer to establish a connection to the remote producer. | string | 1234
 remote_user | The username associated with the request | string | user_name
-request_size_b | The size in bytes of the request entity or "body" (e.g., in case of POST requests). | long | 1234
+request_size_b | The size in bytes of the requesting entity or "body" (e.g., in case of POST requests). | long | 1234
 response_status | The status code of the response. | long | 200
 response_content_type | The MIME type associated with the entity of the response if available/specified | long | application/json
 referer | For HTTP requests, identifies the address of the webpage (i.e. the URI or IRI) that linked to the resource being requested. | string |  /index.html
