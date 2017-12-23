@@ -3,7 +3,7 @@ Python logging library to emit JSON log that can be easily indexed and searchabl
 If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-logging-support](https://github.com/SAP/cf-python-logging-support) which I'm also original author and contributor.
 # Content
 1. [Features](#1-features)
-2. [Usage](#3-usage)   
+2. [Usage](#2-usage)   
    2.1 [Non-web application log](#21-non-web-application-log)  
    2.2 [Web application log](#22-web-application-log)  
    2.3 [Get current correlation-id](#23-get-current-correlation-id)  
@@ -116,7 +116,7 @@ logging.basicConfig()
 json_logging.config_root_logger()
 ```
 
-# 4. Configuration
+# 3. Configuration
 logging library can be configured by setting the value in json_logging
 
 Name | Description | Default value
@@ -133,11 +133,11 @@ COMPONENT_NAME | A human-friendly name representing the software component | EMP
 COMPONENT_INSTANCE_INDEX | Instance's index of horizontally scaled service | 0
 CREATE_CORRELATION_ID_IF_NOT_EXISTS |  Whether to generate an new correlation-id in case one is not present| True
 
-# 5. Python References
+# 4. Python References
 
 TODO: update Python API docs on Github page
 
-# 6. Framework support plugin development
+# 5. Framework support plugin development
 To add support for a new web framework, you need to extend following classes in [**framework_base**](/blob/master/json_logging/framework_base.py) and register support using [**json_logging.register_framework_support**](https://github.com/thangbn/json-logging-python/blob/master/json_logging/__init__.py#L38) method:
 
 Class | Description | Mandatory
@@ -149,7 +149,7 @@ AppRequestInstrumentationConfigurator | Class to perform request instrumentation
 
 Take a look at [**json_logging/base_framework.py**](blob/master/json_logging/framework_base.py), [**json_logging.flask**](tree/master/json_logging/framework/flask) and [**json_logging.sanic**](/tree/master/json_logging/framework/sanic) packages for reference implementations.
 
-# 7. FAQ & Troubleshooting
+# 6. FAQ & Troubleshooting
 1. I configured everything, but no logs are printed out?
 
     - Forgot to add handlers to your logger?
@@ -168,7 +168,7 @@ set SANIC_NO_UVLOOP=true
 set SANIC_NO_UJSON=true
 pip3 install .
 ```
-# 8. References
+# 7. References
 ## [0] Full logging format references
 - Common field
 Field | Description | Format | Example
