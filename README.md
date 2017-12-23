@@ -273,3 +273,31 @@ https://docs.python.org/2/library/logging.html#logging.Logger.propagate
 
 ## [3] more on flask use_reloader
 http://flask.pocoo.org/docs/0.12/errorhandling/#working-with-debuggers
+
+# Development 
+```
+[distutils]
+index-servers =
+  pypi
+  pypitest
+
+[pypi]
+repository: https://upload.pypi.org/legacy/
+username:
+password:
+
+[pypitest]
+repository: https://test.pypi.org/legacy/
+username=
+password=
+```
+pypitest
+```
+python setup.py sdist upload -r pypitest
+pip3 install json_logging --index-url https://test.pypi.org/simple/ 
+```
+pypi
+```
+python setup.py sdist upload -r pypi
+pip3 install json_logging
+```

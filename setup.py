@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="json-logging",
-    version='1.0.0',
+    version='0.0.1',
     packages=find_packages(exclude=['contrib', 'docs', 'tests*', 'example', 'dist', 'build']),
     license='Apache License 2.0',
     description="JSON Python Logging",
@@ -13,7 +13,6 @@ setup(
               "elk", "elk-stack", "logstash", "kibana"],
     platforms='any',
     url="https://github.com/thangbn/json-logging",
-    python_requires='>=2.6, >=3.2',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
