@@ -17,21 +17,21 @@ If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-
 7. [References](#7-references)
 
 # 1. Features
-1. Lightweight, no dependencies. Minimal configuration needed (1 LoC to getting started)
-2. 100% compatible with built-in **logging** module. Support both Python 2.7.x and 3.x
-3. Emit JSON logs. See for detailed log format here [\[0\]](#0-full-logging-format-references) 
-4. Support **correlation-id** [\[1\]](#1-what-is-correlation-idrequest-id)
-5. Support HTTP request instrumentation. Built in support for [Flask](http://flask.pocoo.org/) & [Sanic](http://flask.pocoo.org/).   
-Extensible to support other web frameworks. Pull Request welcome :smiley: .
-6. Support inject arbitrary extra properties to JSON log message.
+1. Emit JSON logs.([format detail](#0-full-logging-format-references)) 
+2. Support **correlation-id** [\[1\]](#1-what-is-correlation-idrequest-id)
+3. Lightweight, no dependencies. Minimal configuration needed (1 LoC to get it working)
+4. Fully compatible with Python **logging** module. Support both Python 2.7.x and 3.x
+5. Support HTTP request instrumentation. Built in support for [Flask](http://flask.pocoo.org/) & [Sanic](http://flask.pocoo.org/). Extensible to support other web frameworks. PR welcome :smiley: .
+6. Support inject arbitrary extra properties to JSON log message.  
 
 # 2. Usage
 Install by running this command:
    > pip install json-logging  
 
-By default log will be emitted in normal format to ease the local development. To enable it on production set either json_logging.ENABLE_JSON_LOGGING or ENABLE_JSON_LOGGING environment variable to true.
+By default log will be emitted in normal format to ease the local development. To enable it on production set either **json_logging.ENABLE_JSON_LOGGING** or **ENABLE_JSON_LOGGING environment variable** to true.
    
-To configure, call json_logging.init(framework_name). Once configured library will try to configure all loggers (existing and newly created) to emit log in JSON format. See each use case for more detail.
+To configure, call **json_logging.init(framework_name)**. Once configured library will try to configure all loggers (existing and newly created) to emit log in JSON format.   
+See following use cases for more detail.
 
 TODO: update guide on how to use ELK stack to view log  
 ## 2.1 Non-web application log
