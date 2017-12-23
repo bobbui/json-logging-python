@@ -17,9 +17,9 @@ If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-
 7. [References](#7-references)
 
 # 1. Features
-1. Emit JSON logs.([format detail](#0-full-logging-format-references)) 
+1. Emit JSON logs ([format detail](#0-full-logging-format-references)) 
 2. Support **correlation-id** [\[1\]](#1-what-is-correlation-idrequest-id)
-3. Lightweight, no dependencies. Minimal configuration needed (1 LoC to get it working)
+3. Lightweight, no dependencies, minimal configuration needed (1 LoC to get it working)
 4. Fully compatible with Python **logging** module. Support both Python 2.7.x and 3.x
 5. Support HTTP request instrumentation. Built in support for [Flask](http://flask.pocoo.org/) & [Sanic](http://flask.pocoo.org/). Extensible to support other web frameworks. PR welcome :smiley: .
 6. Support inject arbitrary extra properties to JSON log message.  

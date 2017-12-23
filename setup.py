@@ -1,18 +1,21 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="json-logging",
-    version='0.0.1',
-    packages=['json_logging'],
+    version='1.0.0',
+    packages=find_packages(exclude=['contrib', 'docs', 'tests*', 'example', 'dist', 'build']),
+    license='Apache License 2.0',
     description="JSON Python Logging",
     long_description=open('README.md').read(),
     author="Bui Nguyen Thang (Bob)",
-    author_email="thang.bn@live.com",
-    keywords=["json", "python", "logging", "request instrumentation"],
+    author_email="bob.bui@outlook.com",
+    keywords=["json", "elastic", "python", "python3", "python2", "logging", "logging-library", "json", "elasticsearch",
+              "elk", "elk-stack", "logstash", "kibana"],
     platforms='any',
     url="https://github.com/thangbn/json-logging",
+    python_requires='>=2.6, >=3.2',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
