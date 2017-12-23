@@ -1,7 +1,7 @@
 # json-logging
 Python logging library to emit JSON log that can be easily indexed and searchable by logging infrastructure such as [ELK](https://www.elastic.co/webinars/introduction-elk-stack).  
 
-If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-logging-support](https://github.com/SAP/cf-python-logging-support) which I'm also original author and contributor. 
+If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-logging-support](https://github.com/SAP/cf-python-logging-support) which I'm also original author and contributor.
 # Content
 1. [Features](#1-features)
 2. [Usage](#2-usage)   
@@ -17,11 +17,12 @@ If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-
 7. [References](#7-references)
 
 # 1. Features
-1. Lightweight, no dependencies. Tested with Python 2.7 & 3.5.
-2. 100% compatible with built-in **logging** module. Minimal configuration needed.
-3. Emit JSON logs, see here for detailed log format. [\[0\]](#0-full-logging-format-references) 
+1. Lightweight, no dependencies. Minimal configuration needed (1 LoC to getting started)
+2. 100% compatible with built-in **logging** module. Support both Python 2.7.x and 3.x
+3. Emit JSON logs. See for detailed log format here [\[0\]](#0-full-logging-format-references) 
 4. Support **correlation-id** [\[1\]](#1-what-is-correlation-idrequest-id)
-5. Support request instrumentation. Built in support for [Flask](http://flask.pocoo.org/) & [Sanic](http://flask.pocoo.org/). Extensible to support others. Pull Request welcome to add other frameworks' support.
+5. Support HTTP request instrumentation. Built in support for [Flask](http://flask.pocoo.org/) & [Sanic](http://flask.pocoo.org/).   
+Extensible to support other web frameworks. Pull Request welcome :smiley: .
 6. Support inject arbitrary extra properties to JSON log message.
 
 # 2. Usage
