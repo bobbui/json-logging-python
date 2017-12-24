@@ -11,17 +11,18 @@ searchable by logging infrastructure such as
 
 # Content
 =========
-  1.`Features <#1-features>`__ 2. `Usage <#2-usage>`__
+| 1.`Features <#1-features>`__ 
+| 2. `Usage <#2-usage>`__
 | 2.1 `Non-web application log <#21-non-web-application-log>`__
 | 2.2 `Web application log <#22-web-application-log>`__
 | 2.3 `Get current correlation-id <#23-get-current-correlation-id>`__
 | 2.4 `Log extra properties <#24-log-extra-properties>`__
-| 2.5 `Root logger <#25-root-logger>`__ 3.
-  `Configuration <#3-configuration>`__
-| 4. `Python References <#4-python-references>`__ 5. `Framework support
-  plugin development <#5-framework-support-plugin-development>`__ 6.
-  `FAQ & Troubleshooting <#6-faq--troubleshooting>`__ 7.
-  `References <#7-references>`__
+| 2.5 `Root logger <#25-root-logger>`__ 
+| 3. `Configuration <#3-configuration>`__
+| 4. `Python References <#4-python-references>`__ 
+| 5. `Framework support plugin development <#5-framework-support-plugin-development>`__ 
+| 6.`FAQ & Troubleshooting <#6-faq--troubleshooting>`__ 
+| 7. `References <#7-references>`__
 
 1. Features
 ===========
