@@ -1,5 +1,6 @@
 import json_logging
 import logging
+# noinspection PyPackageRequirements
 import sanic
 import sys
 
@@ -14,10 +15,12 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
+# noinspection PyUnusedLocal
 @app.route("/")
 async def test(request):
     logger.info("test log statement")
     logger.info("test log statement", extra={'props': {"extra_property": 'extra_value'}})
+    # noinspection PyUnresolvedReferences
     return sanic.response.text("hello world")
 
 

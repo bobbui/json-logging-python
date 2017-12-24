@@ -1,4 +1,3 @@
-import json_logging
 import logging
 import os
 import sys
@@ -6,12 +5,14 @@ from logging import StreamHandler
 from timeit import Timer
 
 from flask import Flask
+from flask import request as request
+
+import json_logging
 
 logger = logging.getLogger("test logger")
 logger.setLevel(logging.DEBUG)
 logger.addHandler(StreamHandler(sys.stdout))
 app = Flask(__name__)
-from flask import request as request
 
 json_logging.init(framework_name='flask')
 json_logging.init_request_instrument(app)

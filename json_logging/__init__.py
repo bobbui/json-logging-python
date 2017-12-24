@@ -31,8 +31,8 @@ _request_util = None
 
 def get_correlation_id():
     """
-    Get current request correlation-id.
-    In request context, if one is not present, a new one might be generated depends on CREATE_CORRELATION_ID_IF_NOT_EXISTS setting value.
+    Get current request correlation-id. If one is not present, a new one might be generated
+    depends on CREATE_CORRELATION_ID_IF_NOT_EXISTS setting value.
 
     :return: correlation-id string
     """
@@ -140,7 +140,7 @@ def init(framework_name=None):
 
 def init_request_instrument(app=None):
     """
-    Sets up the current web application instance' request instrumentation logging configuration. Must be called after init method
+    Configure the request instrumentation logging configuration for given web app. Must be called after init method
 
     :param app: current web application instance
     """
@@ -166,6 +166,7 @@ class RequestInfo(dict):
         self.request = request
         self.request_received_at = util.iso_time_format(utcnow)
 
+    # noinspection PyAttributeOutsideInit
     def update_response_status(self, response):
         """
         update response information into this object, must be called before invoke request logging statement
@@ -279,6 +280,7 @@ register_framework_support('flask', None, flask_support.FlaskAppRequestInstrumen
                            flask_support.FlaskResponseAdapter)
 
 # register flask support
+# noinspection PyPep8
 from json_logging.framework.sanic import SanicAppConfigurator, SanicAppRequestInstrumentationConfigurator, \
     SanicRequestAdapter, SanicResponseAdapter
 

@@ -317,7 +317,7 @@ you can install Sanic on windows by running these commands:
 [0] Full logging format references
 ----------------------------------
 
-2 types of logging statement will be emmited by this library: 
+2 types of logging statement will be emitted by this library: 
 - Application log: normal logging statement e.g.:
 
 ::
@@ -372,52 +372,52 @@ See following tables for detail format explanation:
 
  - Common field
 
-+-----------------+-----------------+-----------------+-----------------+
-| Field           | Description     | Format          | Example         |
-+=================+=================+=================+=================+
-| written_at      | The date when   | ISO 8601        | 2017-12-23T15:1 |
-|                 | this log        | YYYY-MM-DDTHH:M | 4:02.208Z       |
-|                 | message was     | M:SS.milliZ     |                 |
-|                 | written.        |                 |                 |
-+-----------------+-----------------+-----------------+-----------------+
-| written_ts      | The timestamp   | long number     | 145682055381684 |
-|                 | in nano-second  |                 | 9408            |
-|                 | precision when  |                 |                 |
-|                 | this request    |                 |                 |
-|                 | metric message  |                 |                 |
-|                 | was written.    |                 |                 |
-+-----------------+-----------------+-----------------+-----------------+
-| correlation_id  | The timestamp   | string          | db2d002e-2702-4 |
-|                 | in nano-second  |                 | 1ec-66f5-c002a8 |
-|                 | precision when  |                 | 0a3d3f          |
-|                 | this request    |                 |                 |
-|                 | metric message  |                 |                 |
-|                 | was written.    |                 |                 |
-+-----------------+-----------------+-----------------+-----------------+
-| type            | Type of         | string          |                 |
-|                 | logging. “logs” |                 |                 |
-|                 | or “request”    |                 |                 |
-+-----------------+-----------------+-----------------+-----------------+
-| component_id    | Uniquely        | string          | 9e6f3ecf-def0-4 |
-|                 | identifies the  |                 | baf-8fac-9339e6 |
-|                 | software        |                 | 1d5645          |
-|                 | component that  |                 |                 |
-|                 | has processed   |                 |                 |
-|                 | the current     |                 |                 |
-|                 | request         |                 |                 |
-+-----------------+-----------------+-----------------+-----------------+
-| component_name  | A               | string          | my-fancy-compon |
-|                 | human-friendly  |                 | ent             |
-|                 | name            |                 |                 |
-|                 | representing    |                 |                 |
-|                 | the software    |                 |                 |
-|                 | component       |                 |                 |
-+-----------------+-----------------+-----------------+-----------------+
-| component_insta | Instance’s      | string          | 0               |
-| nce             | index of        |                 |                 |
-|                 | horizontally    |                 |                 |
-|                 | scaled service  |                 |                 |
-+-----------------+-----------------+-----------------+-----------------+
++-------------------+-----------------+-----------------+-----------------+
+| Field             | Description     | Format          | Example         |
++===================+=================+=================+=================+
+| written_at        | The date when   | ISO 8601        | 2017-12-23T15:1 |
+|                   | this log        | YYYY-MM-DDTHH:M | 4:02.208Z       |
+|                   | message was     | M:SS.milliZ     |                 |
+|                   | written.        |                 |                 |
++-------------------+-----------------+-----------------+-----------------+
+| written_ts        | The timestamp   | long number     | 145682055381684 |
+|                   | in nano-second  |                 | 9408            |
+|                   | precision when  |                 |                 |
+|                   | this request    |                 |                 |
+|                   | metric message  |                 |                 |
+|                   | was written.    |                 |                 |
++-------------------+-----------------+-----------------+-----------------+
+| correlation_id    | The timestamp   | string          | db2d002e-2702-4 |
+|                   | in nano-second  |                 | 1ec-66f5-c002a8 |
+|                   | precision when  |                 | 0a3d3f          |
+|                   | this request    |                 |                 |
+|                   | metric message  |                 |                 |
+|                   | was written.    |                 |                 |
++-------------------+-----------------+-----------------+-----------------+
+| type              | Type of         | string          |                 |
+|                   | logging. “logs” |                 |                 |
+|                   | or “request”    |                 |                 |
++-------------------+-----------------+-----------------+-----------------+
+| component_id      | Uniquely        | string          | 9e6f3ecf-def0-4 |
+|                   | identifies the  |                 | baf-8fac-9339e6 |
+|                   | software        |                 | 1d5645          |
+|                   | component that  |                 |                 |
+|                   | has processed   |                 |                 |
+|                   | the current     |                 |                 |
+|                   | request         |                 |                 |
++-------------------+-----------------+-----------------+-----------------+
+| component_name    | A               | string          | my-component    |
+|                   | human-friendly  |                 |                 |
+|                   | name            |                 |                 |
+|                   | representing    |                 |                 |
+|                   | the software    |                 |                 |
+|                   | component       |                 |                 |
++-------------------+-----------------+-----------------+-----------------+
+| component_instance| Instance’s      | string          | 0               |
+|                   | index of        |                 |                 |
+|                   | horizontally    |                 |                 |
+|                   | scaled service  |                 |                 |
++-------------------+-----------------+-----------------+-----------------+
 
  -  application logs
 
@@ -549,8 +549,8 @@ See following tables for detail format explanation:
 | t_type          | associated with |                 | n               |
 |                 | the entity of   |                 |                 |
 |                 | the response if |                 |                 |
-|                 | available/speci |                 |                 |
-|                 | fied            |                 |                 |
+|                 | available or    |                 |                 |
+|                 | specified       |                 |                 |
 +-----------------+-----------------+-----------------+-----------------+
 | referer         | For HTTP        | string          | /index.html     |
 |                 | requests,       |                 |                 |

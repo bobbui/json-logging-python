@@ -16,9 +16,9 @@ def is_env_var_toggle(var_name):
 
 def get_library_logger(logger_name):
     """
-    
-    :param logger_name: 
-    :return: 
+
+    :param logger_name: name
+    :return: logger
     """
     # noinspection PyUnresolvedReferences
     if logger_name in logging.Logger.manager.loggerDict:
@@ -47,7 +47,9 @@ def use_cf_logging_formatter(loggers_iter, formatter):
                 handler.formatter = formatter()
 
 
+# noinspection PyPep8
 def parse_int(input_int, default):
+    # noinspection PyBroadException
     try:
         integer = int(input_int)
     except:
@@ -58,9 +60,9 @@ def parse_int(input_int, default):
 def validate_subclass(subclass, superclass):
     """
 
-    :param subclass: 
-    :param superclass: 
-    :return: 
+    :param subclass
+    :param superclass
+    :return: bool
     """
     if not issubclass(subclass, superclass):
         raise RuntimeError(str(subclass) + ' is not a subclass of ' + str(superclass))
@@ -83,8 +85,10 @@ def iso_time_format(datetime_):
 
 _no_of_go_up_level = 11
 if hasattr(sys, '_getframe'):
+    # noinspection PyProtectedMember,PyPep8
     currentframe = lambda: sys._getframe(_no_of_go_up_level)
 else:  # pragma: no cover
+    # noinspection PyBroadException
     def currentframe():
         """Return the frame object for the caller's stack frame."""
         try:
@@ -151,20 +155,20 @@ class RequestUtil(object):
     def get_request_from_call_stack(self):
         """
 
-        :return: get request object from call stack 
+        :return: get request object from call stack
         """
         """
             python 3 call stack frame
-            00 get_request_from_call_stack [util.py:225]  
+            00 get_request_from_call_stack [util.py:225]
             01 get_correlation_id [util.py:177]
             02 format [__init__.py:333]
             03 format [__init__.py:830]
-            04 emit [__init__.py:980]  
-            05 handle [__init__.py:855]  
-            06 callHandlers [__init__.py:1487] 
+            04 emit [__init__.py:980]
+            05 handle [__init__.py:855]
+            06 callHandlers [__init__.py:1487]
             07 handle [__init__.py:1425]
-            08 _log [__init__.py:1415]  
-            09 info [__init__.py:1279]  
+            08 _log [__init__.py:1415]
+            09 info [__init__.py:1279]
             10 logging statement
         """
         # FIXME: find out the depth of logging call stack in Python 2.7

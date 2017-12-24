@@ -9,6 +9,7 @@ from json_logging.framework_base import AppRequestInstrumentationConfigurator, R
 
 
 def is_flask_present():
+    # noinspection PyPep8,PyBroadException
     try:
         import flask
         return True
@@ -37,6 +38,7 @@ class FlaskAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
 
         json_logging.util.use_cf_logging_formatter([logging.getLogger('werkzeug')], JSONLogWebFormatter)
 
+        # noinspection PyAttributeOutsideInit
         self.request_logger = logging.getLogger('flask-request-logger')
         self.request_logger.setLevel(logging.DEBUG)
         self.request_logger.addHandler(logging.StreamHandler(sys.stdout))

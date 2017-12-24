@@ -175,7 +175,7 @@ pip3 install .
 ```
 # 7. References
 ## [0] Full logging format references
-2 types of logging statement will be emmited by this library:
+2 types of logging statement will be emitted by this library:
 - Application log: normal logging statement
 e.g.:
 ```
@@ -301,7 +301,7 @@ pip3 install json_logging --index-url https://test.pypi.org/simple/
 pypi
 ```
 python setup.py sdist upload -r pypi
-python setup.py bdist_wheel --universal upload -r pypi
+python3 setup.py bdist_wheel --universal upload -r pypi
 pip3 install json_logging
 ```
 bdist_wheel --universal

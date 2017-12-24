@@ -9,6 +9,7 @@ from json_logging.framework_base import FrameworkConfigurator, AppRequestInstrum
 
 
 def is_sanic_present():
+    # noinspection PyBroadException
     try:
         # noinspection PyPackageRequirements
         from sanic import Sanic
@@ -44,6 +45,7 @@ class SanicAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
         if not isinstance(app, Sanic):
             raise RuntimeError("app is not a valid Sanic.app.Sanic app instance")
 
+        # noinspection PyAttributeOutsideInit
         self.request_logger = logging.getLogger('sanic-request')
         self.request_logger.setLevel(logging.DEBUG)
         self.request_logger.addHandler(logging.StreamHandler(sys.stdout))

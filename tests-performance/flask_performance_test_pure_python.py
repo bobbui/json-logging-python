@@ -19,7 +19,7 @@ MESSAGE = 'some important information to be logged'
 
 @app.route('/')
 def home________________():
-    count_ = 10;
+    count_ = 10
     if 'count' in request.args:
         count_ = int(request.args['count'])
     simple_logging = Timer(lambda: logger.info(MESSAGE)).timeit(number=count_)

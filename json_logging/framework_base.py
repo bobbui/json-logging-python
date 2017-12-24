@@ -1,7 +1,7 @@
 # coding=utf-8
 class RequestAdapter:
     """
-        Helper class help to extract logging-relevant information from HTTP request object 
+        Helper class help to extract logging-relevant information from HTTP request object
     """
 
     def __new__(cls, *arg, **kwargs):
@@ -34,7 +34,7 @@ class RequestAdapter:
         """
         get HTTP header value given it value name
 
-        :param request: 
+        :param request: request object
         :param header_name: name of header
         :param default: default value if header value is not present
         :return:
@@ -44,40 +44,40 @@ class RequestAdapter:
     def get_remote_user(self, request):
         """
 
-        :param request: 
+        :param request: request object
         """
         raise NotImplementedError
 
     def is_in_request_context(self, request):
         """
 
-        :param request: 
+        :param request: request object
         """
         raise NotImplementedError
 
     def set_correlation_id(self, request, value):
         """
         We can safely assume that request is valid request object.\n
-        Set correlation to request context
-        Made sure that we can access it later from get_correlation_id_in_request_context given the same request. 
+        Set correlation to request context. e.g Flask.g in Flask
+        Made sure that we can access it later from get_correlation_id_in_request_context given the same request.
 
-        :param value: 
-        :param request: 
+        :param value: correlation id string
+        :param request: request object
         """
         raise NotImplementedError
 
     def get_correlation_id_in_request_context(self, request):
         """
         We can safely assume that request is valid request object.
-        
-        :param request: 
+
+        :param request: request object
         """
         raise NotImplementedError
 
     def get_protocol(self, request):
         """
         We can safely assume that request is valid request object.\n
-        Gets the request protocol (e.g. HTTP/1.1). 
+        Gets the request protocol (e.g. HTTP/1.1).
 
         :return: The request protocol or '-' if it cannot be determined
         """
@@ -96,7 +96,7 @@ class RequestAdapter:
         """
         We can safely assume that request is valid request object.\n
         The content length of the request.
-        
+
         :return: the content length of the request or '-' if it cannot be determined
         """
         raise NotImplementedError
@@ -105,7 +105,7 @@ class RequestAdapter:
         """
         We can safely assume that request is valid request object.\n
         Gets the request method (e.g. GET, POST, etc.).
-        
+
         :return: The request method or '-' if it cannot be determined
         """
         raise NotImplementedError
@@ -114,7 +114,7 @@ class RequestAdapter:
         """
         We can safely assume that request is valid request object.\n
         Gets the remote ip of the request initiator.
-        
+
         :return: An ip address or '-' if it cannot be determined
         """
         raise NotImplementedError
@@ -123,7 +123,7 @@ class RequestAdapter:
         """
         We can safely assume that request is valid request object.\n
         Gets the remote port of the request initiator.
-        
+
         :return: A port or '-' if it cannot be determined
         """
         raise NotImplementedError
@@ -131,7 +131,7 @@ class RequestAdapter:
 
 class ResponseAdapter:
     """
-        Helper class help to extract logging-relevant information from HTTP response object 
+        Helper class help to extract logging-relevant information from HTTP response object
     """
 
     def __new__(cls, *arg, **kwargs):
@@ -142,24 +142,24 @@ class ResponseAdapter:
     def get_status_code(self, response):
         """
         get response's integer status code
-        
-        :param response: 
+
+        :param response: response object
         """
         raise NotImplementedError
 
     def get_response_size(self, response):
         """
         get response's size in bytes
-        
-        :param response: 
+
+        :param response: response object
         """
         raise NotImplementedError
 
     def get_content_type(self, response):
         """
-        get response's MIME/media type 
-        
-        :param response: 
+        get response's MIME/media type
+
+        :param response: response object
         """
         raise NotImplementedError
 
@@ -184,14 +184,10 @@ class FrameworkConfigurator:
 class AppRequestInstrumentationConfigurator:
     """
         Class to perform request instrumentation logging configuration. Should at least contains:
-        
         1- register before-request hook and create a RequestInfo object, store it to request context
-        
         2- register after-request hook and update response to stored RequestInfo object
-        
         3 - re-configure framework loggers.
-        
-        NOTE: logger's reference that is used to emit request instrumentation logging will need to assign to **self.request_logger**
+        NOTE: logger that is used to emit request instrumentation logs will need to assign to **self.request_logger**
     """
 
     def __new__(cls, *args, **kw):

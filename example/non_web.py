@@ -1,4 +1,7 @@
-import json_logging, logging, sys
+import logging
+import sys
+
+import json_logging
 
 # log is initialized without a web framework name
 json_logging.ENABLE_JSON_LOGGING = True

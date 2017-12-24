@@ -1,12 +1,22 @@
+import io
+import sys
+
 from setuptools import setup, find_packages
+
+version_info_major = sys.version_info[0]
+if version_info_major == 3:
+    long_description = open('README.rst', encoding="utf8").read()
+else:
+    io_open = io.open('README.rst', encoding="utf8")
+    long_description = io_open.read()
 
 setup(
     name="json-logging",
-    version='0.0.1',
+    version='0.0.7',
     packages=find_packages(exclude=['contrib', 'docs', 'tests*', 'example', 'dist', 'build']),
     license='Apache License 2.0',
     description="JSON Python Logging",
-    long_description=open('README.rst').read(),
+    long_description=long_description,
     author="Bui Nguyen Thang (Bob)",
     author_email="bob.bui@outlook.com",
     keywords=["json", "elastic", "python", "python3", "python2", "logging", "logging-library", "json", "elasticsearch",
