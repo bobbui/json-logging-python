@@ -7,8 +7,11 @@ searchable by logging infrastructure such as
 
 | If you’re using Cloud Foundry, it worth to check out the library
   `SAP/cf-python-logging-support <https://github.com/SAP/cf-python-logging-support>`__
-  which I’m also original author and contributor. # Content 1.
-  `Features <#1-features>`__ 2. `Usage <#2-usage>`__
+  which I’m also original author and contributor. 
+
+# Content
+=========
+  1.`Features <#1-features>`__ 2. `Usage <#2-usage>`__
 | 2.1 `Non-web application log <#21-non-web-application-log>`__
 | 2.2 `Web application log <#22-web-application-log>`__
 | 2.3 `Get current correlation-id <#23-get-current-correlation-id>`__
@@ -580,41 +583,3 @@ https://docs.python.org/2/library/logging.html#logging.Logger.propagate
 ------------------------------
 
 http://flask.pocoo.org/docs/0.12/errorhandling/#working-with-debuggers
-
-Development
-===========
-
-::
-
-    [distutils]
-    index-servers =
-      pypi
-      pypitest
-
-    [pypi]
-    repository: https://upload.pypi.org/legacy/
-    username:
-    password:
-
-    [pypitest]
-    repository: https://test.pypi.org/legacy/
-    username=
-    password=
-
-pypitest
-
-::
-
-    python setup.py sdist upload -r pypitest
-    python setup.py bdist_wheel --universal upload -r pypitest
-    pip3 install json_logging --index-url https://test.pypi.org/simple/ 
-
-pypi
-
-::
-
-    python setup.py sdist upload -r pypi
-    python setup.py bdist_wheel --universal upload -r pypi
-    pip3 install json_logging
-
-bdist_wheel –universal

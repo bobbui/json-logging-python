@@ -2,11 +2,11 @@ from setuptools import setup, find_packages
 
 setup(
     name="json-logging",
-    version='0.0.1',
+    version='0.0.3',
     packages=find_packages(exclude=['contrib', 'docs', 'tests*', 'example', 'dist', 'build']),
     license='Apache License 2.0',
     description="JSON Python Logging",
-    long_description=open('README.md').read(),
+    long_description=open('README.rst').read(),
     author="Bui Nguyen Thang (Bob)",
     author_email="bob.bui@outlook.com",
     keywords=["json", "elastic", "python", "python3", "python2", "logging", "logging-library", "json", "elasticsearch",
