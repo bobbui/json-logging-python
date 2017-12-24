@@ -21,7 +21,7 @@ If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-
 2. Support **correlation-id** [\[1\]](#1-what-is-correlation-idrequest-id)
 3. Lightweight, no dependencies, minimal configuration needed (1 LoC to get it working)
 4. Fully compatible with Python **logging** module. Support both Python 2.7.x and 3.x
-5. Support HTTP request instrumentation. Built in support for [Flask](http://flask.pocoo.org/) & [Sanic](http://flask.pocoo.org/). Extensible to support other web frameworks. PR welcome :smiley: .
+5. Support HTTP request instrumentation. Built in support for [Flask](http://flask.pocoo.org/) & [Sanic](https://github.com/channelcat/sanic). Extensible to support other web frameworks. PR welcome :smiley: .
 6. Support inject arbitrary extra properties to JSON log message.  
 
 # 2. Usage
@@ -34,6 +34,7 @@ To configure, call **json_logging.init(framework_name)**. Once configured librar
 See following use cases for more detail.
 
 TODO: update guide on how to use ELK stack to view log  
+
 ## 2.1 Non-web application log
 This mode don't support **correlation-id**.
 ```python
