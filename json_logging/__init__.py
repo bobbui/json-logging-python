@@ -263,7 +263,9 @@ class JSONLogWebFormatter(logging.Formatter):
                            "thread": record.threadName,
                            "level": record.levelname,
                            "line_no": record.lineno,
-                           "correlation_id": _request_util.get_correlation_id()}
+                           "correlation_id": _request_util.get_correlation_id(),
+                           "msg": record.getMessage()
+                           }
 
         if hasattr(record, 'props'):
             json_log_object.update(record.props)
