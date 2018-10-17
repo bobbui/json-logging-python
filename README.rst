@@ -7,7 +7,7 @@ searchable by logging infrastructure such as
 
 | If you’re using Cloud Foundry, it worth to check out the library
   `SAP/cf-python-logging-support <https://github.com/SAP/cf-python-logging-support>`_
-  which I’m also original author and contributor. 
+  which I’m also original author and contributor.
 
 1. Features
 ===========
@@ -22,14 +22,15 @@ searchable by logging infrastructure such as
    2.7.x and 3.x
 5. Support HTTP request instrumentation. Built in support for
    `Flask <http://flask.pocoo.org/>`_ &
-   `Sanic <https://github.com/channelcat/sanic>`_. Extensible to support other web
+   `Sanic <https://github.com/channelcat/sanic>`_ &
+   `Quart <https://gitlab.com/pgjones/quart>`_. Extensible to support other web
    frameworks. PR welcome :smiley: .
 6. Support inject arbitrary extra properties to JSON log message.
 
 2. Usage
 ========
 
-Install by running this command: 
+Install by running this command:
 
 .. code:: python
 
@@ -122,6 +123,33 @@ Sanic
 
     if __name__ == "__main__":
         app.run(host="0.0.0.0", port=8000)
+
+Quart
+~~~~~
+
+.. code:: python
+
+    import asyncio, logging, sys, json_logging, quart
+
+    app = quart.Quart(__name__)
+    json_logging.ENABLE_JSON_LOGGING = True
+    json_logging.init(framework_name='quart')
+    json_logging.init_request_instrument(app)
+
+    # init the logger as usual
+    logger = logging.getLogger("test logger")
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+
+    @app.route('/')
+    async def home():
+        logger.info("test log statement")
+        logger.info("test log statement", extra={'props': {"extra_property": 'extra_value'}})
+        return "Hello world"
+
+    if __name__ == "__main__":
+        loop = asyncio.get_event_loop()
+        app.run(host='0.0.0.0', port=int(5000), use_reloader=False, loop=loop)
 
 
 2.3 Get current correlation-id
@@ -317,7 +345,7 @@ you can install Sanic on windows by running these commands:
 [0] Full logging format references
 ----------------------------------
 
-2 types of logging statement will be emitted by this library: 
+2 types of logging statement will be emitted by this library:
 - Application log: normal logging statement e.g.:
 
 ::
@@ -368,7 +396,7 @@ you can install Sanic on windows by running these commands:
         "response_sent_at": "2017-12-23T16:55:37.280Z"
     }
 
-See following tables for detail format explanation: 
+See following tables for detail format explanation:
 
  - Common field
 

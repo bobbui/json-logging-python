@@ -17,11 +17,11 @@ If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-
 7. [References](#7-references)
 
 # 1. Features
-1. Emit JSON logs ([format detail](#0-full-logging-format-references)) 
+1. Emit JSON logs ([format detail](#0-full-logging-format-references))
 2. Support **correlation-id** [\[1\]](#1-what-is-correlation-idrequest-id)
 3. Lightweight, no dependencies, minimal configuration needed (1 LoC to get it working)
 4. Fully compatible with Python **logging** module. Support both Python 2.7.x and 3.x
-5. Support HTTP request instrumentation. Built in support for [Flask](http://flask.pocoo.org/) & [Sanic](https://github.com/channelcat/sanic). Extensible to support other web frameworks. PR welcome :smiley: .
+5. Support HTTP request instrumentation. Built in support for [Flask](http://flask.pocoo.org/) & [Sanic](https://github.com/channelcat/sanic) & [Quart](https://gitlab.com/pgjones/quart). Extensible to support other web frameworks. PR welcome :smiley: .
 6. Support inject arbitrary extra properties to JSON log message.  
 
 # 2. Usage
@@ -29,7 +29,7 @@ Install by running this command:
    > pip install json-logging  
 
 By default log will be emitted in normal format to ease the local development. To enable it on production set either **json_logging.ENABLE_JSON_LOGGING** or **ENABLE_JSON_LOGGING environment variable** to true.
-   
+
 To configure, call **json_logging.init(framework_name)**. Once configured library will try to configure all loggers (existing and newly created) to emit log in JSON format.   
 See following use cases for more detail.
 
@@ -97,6 +97,32 @@ async def home(request):
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000)
+```
+
+### Quart
+
+```python
+import asyncio, logging, sys, json_logging, quart
+
+app = quart.Quart(__name__)
+json_logging.ENABLE_JSON_LOGGING = True
+json_logging.init(framework_name='quart')
+json_logging.init_request_instrument(app)
+
+# init the logger as usual
+logger = logging.getLogger("test logger")
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler(sys.stdout))
+
+@app.route('/')
+async def home():
+    logger.info("test log statement")
+    logger.info("test log statement", extra={'props': {"extra_property": 'extra_value'}})
+    return "Hello world"
+
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    app.run(host='0.0.0.0', port=int(5000), use_reloader=False, loop=loop)
 ```
 
 ## 2.3 Get current correlation-id
@@ -223,16 +249,16 @@ e.g.:
 }
 ```
 See following tables for detail format explanation:
-- Common field 
+- Common field
 
 Field | Description | Format | Example
  --- | --- | --- | ---
-written_at | The date when this log message was written. | ISO 8601 YYYY-MM-DDTHH:MM:SS.milliZ | 2017-12-23T15:14:02.208Z 
+written_at | The date when this log message was written. | ISO 8601 YYYY-MM-DDTHH:MM:SS.milliZ | 2017-12-23T15:14:02.208Z
 written_ts | The timestamp in nano-second precision when this request metric message was written. | long number | 1456820553816849408
 correlation_id | The timestamp in nano-second precision when this request metric message was written. | string | db2d002e-2702-41ec-66f5-c002a80a3d3f
-type | Type of logging. "logs" or "request"  | string | 
+type | Type of logging. "logs" or "request"  | string |
 component_id | Uniquely identifies the software component that has processed the current request | string | 9e6f3ecf-def0-4baf-8fac-9339e61d5645
-component_name | A human-friendly name representing the software component | string | my-fancy-component 
+component_name | A human-friendly name representing the software component | string | my-fancy-component
 component_instance | Instance's index of horizontally scaled service  | string | 0
 
 - application logs
@@ -245,7 +271,7 @@ thread | Identifies the execution thread in which this log message has been writ
 logger | The logger name that emits the log message.
  | string | requests-logger
 
-- request logs: 
+- request logs:
 
 Field | Description | Format | Example
  --- | --- | --- | ---
@@ -267,7 +293,7 @@ referer | For HTTP requests, identifies the address of the webpage (i.e. the URI
 x_forwarded_for | Comma-separated list of IP addresses, the left-most being the original client, followed by proxy server addresses that forwarded the client request. | string |  192.0.2.60,10.12.9.23
 
 ## [1] What is correlation-id/request id
-https://stackoverflow.com/questions/25433258/what-is-the-x-request-id-http-header 
+https://stackoverflow.com/questions/25433258/what-is-the-x-request-id-http-header
 ## [2] Python logging propagate
 https://docs.python.org/3/library/logging.html#logging.Logger.propagate
 https://docs.python.org/2/library/logging.html#logging.Logger.propagate
@@ -303,7 +329,7 @@ python -m pip install --index-url https://test.pypi.org/simple/ json_logging
 
 python setup.py sdist upload -r pypitest
 python setup.py bdist_wheel --universal upload -r pypitest
-pip3 install json_logging --index-url https://test.pypi.org/simple/ 
+pip3 install json_logging --index-url https://test.pypi.org/simple/
 ```
 pypi
 ```

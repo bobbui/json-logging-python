@@ -292,3 +292,11 @@ register_framework_support('sanic', SanicAppConfigurator,
                            SanicAppRequestInstrumentationConfigurator,
                            SanicRequestAdapter,
                            SanicResponseAdapter)
+
+# register quart support
+# noinspection PyPep8
+import json_logging.framework.quart as quart_support
+
+register_framework_support('quart', None, quart_support.QuartAppRequestInstrumentationConfigurator,
+                        quart_support.QuartRequestAdapter,
+                        quart_support.QuartResponseAdapter)
