@@ -7,8 +7,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ## [Unreleased]
  - Introduced sap namespace
 
+## 0.0.2 - 2017-12-24
 
-## 1.0.0 - 2017-12-24
+### Changed
+- fixed https://github.com/thangbn/json-logging-python/pull/2 
+
+## 0.0.1 - 2017-12-24
 
 ### Changed
 - Initial release

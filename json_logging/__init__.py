@@ -236,6 +236,7 @@ class JSONLogFormatter(logging.Formatter):
                            "logger": record.name,
                            "thread": record.threadName,
                            "level": record.levelname,
+                           "module": record.module,
                            "line_no": record.lineno,
                            "msg": record.getMessage()
                            }
@@ -262,6 +263,7 @@ class JSONLogWebFormatter(logging.Formatter):
                            "logger": record.name,
                            "thread": record.threadName,
                            "level": record.levelname,
+                           "module": record.module,
                            "line_no": record.lineno,
                            "correlation_id": _request_util.get_correlation_id(),
                            "msg": record.getMessage()
