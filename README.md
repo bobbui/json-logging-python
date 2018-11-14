@@ -149,7 +149,7 @@ json_logging.config_root_logger()
 ```
 
 # 3. Configuration
-logging library can be configured by setting the value in json_logging
+logging library can be configured by setting the value in json_logging, all configuration must be placed before json_logging.init method call
 
 Name | Description | Default value
  --- | --- | ---
