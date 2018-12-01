@@ -252,6 +252,7 @@ class JSONLogFormatter(logging.Formatter):
                            "logger": record.name,
                            "thread": record.threadName,
                            "level": record.levelname,
+                           "line_no": record.lineno,
                            "module": record.module,
                            "msg": record.getMessage(),
                            }
@@ -305,7 +306,7 @@ class JSONLogWebFormatter(logging.Formatter):
         if hasattr(record, 'props'):
             json_log_object.update(record.props)
 
-        if hasattr(record, 'exc_info') or hasattr(record, 'exc_text'):
+        if record.exc_info or record.exc_text:
             json_log_object.update(self.get_exc_fields(record))
 
         return JSON_SERIALIZER(json_log_object)
