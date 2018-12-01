@@ -216,8 +216,11 @@ e.g.:
 	"thread": "MainThread",
 	"level": "INFO",
 	"line_no": 22,
+	"filename": "/path/to/foo.py"
+	"exc_info": "Traceback (most recent call last): \n  File "<stdin>", line 1, in <module>\n ValueError: There is something wrong with your input",
 	"correlation_id": "1975a02e-e802-11e7-8971-28b2bd90b19a",
-	"extra_property": "extra_value"
+	"extra_property": "extra_value",
+	"msg": "This is a message"
 }
 ```
 - Request log: request instrumentation logging statement which recorded request information such as response time, request size, etc.
@@ -268,8 +271,9 @@ Field | Description | Format | Example
 msg | The actual message string passed to the logger.  | string | This is a log message
 level | The log "level" indicating the severity of the log message.  | string | INFO
 thread | Identifies the execution thread in which this log message has been written.  | string | http-nio-4655
-logger | The logger name that emits the log message.
- | string | requests-logger
+logger | The logger name that emits the log message. |string | requests-logger
+filename | The file name where an exception originated | string | /path/to/foo.py
+exc_info | Traceback information about an exception | string | "Traceback (most recent call last): \n  File "<stdin>", line 1, in <module>\n ValueError: There is something wrong with your input"
 
 - request logs:
 
