@@ -3,6 +3,7 @@ import json
 import logging
 import uuid
 from datetime import datetime
+import traceback
 
 from json_logging import util
 from json_logging.framework_base import RequestAdapter, ResponseAdapter, AppRequestInstrumentationConfigurator, \
@@ -225,6 +226,21 @@ class JSONLogFormatter(logging.Formatter):
     Formatter for non-web application log
     """
 
+    def get_exc_fields(self, record):
+        if record.exc_info:
+            exc_info = self.format_exception(record.exc_info)
+        else:
+            exc_info = record.exc_text
+        return {
+            'exc_info': exc_info,
+            'filename': record.filename,
+        }
+
+    @classmethod
+    def format_exception(cls, exc_info):
+
+        return ''.join(traceback.format_exception(*exc_info)) if exc_info else ''
+
     def format(self, record):
         utcnow = datetime.utcnow()
         json_log_object = {"type": "log",
@@ -236,13 +252,16 @@ class JSONLogFormatter(logging.Formatter):
                            "logger": record.name,
                            "thread": record.threadName,
                            "level": record.levelname,
-                           "module": record.module,
                            "line_no": record.lineno,
-                           "msg": record.getMessage()
+                           "module": record.module,
+                           "msg": record.getMessage(),
                            }
 
         if hasattr(record, 'props'):
             json_log_object.update(record.props)
+
+        if record.exc_info or record.exc_text:
+            json_log_object.update(self.get_exc_fields(record))
 
         return JSON_SERIALIZER(json_log_object)
 
@@ -251,6 +270,21 @@ class JSONLogWebFormatter(logging.Formatter):
     """
     Formatter for web application log
     """
+
+    def get_exc_fields(self, record):
+        if record.exc_info:
+            exc_info = self.format_exception(record.exc_info)
+        else:
+            exc_info = record.exc_text
+        return {
+            'exc_info': exc_info,
+            'filename': record.filename,
+        }
+
+    @classmethod
+    def format_exception(cls, exc_info):
+
+        return ''.join(traceback.format_exception(*exc_info)) if exc_info else ''
 
     def format(self, record):
         utcnow = datetime.utcnow()
@@ -271,6 +305,9 @@ class JSONLogWebFormatter(logging.Formatter):
 
         if hasattr(record, 'props'):
             json_log_object.update(record.props)
+
+        if record.exc_info or record.exc_text:
+            json_log_object.update(self.get_exc_fields(record))
 
         return JSON_SERIALIZER(json_log_object)
 
