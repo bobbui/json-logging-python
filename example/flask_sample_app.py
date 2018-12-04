@@ -16,6 +16,7 @@ logger = logging.getLogger("test logger")
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
+
 @app.route('/')
 def home():
     logger.info("test log statement")
@@ -23,5 +24,15 @@ def home():
     return "Hello world"
 
 
+@app.route('/exception')
+def exception():
+    try:
+        raise RuntimeError
+    except BaseException as e:
+        logger.error("Error occurred", exc_info=e)
+        logger.exception("Error occurred", exc_info=e)
+    return "Error occurred, check log for detail"
+
+
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=int(5000), use_reloader=False)
+    app.run(host='0.0.0.0', port=int(5000), use_reloader=True)

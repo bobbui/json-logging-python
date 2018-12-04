@@ -330,7 +330,6 @@ python setup.py bdist_wheel
 twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 python -m pip install --index-url https://test.pypi.org/simple/ json_logging
 
-
 python setup.py sdist upload -r pypitest
 python setup.py bdist_wheel --universal upload -r pypitest
 pip3 install json_logging --index-url https://test.pypi.org/simple/
