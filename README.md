@@ -1,5 +1,5 @@
 # json-logging
-Python logging library to emit JSON log that can be easily indexed and searchable by logging infrastructure such as [ELK](https://www.elastic.co/webinars/introduction-elk-stack).  
+Python logging library to emit JSON log that can be easily indexed and searchable by logging infrastructure such as [ELK](https://www.elastic.co/elk-stack), [EFK](https://docs.fluentd.org/v0.12/articles/docker-logging-efk-compose) 
 
 If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-logging-support](https://github.com/SAP/cf-python-logging-support) which I'm also original author.
 # Content
@@ -18,7 +18,7 @@ If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-
 
 # 1. Features
 1. Emit JSON logs ([format detail](#0-full-logging-format-references))
-2. Support **correlation-id** [\[1\]](#1-what-is-correlation-idrequest-id)
+2. Auto extract **correlation-id** for distributed tracing [\[1\]](#1-what-is-correlation-idrequest-id)
 3. Lightweight, no dependencies, minimal configuration needed (1 LoC to get it working)
 4. Fully compatible with Python **logging** module. Support both Python 2.7.x and 3.x
 5. Support HTTP request instrumentation. Built in support for [Flask](http://flask.pocoo.org/) & [Sanic](https://github.com/channelcat/sanic) & [Quart](https://gitlab.com/pgjones/quart). Extensible to support other web frameworks. PR welcome :smiley: .
