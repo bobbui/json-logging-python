@@ -95,12 +95,15 @@ def config_root_logger():
                 "logging.basicConfig() or logging.getLogger('root')")
 
 
-def init(framework_name=None):
+def init(framework_name=None, custom_formatter=None):
     """
     Initialize JSON logging support, if no **framework_name** passed, logging will be initialized in non-web context.
     This is supposed to be called only one time.
 
+    If **custom_formatter** is passed, it will (in non-web context) use this formatter over the default.
+
     :param framework_name: type of framework logging should support.
+    :param custom_formatter: formatter to override default JSONLogFormatter.
     """
 
     global _current_framework
@@ -123,6 +126,10 @@ def init(framework_name=None):
             _current_framework['app_configurator']().config()
 
         formatter = JSONLogWebFormatter
+    elif custom_formatter:
+        if not issubclass(custom_formatter, logging.Formatter):
+            raise ValueError('custom_formatter is not subclass of logging.Formatter', custom_formatter)
+        formatter = custom_formatter
     else:
         formatter = JSONLogFormatter
 
