@@ -4,8 +4,14 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).  
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [Unreleased]
- - Introduced sap namespace
+## 0.0.11 - 2019-01-26
+ - Adds functionality to customize the the JSON - change keys, values, etc.
+ 
+## 0.0.10 - 2018-12-04
+ - Support for exception tracing exception
+
+## 0.0.9 - 2018-10-16
+ - Add Quart framework support
 
 ## 0.0.2 - 2017-12-24
 
