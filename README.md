@@ -9,7 +9,8 @@ If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-
    2.2 [Web application log](#22-web-application-log)  
    2.3 [Get current correlation-id](#23-get-current-correlation-id)  
    2.4 [Log extra properties](#24-log-extra-properties)  
-   2.5 [Root logger](#25-root-logger)
+   2.5 [Root logger](#25-root-logger)  
+   2.6 [Custom log formatter](#26-custom-log-formatter)
 3. [Configuration](#3-configuration)  
 4. [Python References](#4-python-references)
 5. [Framework support plugin development](#5-framework-support-plugin-development)
@@ -147,6 +148,10 @@ logging.basicConfig() or logging.getLogger('root')) [\[2\]](#2-python-logging-pr
 logging.basicConfig()
 json_logging.config_root_logger()
 ```
+
+## 2.6 Custom log formatter
+Customer JSON log formatter can be passed to init method. see example for more detail: 
+https://github.com/thangbn/json-logging-python/blob/master/example/custom_log_format.py
 
 # 3. Configuration
 logging library can be configured by setting the value in json_logging, all configuration must be placed before json_logging.init method call
