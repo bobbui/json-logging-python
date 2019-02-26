@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).  
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 0.0.12 - 2019-02-26
+ - Fix #16
+
 ## 0.0.11 - 2019-01-26
  - Adds functionality to customize the the JSON - change keys, values, etc.
  
