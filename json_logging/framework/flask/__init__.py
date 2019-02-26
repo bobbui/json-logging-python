@@ -36,7 +36,7 @@ class FlaskAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
         # Disable standard logging
         logging.getLogger('werkzeug').disabled = True
 
-        json_logging.util.use_cf_logging_formatter([logging.getLogger('werkzeug')], JSONLogWebFormatter)
+        json_logging.util.update_formatter_for_loggers([logging.getLogger('werkzeug')], JSONLogWebFormatter)
 
         # noinspection PyAttributeOutsideInit
         self.request_logger = logging.getLogger('flask-request-logger')

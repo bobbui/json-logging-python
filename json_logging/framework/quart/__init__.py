@@ -38,7 +38,7 @@ class QuartAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
         logging.getLogger('quart.app').removeHandler(default_handler)
         logging.getLogger('quart.serving').removeHandler(serving_handler)
 
-        json_logging.util.use_cf_logging_formatter([
+        json_logging.util.update_formatter_for_loggers([
             # logging.getLogger('quart.app'),
             # logging.getLogger('quart.serving'),
         ], JSONLogWebFormatter)

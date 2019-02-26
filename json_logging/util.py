@@ -34,7 +34,7 @@ def get_library_logger(logger_name):
     return logger
 
 
-def use_cf_logging_formatter(loggers_iter, formatter):
+def update_formatter_for_loggers(loggers_iter, formatter):
     """
     :param formatter:
     :param loggers_iter:
