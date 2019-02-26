@@ -81,9 +81,9 @@ def config_root_logger():
         _logger.debug("Update root logger to using JSONLogFormatter")
         if len(logging.root.handlers) > 0:
             if _current_framework is not None or _current_framework != '-':
-                util.use_cf_logging_formatter(logging.root, JSONLogWebFormatter)
+                util.use_cf_logging_formatter([logging.root], JSONLogWebFormatter)
             else:
-                util.use_cf_logging_formatter(logging.root, JSONLogFormatter)
+                util.use_cf_logging_formatter([logging.root], JSONLogFormatter)
             # remove all handlers for request logging
             request_logger = _current_framework['app_request_instrumentation_configurator']().get_request_logger()
             if request_logger:
