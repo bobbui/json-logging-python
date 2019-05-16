@@ -112,7 +112,11 @@ class QuartRequestAdapter(RequestAdapter):
         return request.remote_addr
 
     def get_remote_port(self, request):
-        return request.host.split(":", 2)[1]
+        return (
+            request.host.split(":", 2)[1]
+            if len(request.host.split(":", 2)) == 2
+            else None
+        )
 
 
 class QuartResponseAdapter(ResponseAdapter):
