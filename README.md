@@ -329,23 +329,18 @@ repository: https://test.pypi.org/legacy/
 username=
 password=
 ```
+build
+```bash
+python setup.py bdist_wheel --universal
+```
+
 pypitest
 ```
-python setup.py bdist_wheel
 twine upload --repository-url https://test.pypi.org/legacy/ dist/*
-python -m pip install --index-url https://test.pypi.org/simple/ json_logging
-
-python setup.py sdist upload -r pypitest
-python setup.py bdist_wheel --universal upload -r pypitest
 pip3 install json_logging --index-url https://test.pypi.org/simple/
 ```
 pypi
 ```
 twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
-
-
-python setup.py sdist upload -r pypi
-python3 setup.py bdist_wheel --universal upload -r pypi
 pip3 install json_logging
 ```
-bdist_wheel --universal
