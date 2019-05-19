@@ -126,6 +126,27 @@ if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(5000), use_reloader=False, loop=loop)
 ```
 
+### Connexion
+
+```python
+import datetime, logging, sys, json_logging, connexion
+
+app = connexion.FlaskApp(__name__)
+json_logging.ENABLE_JSON_LOGGING = True
+json_logging.init(framework_name='connexion', specification_dir='openapi/')
+json_logging.init_request_instrument(app)
+
+app.add_api('api.yaml')
+
+# init the logger as usual
+logger = logging.getLogger("test-logger")
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler(sys.stdout))
+
+if __name__ == "__main__":
+    app.run()
+```
+
 ## 2.3 Get current correlation-id
 Current request correlation-id can be retrieved and pass to downstream services call as follow:
 

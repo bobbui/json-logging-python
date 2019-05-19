@@ -344,3 +344,11 @@ import json_logging.framework.quart as quart_support
 register_framework_support('quart', None, quart_support.QuartAppRequestInstrumentationConfigurator,
                         quart_support.QuartRequestAdapter,
                         quart_support.QuartResponseAdapter)
+
+# register connexion support
+# noinspection PyPep8
+import json_logging.framework.connexion as connexion_support
+
+register_framework_support('connexion', None, connexion_support.ConnexionAppRequestInstrumentationConfigurator,
+                        connexion_support.ConnexionRequestAdapter,
+                        connexion_support.ConnexionResponseAdapter)
