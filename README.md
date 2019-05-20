@@ -22,7 +22,7 @@ If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-
 2. Auto extract **correlation-id** for distributed tracing [\[1\]](#1-what-is-correlation-idrequest-id)
 3. Lightweight, no dependencies, minimal configuration needed (1 LoC to get it working)
 4. Fully compatible with Python **logging** module. Support both Python 2.7.x and 3.x
-5. Support HTTP request instrumentation. Built in support for [Flask](http://flask.pocoo.org/) & [Sanic](https://github.com/channelcat/sanic) & [Quart](https://gitlab.com/pgjones/quart). Extensible to support other web frameworks. PR welcome :smiley: .
+5. Support HTTP request instrumentation. Built in support for [Flask](https://github.com/pallets/flask/), [Sanic](https://github.com/channelcat/sanic), [Quart](https://gitlab.com/pgjones/quart), [Connexion](https://github.com/zalando/connexion). Extensible to support other web frameworks. PR welcome :smiley: .
 6. Support inject arbitrary extra properties to JSON log message.  
 
 # 2. Usage
