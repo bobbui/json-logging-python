@@ -20,10 +20,12 @@ def is_connexion_present():
 if is_connexion_present():
     from connexion import request as request_obj
     import connexion as connexion
+    import flask as flask
     from flask import g
 
     _current_request = request_obj
     _connexion = connexion
+    _flask = flask
     _connexion.g = g
 
 
@@ -80,7 +82,7 @@ class ConnexionRequestAdapter(RequestAdapter):
             return json_logging.EMPTY_VALUE
 
     def is_in_request_context(self, request_):
-        return _connexion.has_request_context()
+        return _flask.has_request_context()
 
     def get_http_header(self, request, header_name, default=None):
         if header_name in request.headers:
