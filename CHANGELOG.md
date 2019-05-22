@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).  
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 0.1.1 - 2019-05-22
+ - fix: connexion under gunicorn has no has_request() #22
+ 
 ## 0.1.0 - 2019-05-20
  - Add [Connexion](https://github.com/zalando/connexion) support
 
