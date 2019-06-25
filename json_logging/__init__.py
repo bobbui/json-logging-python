@@ -18,7 +18,7 @@ if is_env_var_toggle("ENABLE_JSON_LOGGING"):
 ENABLE_JSON_LOGGING_DEBUG = False
 EMPTY_VALUE = '-'
 CREATE_CORRELATION_ID_IF_NOT_EXISTS = True
-JSON_SERIALIZER = json.dumps
+JSON_SERIALIZER = lambda log: json.dumps(log, ensure_ascii=False)
 CORRELATION_ID_HEADERS = ['X-Correlation-ID', 'X-Request-ID']
 COMPONENT_ID = EMPTY_VALUE
 COMPONENT_NAME = EMPTY_VALUE
