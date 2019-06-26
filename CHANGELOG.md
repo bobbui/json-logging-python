@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).  
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 0.1.2 - 2019-06-25
+ - fix: add japanese character encoding for json logger #24
+ 
 ## 0.1.1 - 2019-05-22
  - fix: connexion under gunicorn has no has_request() #22
  
