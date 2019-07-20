@@ -25,6 +25,7 @@ COMPONENT_NAME = EMPTY_VALUE
 COMPONENT_INSTANCE_INDEX = 0
 
 _framework_support_map = {}
+_request_logger = None
 _current_framework = None
 _logger = get_library_logger(__name__)
 _request_util = None
@@ -162,9 +163,21 @@ def init_request_instrument(app=None):
 
     configurator = _current_framework['app_request_instrumentation_configurator']()
     configurator.config(app)
-    handlers = configurator.request_logger.handlers
+    request_logger = configurator.request_logger
+    handlers = request_logger.handlers
     for handler in handlers:
         handler.setFormatter(JSONRequestLogFormatter())
+
+
+def get_request_logger():
+    global _request_logger
+    if _current_framework is None or _current_framework == '-':
+        raise RuntimeError("please init the logging first, call init(framework_name) first")
+
+    if _request_logger is None:
+        raise RuntimeError("please init request instrument first, call init_request_instrument(app) first")
+
+    return _request_logger
 
 
 class RequestInfo(dict):
