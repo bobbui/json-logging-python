@@ -233,6 +233,10 @@ class JSONRequestLogFormatter(logging.Formatter):
         return JSON_SERIALIZER(json_log_object)
 
 
+def _sanitize_log_msg(record):
+    return record.getMessage().replace('\n', '_').replace('\r', '_').replace('\t', '_')
+
+
 class JSONLogFormatter(logging.Formatter):
     """
     Formatter for non-web application log
@@ -266,9 +270,8 @@ class JSONLogFormatter(logging.Formatter):
                            "level": record.levelname,
                            "line_no": record.lineno,
                            "module": record.module,
-                           "msg": record.getMessage(),
+                           "msg": _sanitize_log_msg(record),
                            }
-
         if hasattr(record, 'props'):
             json_log_object.update(record.props)
 
@@ -312,7 +315,7 @@ class JSONLogWebFormatter(logging.Formatter):
                            "module": record.module,
                            "line_no": record.lineno,
                            "correlation_id": _request_util.get_correlation_id(),
-                           "msg": record.getMessage()
+                           "msg": _sanitize_log_msg(record)
                            }
 
         if hasattr(record, 'props'):
