@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).  
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 1.0.0 - 2019-07-20
+Breaking change:
+ - add more specific init method for each framework
+ - minor correct for ENABLE_JSON_LOGGING_DEBUG behaviour
+ - update few code comments
+ 
 ## 0.1.2 - 2019-06-25
  - fix: add japanese character encoding for json logger #24
  
