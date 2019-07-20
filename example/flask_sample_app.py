@@ -7,8 +7,7 @@ import json_logging
 
 app = flask.Flask(__name__)
 json_logging.ENABLE_JSON_LOGGING = True
-# json_logging.CREATE_CORRELATION_ID_IF_NOT_EXISTS = False
-json_logging.init(framework_name='flask')
+json_logging.init_flask()
 json_logging.init_request_instrument(app)
 
 # init the logger as usual
@@ -35,4 +34,4 @@ def exception():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=int(5000), use_reloader=True)
+    app.run(host='0.0.0.0', port=int(5000), use_reloader=False)

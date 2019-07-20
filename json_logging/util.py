@@ -25,11 +25,10 @@ def get_library_logger(logger_name):
         return logging.getLogger(logger_name)
 
     logger = logging.getLogger(logger_name)
-    if json_logging.ENABLE_JSON_LOGGING_DEBUG:
-        logger.setLevel(logging.DEBUG)
-        # add stdout output in case parent have no handlers
-        if len(logger.parent.handlers) == 0:
-            logger.addHandler(StreamHandler(sys.stdout))
+    logger.setLevel(logging.DEBUG)
+    # add stdout output in case parent have no handlers
+    if len(logger.parent.handlers) == 0:
+        logger.addHandler(StreamHandler(sys.stdout))
 
     return logger
 

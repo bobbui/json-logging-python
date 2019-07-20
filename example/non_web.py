@@ -5,7 +5,7 @@ import json_logging
 
 # log is initialized without a web framework name
 json_logging.ENABLE_JSON_LOGGING = True
-json_logging.init()
+json_logging.init_non_web()
 
 logger = logging.getLogger("test logger")
 logger.setLevel(logging.DEBUG)

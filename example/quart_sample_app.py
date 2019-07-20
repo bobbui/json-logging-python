@@ -8,7 +8,7 @@ import json_logging
 
 app = quart.Quart(__name__)
 json_logging.ENABLE_JSON_LOGGING = True
-json_logging.init(framework_name='quart')
+json_logging.init_quart()
 json_logging.init_request_instrument(app)
 
 # init the logger as usual
@@ -26,4 +26,4 @@ async def home():
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    app.run(host='0.0.0.0', port=int(5000), use_reloader=False, loop=loop)
+    app.run(host='0.0.0.0', port=int(5001), use_reloader=False, loop=loop)

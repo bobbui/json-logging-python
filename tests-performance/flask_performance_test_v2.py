@@ -14,7 +14,7 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(StreamHandler(sys.stdout))
 app = Flask(__name__)
 
-json_logging.init(framework_name='flask')
+json_logging.init_flask()
 json_logging.init_request_instrument(app)
 
 FORMAT = 'important: %s'

@@ -56,7 +56,7 @@ class CustomJSONLog(logging.Formatter):
 
 
 def logger_init():
-    json_logging.init(custom_formatter=CustomJSONLog)
+    json_logging.__init(custom_formatter=CustomJSONLog)
 
 # You would normally import logger_init and setup the logger in your main module - e.g.
 # main.py

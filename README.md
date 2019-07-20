@@ -31,7 +31,7 @@ Install by running this command:
 
 By default log will be emitted in normal format to ease the local development. To enable it on production set either **json_logging.ENABLE_JSON_LOGGING** or **ENABLE_JSON_LOGGING environment variable** to true.
 
-To configure, call **json_logging.init(framework_name)**. Once configured library will try to configure all loggers (existing and newly created) to emit log in JSON format.   
+To configure, call **json_logging.init_< framework_name >()**. Once configured library will try to configure all loggers (existing and newly created) to emit log in JSON format.   
 See following use cases for more detail.
 
 TODO: update guide on how to use ELK stack to view log  
@@ -43,7 +43,7 @@ import json_logging, logging, sys
 
 # log is initialized without a web framework name
 json_logging.ENABLE_JSON_LOGGING = True
-json_logging.init()
+json_logging.init_non_web()
 
 logger = logging.getLogger("test-logger")
 logger.setLevel(logging.DEBUG)
@@ -60,7 +60,7 @@ import datetime, logging, sys, json_logging, flask
 
 app = flask.Flask(__name__)
 json_logging.ENABLE_JSON_LOGGING = True
-json_logging.init(framework_name='flask')
+json_logging.init_flask()
 json_logging.init_request_instrument(app)
 
 # init the logger as usual
@@ -83,7 +83,7 @@ import logging, sys, json_logging, sanic
 
 app = sanic.Sanic()
 json_logging.ENABLE_JSON_LOGGING = True
-json_logging.init(framework_name='sanic')
+json_logging.init_sanic()
 json_logging.init_request_instrument(app)
 
 # init the logger as usual
@@ -107,7 +107,7 @@ import asyncio, logging, sys, json_logging, quart
 
 app = quart.Quart(__name__)
 json_logging.ENABLE_JSON_LOGGING = True
-json_logging.init(framework_name='quart')
+json_logging.init_quart()
 json_logging.init_request_instrument(app)
 
 # init the logger as usual
@@ -133,7 +133,7 @@ import datetime, logging, sys, json_logging, connexion
 
 app = connexion.FlaskApp(__name__)
 json_logging.ENABLE_JSON_LOGGING = True
-json_logging.init(framework_name='connexion', specification_dir='openapi/')
+json_logging.init_connexion()
 json_logging.init_request_instrument(app)
 
 app.add_api('api.yaml')
@@ -163,8 +163,7 @@ Extra property can be added to logging statement as follow:
 logger.info("test log statement", extra = {'props' : {'extra_property' : 'extra_value'}})
 ```
 ## 2.5 Root logger
-If you want to use root logger as main logger to emit log. Made sure you call **config_root_logger()** after initialize root logger (by
-logging.basicConfig() or logging.getLogger('root')) [\[2\]](#2-python-logging-propagate)
+If you want to use root logger as main logger to emit log. Made sure you call **config_root_logger()** after initialize root logger (by logging.basicConfig() or logging.getLogger('root')) [\[2\]](#2-python-logging-propagate)
 ```python
 logging.basicConfig()
 json_logging.config_root_logger()

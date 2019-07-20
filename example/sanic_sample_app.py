@@ -6,7 +6,7 @@ import sys
 
 app = sanic.Sanic()
 json_logging.ENABLE_JSON_LOGGING = True
-json_logging.init(framework_name='sanic')
+json_logging.__init(framework_name='sanic')
 json_logging.init_request_instrument(app)
 
 # init the logger as usual

@@ -62,7 +62,7 @@ def register_framework_support(name, app_configurator, app_request_instrumentati
 
     name = name.lower()
     if name in _framework_support_map:
-        _logger.warning("Re-register framework %s", name)
+        ENABLE_JSON_LOGGING_DEBUG and _logger.warning("Re-register framework %s", name)
     _framework_support_map[name] = {
         'app_configurator': app_configurator,
         'app_request_instrumentation_configurator': app_request_instrumentation_configurator,
@@ -75,10 +75,11 @@ def config_root_logger():
     """
         You must call this if you are using root logger.
         Make all root logger' handlers produce JSON format
-        & remove duplicate handlers for request instrumentation logging
+        & remove duplicate handlers for request instrumentation logging.
+        Please made sure that you call this after you called "logging.basicConfig() or logging.getLogger('root')
     """
     if ENABLE_JSON_LOGGING:
-        _logger.debug("Update root logger to using JSONLogFormatter")
+        ENABLE_JSON_LOGGING_DEBUG and _logger.debug("Update root logger to using JSONLogFormatter")
         if len(logging.root.handlers) > 0:
             if _current_framework is not None or _current_framework != '-':
                 util.update_formatter_for_loggers([logging.root], JSONLogWebFormatter)
@@ -95,7 +96,11 @@ def config_root_logger():
                 "logging.basicConfig() or logging.getLogger('root')")
 
 
-def init(framework_name=None, custom_formatter=None):
+def init_non_web():
+    __init()
+
+
+def __init(framework_name=None, custom_formatter=None):
     """
     Initialize JSON logging support, if no **framework_name** passed, logging will be initialized in non-web context.
     This is supposed to be called only one time.
@@ -110,12 +115,16 @@ def init(framework_name=None, custom_formatter=None):
     if _current_framework is not None:
         raise RuntimeError("Can not call init more than once")
 
-    _logger.info("init framework " + str(framework_name))
+    if custom_formatter:
+        if not issubclass(custom_formatter, logging.Formatter):
+            raise ValueError('custom_formatter is not subclass of logging.Formatter', custom_formatter)
+
+    ENABLE_JSON_LOGGING_DEBUG and _logger.info("init framework " + str(framework_name))
 
     if framework_name:
         framework_name = framework_name.lower()
         if framework_name not in _framework_support_map.keys():
-            raise RuntimeError(framework_name + "is not a supported framework")
+            raise RuntimeError(framework_name + " is not a supported framework")
 
         _current_framework = _framework_support_map[framework_name]
         global _request_util
@@ -125,23 +134,19 @@ def init(framework_name=None, custom_formatter=None):
         if ENABLE_JSON_LOGGING and _current_framework['app_configurator'] is not None:
             _current_framework['app_configurator']().config()
 
-        formatter = JSONLogWebFormatter
-    elif custom_formatter:
-        if not issubclass(custom_formatter, logging.Formatter):
-            raise ValueError('custom_formatter is not subclass of logging.Formatter', custom_formatter)
-        formatter = custom_formatter
+        formatter = custom_formatter if custom_formatter else JSONLogWebFormatter
     else:
-        formatter = JSONLogFormatter
+        formatter = custom_formatter if custom_formatter else JSONLogFormatter
 
     if not ENABLE_JSON_LOGGING:
         _logger.warning(
-            "JSON format is not enable! "
+            "JSON format is not enable, normal log will be in plain text but request logging still in JSON format! "
             "To enable set ENABLE_JSON_LOGGING env var to either one of following values: ['true', '1', 'y', 'yes']")
     else:
         logging._defaultFormatter = formatter()
 
     # go to all the initialized logger and update it to use JSON formatter
-    _logger.debug("Update all existing logger to using JSONLogFormatter")
+    ENABLE_JSON_LOGGING_DEBUG and _logger.debug("Update all existing logger to using JSONLogFormatter")
     existing_loggers = list(map(logging.getLogger, logging.Logger.manager.loggerDict))
     util.update_formatter_for_loggers(existing_loggers, formatter)
 
@@ -327,7 +332,12 @@ register_framework_support('flask', None, flask_support.FlaskAppRequestInstrumen
                            flask_support.FlaskRequestAdapter,
                            flask_support.FlaskResponseAdapter)
 
-# register flask support
+
+def init_flask(custom_formatter=None):
+    __init(framework_name='flask', custom_formatter=custom_formatter)
+
+
+# register sanic support
 # noinspection PyPep8
 from json_logging.framework.sanic import SanicAppConfigurator, SanicAppRequestInstrumentationConfigurator, \
     SanicRequestAdapter, SanicResponseAdapter
@@ -337,18 +347,32 @@ register_framework_support('sanic', SanicAppConfigurator,
                            SanicRequestAdapter,
                            SanicResponseAdapter)
 
+
+def init_sanic(custom_formatter=None):
+    __init(framework_name='sanic', custom_formatter=custom_formatter)
+
+
 # register quart support
 # noinspection PyPep8
 import json_logging.framework.quart as quart_support
 
 register_framework_support('quart', None, quart_support.QuartAppRequestInstrumentationConfigurator,
-                        quart_support.QuartRequestAdapter,
-                        quart_support.QuartResponseAdapter)
+                           quart_support.QuartRequestAdapter,
+                           quart_support.QuartResponseAdapter)
+
+
+def init_quart(custom_formatter=None):
+    __init(framework_name='quart', custom_formatter=custom_formatter)
+
 
 # register connexion support
 # noinspection PyPep8
 import json_logging.framework.connexion as connexion_support
 
 register_framework_support('connexion', None, connexion_support.ConnexionAppRequestInstrumentationConfigurator,
-                        connexion_support.ConnexionRequestAdapter,
-                        connexion_support.ConnexionResponseAdapter)
+                           connexion_support.ConnexionRequestAdapter,
+                           connexion_support.ConnexionResponseAdapter)
+
+
+def init_connexion(custom_formatter=None):
+    __init(framework_name='connexion', custom_formatter=custom_formatter)
