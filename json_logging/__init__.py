@@ -97,8 +97,8 @@ def config_root_logger():
                 "logging.basicConfig() or logging.getLogger('root')")
 
 
-def init_non_web():
-    __init()
+def init_non_web(**kwargs):
+    __init(**kwargs)
 
 
 def __init(framework_name=None, custom_formatter=None):
