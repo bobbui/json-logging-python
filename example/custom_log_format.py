@@ -71,4 +71,4 @@ logger.info('Starting')
 try:
     1/0
 except: # noqa pylint: disable=bare-except
-    logger.exception('You can\t divide by zero')
+    logger.exception('You can't divide by zero')
