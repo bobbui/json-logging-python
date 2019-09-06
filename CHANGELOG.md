@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).  
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 1.0.4 - 2019-07-20
+ - fix #30 
+
 ## 1.0.3 - 2019-07-20
  - add missing kwargs for init_non_web
 
