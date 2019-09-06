@@ -82,15 +82,15 @@ def config_root_logger():
     if ENABLE_JSON_LOGGING:
         ENABLE_JSON_LOGGING_DEBUG and _logger.debug("Update root logger to using JSONLogFormatter")
         if len(logging.root.handlers) > 0:
-            if _current_framework is not None or _current_framework != '-':
-                util.update_formatter_for_loggers([logging.root], JSONLogWebFormatter)
-            else:
+            if _current_framework is None or _current_framework == '-':
                 util.update_formatter_for_loggers([logging.root], JSONLogFormatter)
-            # remove all handlers for request logging
-            request_logger = _current_framework['app_request_instrumentation_configurator']().get_request_logger()
-            if request_logger:
-                for handler in request_logger.handlers:
-                    request_logger.removeHandler(handler)
+            else:
+                util.update_formatter_for_loggers([logging.root], JSONLogWebFormatter)
+                # remove all handlers for request logging
+                request_logger = _current_framework['app_request_instrumentation_configurator']().get_request_logger()
+                if request_logger:
+                    for handler in request_logger.handlers:
+                        request_logger.removeHandler(handler)
         else:
             _logger.error(
                 "No logging handlers found for root logger. Please made sure that you call this after you called "
