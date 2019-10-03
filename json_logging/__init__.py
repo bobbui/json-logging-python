@@ -25,7 +25,6 @@ COMPONENT_NAME = EMPTY_VALUE
 COMPONENT_INSTANCE_INDEX = 0
 
 _framework_support_map = {}
-_request_logger = None
 _current_framework = None
 _logger = get_library_logger(__name__)
 _request_util = None
@@ -158,26 +157,31 @@ def init_request_instrument(app=None):
 
     :param app: current web application instance
     """
+
     if _current_framework is None or _current_framework == '-':
         raise RuntimeError("please init the logging first, call init(framework_name) first")
 
     configurator = _current_framework['app_request_instrumentation_configurator']()
     configurator.config(app)
-    request_logger = configurator.request_logger
-    handlers = request_logger.handlers
+
+    handlers = configurator.request_logger.handlers
     for handler in handlers:
         handler.setFormatter(JSONRequestLogFormatter())
 
 
 def get_request_logger():
     global _request_logger
+
     if _current_framework is None or _current_framework == '-':
-        raise RuntimeError("please init the logging first, call init(framework_name) first")
+        raise RuntimeError(
+            "request_logger is only available if json_logging is inited with a web app, "
+            "call init_<framework_name>() to do that")
 
-    if _request_logger is None:
-        raise RuntimeError("please init request instrument first, call init_request_instrument(app) first")
+    instance = _current_framework['app_request_instrumentation_configurator']._instance
+    if instance is None:
+        raise RuntimeError("please init request instrument first, call init_request_instrument(app) to do that")
 
-    return _request_logger
+    return instance.request_logger
 
 
 class RequestInfo(dict):
