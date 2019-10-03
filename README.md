@@ -178,7 +178,7 @@ logging library can be configured by setting the value in json_logging, all conf
 
 Name | Description | Default value
  --- | --- | ---
-ENABLE_JSON_LOGGING | Whether to enable JSON logging mode.Can be set as an environment variable, enable when set to to either one in following list (case-insensitive) **['true', '1', 'y', 'yes']** | false
+ENABLE_JSON_LOGGING | Whether to enable JSON logging mode.Can be set as an environment variable, enable when set to to either one in following list (case-insensitive) **['true', '1', 'y', 'yes']** , this have no effect on request logger | false
 ENABLE_JSON_LOGGING_DEBUG |  Whether to enable debug logging for this library for development purpose. | true
 CORRELATION_ID_HEADERS | List of HTTP headers that will be used to look for correlation-id value. HTTP headers will be searched one by one according to list order| ['X-Correlation-ID','X-Request-ID']
 EMPTY_VALUE | Default value when a logging record property is None |  '-'
