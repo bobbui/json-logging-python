@@ -184,9 +184,8 @@ class RequestUtil(object):
                     return f_locals['req']
 
             for key in f_locals:
-                if key is not 'request' and key is not 'req':
-                    if isinstance(f_locals[key], class_type):
-                        return f_locals[key]
+                if key not in {'request', 'req'} and isinstance(f_locals[key], class_type):
+                    return f_locals[key]
             if f.f_back is not None:
                 f = f.f_back
             else:
