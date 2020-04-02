@@ -151,22 +151,29 @@ def __init(framework_name=None, custom_formatter=None):
     util.update_formatter_for_loggers(existing_loggers, formatter)
 
 
-def init_request_instrument(app=None):
+def init_request_instrument(app=None, custom_formatter=None):
     """
     Configure the request instrumentation logging configuration for given web app. Must be called after init method
 
+    If **custom_formatter** is passed, it will use this formatter over the default.
+
     :param app: current web application instance
+    :param custom_formatter: formatter to override default JSONRequestLogFormatter.
     """
 
     if _current_framework is None or _current_framework == '-':
         raise RuntimeError("please init the logging first, call init(framework_name) first")
+    
+    if custom_formatter:
+        if not issubclass(custom_formatter, logging.Formatter):
+            raise ValueError('custom_formatter is not subclass of logging.Formatter', custom_formatter)
 
     configurator = _current_framework['app_request_instrumentation_configurator']()
     configurator.config(app)
 
-    handlers = configurator.request_logger.handlers
-    for handler in handlers:
-        handler.setFormatter(JSONRequestLogFormatter())
+    formatter = custom_formatter if custom_formatter else JSONRequestLogFormatter
+    logger = configurator.request_logger
+    utils.update_formatter_for_loggers([logger])
 
 
 def get_request_logger():
@@ -212,25 +219,40 @@ class RequestInfo(dict):
         self.response_sent_at = util.iso_time_format(utcnow)
 
 
-class JSONRequestLogFormatter(logging.Formatter):
+class BaseJSONFormatter(logging.Formatter):
     """
-       Formatter for HTTP request instrumentation logging
+       Base class for JSON formatters
     """
 
     def format(self, record):
-        utcnow = datetime.utcnow()
-        request = record.request_info.request
-        request_adapter = _request_util.request_adapter
+        log_object = self._format_log_object(record, request_util=_request_util)
+        return JSON_SERIALIZER(log_object)
 
-        length = request_adapter.get_content_length(request)
-        json_log_object = {
-            "type": "request",
+    def _format_log_object(self, record, request_util):
+        utcnow = datetime.utcnow()
+        return {
             "written_at": util.iso_time_format(utcnow),
             "written_ts": util.epoch_nano_second(utcnow),
             "component_id": COMPONENT_ID,
             "component_name": COMPONENT_NAME,
             "component_instance": COMPONENT_INSTANCE_INDEX,
-            "correlation_id": _request_util.get_correlation_id(request),
+        }
+
+
+class JSONRequestLogFormatter(BaseJSONFormatter):
+    """
+       Formatter for HTTP request instrumentation logging
+    """
+
+    def _format_log_object(self, record, request_util):
+        json_log_object = super()._format_log_object(record, request_util)
+        request = record.request_info.request
+        request_adapter = request_util.request_adapter
+
+        length = request_adapter.get_content_length(request)
+        json_log_object.update({
+            "type": "request",
+            "correlation_id": request_util.get_correlation_id(request),
             "remote_user": request_adapter.get_remote_user(request),
             "request": request_adapter.get_path(request),
             "referer": request_adapter.get_http_header(request, 'referer', EMPTY_VALUE),
@@ -246,15 +268,17 @@ class JSONRequestLogFormatter(logging.Formatter):
             "response_status": record.request_info.response_status,
             "response_size_b": record.request_info.response_size_b,
             "response_content_type": record.request_info.response_content_type,
-            "response_sent_at": record.request_info.response_sent_at}
-        return JSON_SERIALIZER(json_log_object)
+            "response_sent_at": record.request_info.response_sent_at
+        })
+        return json_log_object
+        
 
 
 def _sanitize_log_msg(record):
     return record.getMessage().replace('\n', '_').replace('\r', '_').replace('\t', '_')
 
 
-class JSONLogFormatter(logging.Formatter):
+class JSONLogFormatter(BaseJSONFormatter):
     """
     Formatter for non-web application log
     """
@@ -271,77 +295,39 @@ class JSONLogFormatter(logging.Formatter):
 
     @classmethod
     def format_exception(cls, exc_info):
-
         return ''.join(traceback.format_exception(*exc_info)) if exc_info else ''
 
-    def format(self, record):
-        utcnow = datetime.utcnow()
-        json_log_object = {"type": "log",
-                           "written_at": util.iso_time_format(utcnow),
-                           "written_ts": util.epoch_nano_second(utcnow),
-                           "component_id": COMPONENT_ID,
-                           "component_name": COMPONENT_NAME,
-                           "component_instance": COMPONENT_INSTANCE_INDEX,
-                           "logger": record.name,
-                           "thread": record.threadName,
-                           "level": record.levelname,
-                           "line_no": record.lineno,
-                           "module": record.module,
-                           "msg": _sanitize_log_msg(record),
-                           }
+    def _format_log_object(self, record, request_util):
+        json_log_object = super()._format_log_object(record, request_util)
+        json_log_object.update({
+            "type": "log",
+            "logger": record.name,
+            "thread": record.threadName,
+            "level": record.levelname,
+            "module": record.module,
+            "line_no": record.lineno,
+            "msg": _sanitize_log_msg(record),
+        })
         if hasattr(record, 'props'):
             json_log_object.update(record.props)
 
         if record.exc_info or record.exc_text:
             json_log_object.update(self.get_exc_fields(record))
 
-        return JSON_SERIALIZER(json_log_object)
+        return json_log_object
 
 
-class JSONLogWebFormatter(logging.Formatter):
+class JSONLogWebFormatter(JSONLogFormatter):
     """
     Formatter for web application log
     """
 
-    def get_exc_fields(self, record):
-        if record.exc_info:
-            exc_info = self.format_exception(record.exc_info)
-        else:
-            exc_info = record.exc_text
-        return {
-            'exc_info': exc_info,
-            'filename': record.filename,
-        }
-
-    @classmethod
-    def format_exception(cls, exc_info):
-
-        return ''.join(traceback.format_exception(*exc_info)) if exc_info else ''
-
-    def format(self, record):
-        utcnow = datetime.utcnow()
-        json_log_object = {"type": "log",
-                           "written_at": util.iso_time_format(utcnow),
-                           "written_ts": util.epoch_nano_second(utcnow),
-                           "component_id": COMPONENT_ID,
-                           "component_name": COMPONENT_NAME,
-                           "component_instance": COMPONENT_INSTANCE_INDEX,
-                           "logger": record.name,
-                           "thread": record.threadName,
-                           "level": record.levelname,
-                           "module": record.module,
-                           "line_no": record.lineno,
-                           "correlation_id": _request_util.get_correlation_id(),
-                           "msg": _sanitize_log_msg(record)
-                           }
-
-        if hasattr(record, 'props'):
-            json_log_object.update(record.props)
-
-        if record.exc_info or record.exc_text:
-            json_log_object.update(self.get_exc_fields(record))
-
-        return JSON_SERIALIZER(json_log_object)
+    def _format_log_object(self, record, request_util):
+        json_log_object = super()._format_log_object(record, request_util)
+        json_log_object.update({
+            "correlation_id": request_util.get_correlation_id(),
+        })
+        return json_log_object
 
 
 # register flask support
