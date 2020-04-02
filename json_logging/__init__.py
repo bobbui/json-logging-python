@@ -173,7 +173,7 @@ def init_request_instrument(app=None, custom_formatter=None):
 
     formatter = custom_formatter if custom_formatter else JSONRequestLogFormatter
     logger = configurator.request_logger
-    utils.update_formatter_for_loggers([logger])
+    util.update_formatter_for_loggers([logger], formatter)
 
 
 def get_request_logger():
