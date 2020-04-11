@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).  
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 1.1.0 - 2020-04-10
+ - Add the possibility to modify the formatter for request logs.
+ 
 ## 1.0.4 - 2019-07-20
  - fix #30 
 
