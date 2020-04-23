@@ -8,7 +8,7 @@ servers:
 
 paths:
   /greeting/{name}:
-    post:
+    get:
       summary: Generate greeting
       description: Generates a greeting message.
       operationId: hello.post_greeting

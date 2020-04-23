@@ -45,8 +45,6 @@ class QuartAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
 
         # noinspection PyAttributeOutsideInit
         self.request_logger = logging.getLogger('quart.app')
-        self.request_logger.setLevel(logging.DEBUG)
-        self.request_logger.addHandler(logging.StreamHandler(sys.stdout))
 
         from quart import g
 
@@ -81,9 +79,6 @@ class QuartRequestAdapter(RequestAdapter):
             return request.authorization.username
         else:
             return json_logging.EMPTY_VALUE
-
-    def is_in_request_context(self, request_):
-        return _quart.has_request_context()
 
     def get_http_header(self, request, header_name, default=None):
         if header_name in request.headers:

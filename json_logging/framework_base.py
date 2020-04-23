@@ -12,7 +12,7 @@ class RequestAdapter:
     @staticmethod
     def support_global_request_object():
         """
-            whether current framework supports global request object
+            whether current framework supports global request object like Flask
         """
         raise NotImplementedError
 
@@ -26,7 +26,7 @@ class RequestAdapter:
     @staticmethod
     def get_request_class_type():
         """
-            class type of request object
+            class type of request object, only need to specify in case the framework dont support global request object
         """
         raise NotImplementedError
 
@@ -42,13 +42,6 @@ class RequestAdapter:
         raise NotImplementedError
 
     def get_remote_user(self, request):
-        """
-
-        :param request: request object
-        """
-        raise NotImplementedError
-
-    def is_in_request_context(self, request):
         """
 
         :param request: request object
@@ -166,7 +159,7 @@ class ResponseAdapter:
 
 class FrameworkConfigurator:
     """
-       Class to perform logging configuration for given framework as needed
+       Class to perform logging configuration for given framework as needed, like disable built in request logging and other utils logging
     """
 
     def __new__(cls, *args, **kw):

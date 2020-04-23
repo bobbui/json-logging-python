@@ -44,8 +44,7 @@ class ConnexionAppRequestInstrumentationConfigurator(AppRequestInstrumentationCo
 
         # noinspection PyAttributeOutsideInit
         self.request_logger = logging.getLogger('connexion-request-logger')
-        self.request_logger.setLevel(logging.DEBUG)
-        self.request_logger.addHandler(logging.StreamHandler(sys.stdout))
+
 
         from flask import g
 
@@ -80,9 +79,6 @@ class ConnexionRequestAdapter(RequestAdapter):
             return request.authorization.username
         else:
             return json_logging.EMPTY_VALUE
-
-    def is_in_request_context(self, request_):
-        return _flask.has_request_context()
 
     def get_http_header(self, request, header_name, default=None):
         if header_name in request.headers:

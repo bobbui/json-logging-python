@@ -7,8 +7,7 @@ import quart
 import json_logging
 
 app = quart.Quart(__name__)
-json_logging.ENABLE_JSON_LOGGING = True
-json_logging.init_quart()
+json_logging.init_quart(enable_json=True)
 json_logging.init_request_instrument(app)
 
 # init the logger as usual
@@ -20,8 +19,10 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 @app.route('/')
 async def home():
     logger.info("test log statement")
-    logger.info("test log statement", extra={'props': {"extra_property": 'extra_value'}})
-    return "Hello world"
+    logger.info("test log statement with extra props", extra={'props': {"extra_property": 'extra_value'}})
+    correlation_id = json_logging.get_correlation_id()
+    return "hello world" \
+           "\ncorrelation_id                    : " + correlation_id
 
 
 if __name__ == "__main__":

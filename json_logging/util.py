@@ -6,6 +6,7 @@ from datetime import datetime
 from logging import Logger, StreamHandler
 
 import json_logging
+import inspect
 
 
 def is_env_var_toggle(var_name):
@@ -82,13 +83,11 @@ def iso_time_format(datetime_):
         int(datetime_.microsecond / 1000))
 
 
-_no_of_go_up_level = 11
 if hasattr(sys, '_getframe'):
-    # noinspection PyProtectedMember,PyPep8
-    currentframe = lambda: sys._getframe(_no_of_go_up_level)
+    currentframe = lambda _no_of_go_up_level: sys._getframe(_no_of_go_up_level)
 else:  # pragma: no cover
     # noinspection PyBroadException
-    def currentframe():
+    def currentframe(_no_of_go_up_level):
         """Return the frame object for the caller's stack frame."""
         try:
             raise Exception
@@ -105,9 +104,12 @@ class RequestUtil(object):
         if not hasattr(cls, '_instance'):
             request_adapter_class = kw['request_adapter_class']
             response_adapter_class = kw['response_adapter_class']
+
             validate_subclass(request_adapter_class, json_logging.RequestAdapter)
             validate_subclass(response_adapter_class, json_logging.ResponseAdapter)
+
             cls._instance = object.__new__(cls)
+
             cls._instance.request_adapter_class = request_adapter_class
             cls._instance.response_adapter_class = response_adapter_class
             cls._instance.request_adapter = request_adapter_class()
@@ -117,7 +119,7 @@ class RequestUtil(object):
 
         return cls._instance
 
-    def get_correlation_id(self, request=None):
+    def get_correlation_id(self, request=None,within_formatter=False):
         """
         Gets the correlation id from the header of the request. \
         It tries to search from json_logging.CORRELATION_ID_HEADERS list, one by one.\n
@@ -133,9 +135,7 @@ class RequestUtil(object):
             else:
                 request = self.get_request_from_call_stack()
 
-            if not self.request_adapter.is_in_request_context(request):
-                # _logger.debug("Not in request context, return %s", json_logging.EMPTY_VALUE,
-                #               extra={'correlation_id': '-'})
+            if request is None:
                 return json_logging.EMPTY_VALUE
 
         # _logger.debug("Attempt to get correlation from request context", extra={'correlation_id': '-'})
@@ -151,7 +151,7 @@ class RequestUtil(object):
 
         return correlation_id if correlation_id else json_logging.EMPTY_VALUE
 
-    def get_request_from_call_stack(self):
+    def get_request_from_call_stack(self, within_formatter=False):
         """
 
         :return: get request object from call stack
@@ -170,11 +170,15 @@ class RequestUtil(object):
             09 info [__init__.py:1279]
             10 logging statement
         """
+        module = inspect.getmodule(inspect.currentframe().f_back)
+
+        class_type = self.request_adapter_class.get_request_class_type()
+        no_of_go_up_level = 11 if within_formatter else 1
+
         # FIXME: find out the depth of logging call stack in Python 2.7
-        f = currentframe()
+        f = currentframe(no_of_go_up_level)
         while True:
             f_locals = f.f_locals
-            class_type = self.request_adapter_class.get_request_class_type()
             if 'request' in f_locals:
                 if isinstance(f_locals['request'], class_type):
                     return f_locals['request']

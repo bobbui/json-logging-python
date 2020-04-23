@@ -19,13 +19,13 @@ class CustomJSONLog(logging.Formatter):
     """
     Customized logger
     """
-    python_log_prefix = 'python.'
+
     def get_exc_fields(self, record):
         if record.exc_info:
             exc_info = self.format_exception(record.exc_info)
         else:
             exc_info = record.exc_text
-        return {f'{self.python_log_prefix}exc_info': exc_info}
+        return {'python.exc_info': exc_info}
 
     @classmethod
     def format_exception(cls, exc_info):
@@ -38,13 +38,13 @@ class CustomJSONLog(logging.Formatter):
                            "caller": record.filename + '::' + record.funcName
                            }
         json_log_object['data'] = {
-            f'{self.python_log_prefix}logger_name': record.name,
-            f'{self.python_log_prefix}module': record.module,
-            f'{self.python_log_prefix}funcName': record.funcName,
-            f'{self.python_log_prefix}filename': record.filename,
-            f'{self.python_log_prefix}lineno': record.lineno,
-            f'{self.python_log_prefix}thread': f'{record.threadName}[{record.thread}]',
-            f'{self.python_log_prefix}pid': record.process
+            "python.logger_name": record.name,
+            "python.module": record.module,
+            "python.funcName": record.funcName,
+            "python.filename": record.filename,
+            "python.lineno": record.lineno,
+            "python.thread": record.threadName,
+            "python.pid": record.process
         }
         if hasattr(record, 'props'):
             json_log_object['data'].update(record.props)
@@ -55,13 +55,10 @@ class CustomJSONLog(logging.Formatter):
         return json.dumps(json_log_object)
 
 
-def logger_init():
-    json_logging.__init(custom_formatter=CustomJSONLog)
-
 # You would normally import logger_init and setup the logger in your main module - e.g.
 # main.py
 
-logger_init()
+json_logging.init_non_web(custom_formatter=CustomJSONLog)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -69,6 +66,6 @@ logger.addHandler(logging.StreamHandler(sys.stderr))
 
 logger.info('Starting')
 try:
-    1/0
-except: # noqa pylint: disable=bare-except
+    1 / 0
+except:  # noqa pylint: disable=bare-except
     logger.exception('You can\'t divide by zero')

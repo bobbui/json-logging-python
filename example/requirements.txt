@@ -1,3 +1,4 @@
 flask==1.0
-sanic==0.7.0
-Quart==0.6.7
+connexion[swagger-ui]
+quart
+sanic

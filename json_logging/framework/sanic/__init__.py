@@ -1,5 +1,7 @@
 # coding=utf-8
 import logging
+import logging.config
+
 import sys
 
 import json_logging
@@ -26,14 +28,16 @@ class SanicAppConfigurator(FrameworkConfigurator):
 
         # from sanic.config import LOGGING
         # noinspection PyPackageRequirements
-        from sanic.log import LOGGING_CONFIG_DEFAULTS as LOGGING
+        from sanic.log import LOGGING_CONFIG_DEFAULTS
 
-        LOGGING['disable_existing_loggers'] = False
-        LOGGING['formatters']['generic']['class'] = "json_logging.JSONLogFormatter"
-        del LOGGING['formatters']['generic']['format']
+        LOGGING_CONFIG_DEFAULTS['disable_existing_loggers'] = False
+        LOGGING_CONFIG_DEFAULTS['formatters']['generic']['class'] = "json_logging.JSONLogFormatter"
+        del LOGGING_CONFIG_DEFAULTS['formatters']['generic']['format']
 
-        LOGGING['formatters']['access']['class'] = "json_logging.JSONLogFormatter"
-        del LOGGING['formatters']['access']['format']
+        LOGGING_CONFIG_DEFAULTS['formatters']['access']['class'] = "json_logging.JSONLogFormatter"
+        del LOGGING_CONFIG_DEFAULTS['formatters']['access']['format']
+
+        # logging.config.dictConfig(LOGGING_CONFIG_DEFAULTS)
 
 
 class SanicAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfigurator):
@@ -47,8 +51,8 @@ class SanicAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
 
         # noinspection PyAttributeOutsideInit
         self.request_logger = logging.getLogger('sanic-request')
-        self.request_logger.setLevel(logging.DEBUG)
-        self.request_logger.addHandler(logging.StreamHandler(sys.stdout))
+
+        logging.getLogger('sanic.access').disabled = True
 
         @app.middleware('request')
         def before_request(request):
@@ -69,9 +73,6 @@ class SanicRequestAdapter(RequestAdapter):
     @staticmethod
     def get_current_request():
         raise NotImplementedError
-
-    def is_in_request_context(self, request):
-        return request is not None
 
     @staticmethod
     def support_global_request_object():

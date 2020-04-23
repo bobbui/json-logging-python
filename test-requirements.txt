@@ -1,1 +1,4 @@
 flask==1.0
+connexion[swagger-ui]
+quart
+sanic

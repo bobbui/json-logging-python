@@ -1,6 +1,7 @@
 # coding=utf-8
 import json
 import logging
+import sys
 import uuid
 from datetime import datetime
 import traceback
@@ -30,14 +31,14 @@ _logger = get_library_logger(__name__)
 _request_util = None
 
 
-def get_correlation_id():
+def get_correlation_id(request=None):
     """
     Get current request correlation-id. If one is not present, a new one might be generated
     depends on CREATE_CORRELATION_ID_IF_NOT_EXISTS setting value.
 
     :return: correlation-id string
     """
-    return _request_util.get_correlation_id()
+    return _request_util.get_correlation_id(request=request)
 
 
 def register_framework_support(name, app_configurator, app_request_instrumentation_configurator, request_adapter_class,
@@ -96,11 +97,11 @@ def config_root_logger():
                 "logging.basicConfig() or logging.getLogger('root')")
 
 
-def init_non_web(**kwargs):
-    __init(**kwargs)
+def init_non_web(*args, **kw):
+    __init(*args, **kw)
 
 
-def __init(framework_name=None, custom_formatter=None):
+def __init(framework_name=None, custom_formatter=None, enable_json=False):
     """
     Initialize JSON logging support, if no **framework_name** passed, logging will be initialized in non-web context.
     This is supposed to be called only one time.
@@ -112,6 +113,7 @@ def __init(framework_name=None, custom_formatter=None):
     """
 
     global _current_framework
+    global ENABLE_JSON_LOGGING
     if _current_framework is not None:
         raise RuntimeError("Can not call init more than once")
 
@@ -138,11 +140,12 @@ def __init(framework_name=None, custom_formatter=None):
     else:
         formatter = custom_formatter if custom_formatter else JSONLogFormatter
 
-    if not ENABLE_JSON_LOGGING:
+    if not enable_json and not ENABLE_JSON_LOGGING:
         _logger.warning(
             "JSON format is not enable, normal log will be in plain text but request logging still in JSON format! "
             "To enable set ENABLE_JSON_LOGGING env var to either one of following values: ['true', '1', 'y', 'yes']")
     else:
+        ENABLE_JSON_LOGGING = True
         logging._defaultFormatter = formatter()
 
     # go to all the initialized logger and update it to use JSON formatter
@@ -163,7 +166,7 @@ def init_request_instrument(app=None, custom_formatter=None):
 
     if _current_framework is None or _current_framework == '-':
         raise RuntimeError("please init the logging first, call init(framework_name) first")
-    
+
     if custom_formatter:
         if not issubclass(custom_formatter, logging.Formatter):
             raise ValueError('custom_formatter is not subclass of logging.Formatter', custom_formatter)
@@ -172,8 +175,10 @@ def init_request_instrument(app=None, custom_formatter=None):
     configurator.config(app)
 
     formatter = custom_formatter if custom_formatter else JSONRequestLogFormatter
-    logger = configurator.request_logger
-    util.update_formatter_for_loggers([logger], formatter)
+    request_logger = configurator.request_logger
+    request_logger.setLevel(logging.DEBUG)
+    request_logger.addHandler(logging.StreamHandler(sys.stdout))
+    util.update_formatter_for_loggers([request_logger], formatter)
 
 
 def get_request_logger():
@@ -197,7 +202,7 @@ class RequestInfo(dict):
     """
 
     def __init__(self, request, **kwargs):
-        super(self.__class__, self).__init__(**kwargs)
+        super(RequestInfo, self).__init__(**kwargs)
         utcnow = datetime.utcnow()
         self.request_start = utcnow
         self.request = request
@@ -223,6 +228,16 @@ class BaseJSONFormatter(logging.Formatter):
     """
        Base class for JSON formatters
     """
+    base_object_common = {}
+
+    def __init__(self, *args, **kw):
+        super(BaseJSONFormatter, self).__init__(*args, **kw)
+        if COMPONENT_ID and COMPONENT_ID != EMPTY_VALUE:
+            self.base_object_common["component_id"] = COMPONENT_ID
+        if COMPONENT_NAME and COMPONENT_NAME != EMPTY_VALUE:
+            self.base_object_common["component_name"] = COMPONENT_NAME
+        if COMPONENT_INSTANCE_INDEX and COMPONENT_INSTANCE_INDEX != EMPTY_VALUE:
+            self.base_object_common["component_instance_idx"] = COMPONENT_INSTANCE_INDEX
 
     def format(self, record):
         log_object = self._format_log_object(record, request_util=_request_util)
@@ -230,13 +245,12 @@ class BaseJSONFormatter(logging.Formatter):
 
     def _format_log_object(self, record, request_util):
         utcnow = datetime.utcnow()
-        return {
+        base_obj = {
             "written_at": util.iso_time_format(utcnow),
             "written_ts": util.epoch_nano_second(utcnow),
-            "component_id": COMPONENT_ID,
-            "component_name": COMPONENT_NAME,
-            "component_instance": COMPONENT_INSTANCE_INDEX,
         }
+        base_obj.update(self.base_object_common)
+        return base_obj
 
 
 class JSONRequestLogFormatter(BaseJSONFormatter):
@@ -245,7 +259,7 @@ class JSONRequestLogFormatter(BaseJSONFormatter):
     """
 
     def _format_log_object(self, record, request_util):
-        json_log_object = super()._format_log_object(record, request_util)
+        json_log_object = super(JSONRequestLogFormatter, self)._format_log_object(record, request_util)
         request = record.request_info.request
         request_adapter = request_util.request_adapter
 
@@ -271,7 +285,6 @@ class JSONRequestLogFormatter(BaseJSONFormatter):
             "response_sent_at": record.request_info.response_sent_at
         })
         return json_log_object
-        
 
 
 def _sanitize_log_msg(record):
@@ -298,15 +311,15 @@ class JSONLogFormatter(BaseJSONFormatter):
         return ''.join(traceback.format_exception(*exc_info)) if exc_info else ''
 
     def _format_log_object(self, record, request_util):
-        json_log_object = super()._format_log_object(record, request_util)
+        json_log_object = super(JSONLogFormatter, self)._format_log_object(record, request_util)
         json_log_object.update({
+            "msg": _sanitize_log_msg(record),
             "type": "log",
             "logger": record.name,
             "thread": record.threadName,
             "level": record.levelname,
             "module": record.module,
             "line_no": record.lineno,
-            "msg": _sanitize_log_msg(record),
         })
         if hasattr(record, 'props'):
             json_log_object.update(record.props)
@@ -323,9 +336,9 @@ class JSONLogWebFormatter(JSONLogFormatter):
     """
 
     def _format_log_object(self, record, request_util):
-        json_log_object = super()._format_log_object(record, request_util)
+        json_log_object = super(JSONLogWebFormatter, self)._format_log_object(record, request_util)
         json_log_object.update({
-            "correlation_id": request_util.get_correlation_id(),
+            "correlation_id": request_util.get_correlation_id(within_formatter=True),
         })
         return json_log_object
 
@@ -339,8 +352,8 @@ register_framework_support('flask', None, flask_support.FlaskAppRequestInstrumen
                            flask_support.FlaskResponseAdapter)
 
 
-def init_flask(custom_formatter=None):
-    __init(framework_name='flask', custom_formatter=custom_formatter)
+def init_flask(custom_formatter=None, enable_json=False):
+    __init(framework_name='flask', custom_formatter=custom_formatter, enable_json=enable_json)
 
 
 # register sanic support
@@ -354,8 +367,8 @@ register_framework_support('sanic', SanicAppConfigurator,
                            SanicResponseAdapter)
 
 
-def init_sanic(custom_formatter=None):
-    __init(framework_name='sanic', custom_formatter=custom_formatter)
+def init_sanic(custom_formatter=None, enable_json=False):
+    __init(framework_name='sanic', custom_formatter=custom_formatter, enable_json=enable_json)
 
 
 # register quart support
@@ -367,8 +380,8 @@ register_framework_support('quart', None, quart_support.QuartAppRequestInstrumen
                            quart_support.QuartResponseAdapter)
 
 
-def init_quart(custom_formatter=None):
-    __init(framework_name='quart', custom_formatter=custom_formatter)
+def init_quart(custom_formatter=None, enable_json=False):
+    __init(framework_name='quart', custom_formatter=custom_formatter, enable_json=enable_json)
 
 
 # register connexion support
@@ -380,5 +393,5 @@ register_framework_support('connexion', None, connexion_support.ConnexionAppRequ
                            connexion_support.ConnexionResponseAdapter)
 
 
-def init_connexion(custom_formatter=None):
-    __init(framework_name='connexion', custom_formatter=custom_formatter)
+def init_connexion(custom_formatter=None, enable_json=False):
+    __init(framework_name='connexion', custom_formatter=custom_formatter, enable_json=enable_json)

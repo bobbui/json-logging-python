@@ -21,9 +21,9 @@ If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-
 1. Emit JSON logs ([format detail](#0-full-logging-format-references))
 2. Auto extract **correlation-id** for distributed tracing [\[1\]](#1-what-is-correlation-idrequest-id)
 3. Lightweight, no dependencies, minimal configuration needed (1 LoC to get it working)
-4. Fully compatible with Python **logging** module. Support both Python 2.7.x and 3.x
+4. Seamlessly integrate with Python native **logging** module. Support both Python 2.7.x and 3.x
 5. Support HTTP request instrumentation. Built in support for [Flask](https://github.com/pallets/flask/), [Sanic](https://github.com/channelcat/sanic), [Quart](https://gitlab.com/pgjones/quart), [Connexion](https://github.com/zalando/connexion). Extensible to support other web frameworks. PR welcome :smiley: .
-6. Support inject arbitrary extra properties to JSON log message.  
+6. Highly customizable: support inject arbitrary extra properties to JSON log message, override logging formatter, etc.  
 
 # 2. Usage
 Install by running this command:
@@ -59,8 +59,7 @@ logger.info("test logging statement")
 import datetime, logging, sys, json_logging, flask
 
 app = flask.Flask(__name__)
-json_logging.ENABLE_JSON_LOGGING = True
-json_logging.init_flask()
+json_logging.init_flask(enable_json=True)
 json_logging.init_request_instrument(app)
 
 # init the logger as usual
@@ -71,6 +70,8 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 @app.route('/')
 def home():
     logger.info("test log statement")
+    logger.info("test log statement with extra props", extra={'props': {"extra_property": 'extra_value'}})
+    correlation_id = json_logging.get_correlation_id()
     return "Hello world : " + str(datetime.datetime.now())
 
 if __name__ == "__main__":
@@ -81,9 +82,8 @@ if __name__ == "__main__":
 ```python
 import logging, sys, json_logging, sanic
 
-app = sanic.Sanic()
-json_logging.ENABLE_JSON_LOGGING = True
-json_logging.init_sanic()
+app = sanic.Sanic(name="sanic-web-app")
+json_logging.init_sanic(enable_json=True)
 json_logging.init_request_instrument(app)
 
 # init the logger as usual
@@ -94,6 +94,12 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 @app.route("/")
 async def home(request):
     logger.info("test log statement")
+    logger.info("test log statement with extra props", extra={'props': {"extra_property": 'extra_value'}})
+    # this will be faster
+    correlation_id = json_logging.get_correlation_id(request=request)
+    # this will be slower, but will work in context you cant get a reference of request object
+    correlation_id_without_request_obj = json_logging.get_correlation_id()
+
     return sanic.response.text("hello world")
 
 if __name__ == "__main__":
@@ -106,8 +112,7 @@ if __name__ == "__main__":
 import asyncio, logging, sys, json_logging, quart
 
 app = quart.Quart(__name__)
-json_logging.ENABLE_JSON_LOGGING = True
-json_logging.init_quart()
+json_logging.init_quart(enable_json=True)
 json_logging.init_request_instrument(app)
 
 # init the logger as usual
@@ -118,7 +123,8 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 @app.route('/')
 async def home():
     logger.info("test log statement")
-    logger.info("test log statement", extra={'props': {"extra_property": 'extra_value'}})
+    logger.info("test log statement with extra props", extra={'props': {"extra_property": 'extra_value'}})
+    correlation_id = json_logging.get_correlation_id()
     return "Hello world"
 
 if __name__ == "__main__":
@@ -129,11 +135,10 @@ if __name__ == "__main__":
 ### Connexion
 
 ```python
-import datetime, logging, sys, json_logging, connexion
+import logging, sys, json_logging, connexion
 
 app = connexion.FlaskApp(__name__)
-json_logging.ENABLE_JSON_LOGGING = True
-json_logging.init_connexion()
+json_logging.init_connexion(enable_json=True)
 json_logging.init_request_instrument(app)
 
 app.add_api('api.yaml')
@@ -151,7 +156,10 @@ if __name__ == "__main__":
 Current request correlation-id can be retrieved and pass to downstream services call as follow:
 
 ```python
-correlation_id = json_logging.get_correlation_id()
+# this will be faster
+correlation_id = json_logging.get_correlation_id(request=request)
+# this will be slower, but will work in context where you couldn't get a reference of request object
+correlation_id_without_request_obj = json_logging.get_correlation_id()
 # use correlation id for downstream service calls here
 ```
 
@@ -178,7 +186,7 @@ logging library can be configured by setting the value in json_logging, all conf
 
 Name | Description | Default value
  --- | --- | ---
-ENABLE_JSON_LOGGING | Whether to enable JSON logging mode.Can be set as an environment variable, enable when set to to either one in following list (case-insensitive) **['true', '1', 'y', 'yes']** , this have no effect on request logger | false
+ENABLE_JSON_LOGGING | **DEPRECATED** Whether to enable JSON logging mode.Can be set as an environment variable, enable when set to to either one in following list (case-insensitive) **['true', '1', 'y', 'yes']** , this have no effect on request logger | false
 ENABLE_JSON_LOGGING_DEBUG |  Whether to enable debug logging for this library for development purpose. | true
 CORRELATION_ID_HEADERS | List of HTTP headers that will be used to look for correlation-id value. HTTP headers will be searched one by one according to list order| ['X-Correlation-ID','X-Request-ID']
 EMPTY_VALUE | Default value when a logging record property is None |  '-'
@@ -198,7 +206,7 @@ To add support for a new web framework, you need to extend following classes in 
 
 Class | Description | Mandatory
 --- | --- | ---
-RequestAdapter | Helper class help to extract logging-relevant information from HTTP request object | no
+RequestAdapter | Helper class help to extract logging-relevant information from HTTP request object | yes
 ResponseAdapter | Helper class help to extract logging-relevant information from HTTP response object | yes
 FrameworkConfigurator |  Class to perform logging configuration for given framework as needed | no
 AppRequestInstrumentationConfigurator | Class to perform request instrumentation logging configuration | no
@@ -236,7 +244,7 @@ e.g.:
 	"written_ts": 1514048137280721000,
 	"component_id": "1d930c0xd-19-s3213",
 	"component_name": "ny-component_name",
-	"component_instance": 0,
+	"component_instance_idx": 0,
 	"logger": "test logger",
 	"thread": "MainThread",
 	"level": "INFO",
@@ -256,7 +264,7 @@ e.g.:
 	"written_ts": 1514048137280721000,
 	"component_id": "-",
 	"component_name": "-",
-	"component_instance": 0,
+	"component_instance_idx": 0,
 	"correlation_id": "1975a02e-e802-11e7-8971-28b2bd90b19a",
 	"remote_user": "user_a",
 	"request": "/index.html",
@@ -287,7 +295,7 @@ correlation_id | The timestamp in nano-second precision when this request metric
 type | Type of logging. "logs" or "request"  | string |
 component_id | Uniquely identifies the software component that has processed the current request | string | 9e6f3ecf-def0-4baf-8fac-9339e61d5645
 component_name | A human-friendly name representing the software component | string | my-fancy-component
-component_instance | Instance's index of horizontally scaled service  | string | 0
+component_instance_idx | Instance's index of horizontally scaled service  | string | 0
 
 - application logs
 
@@ -352,6 +360,7 @@ password=
 build
 ```bash
 python setup.py bdist_wheel --universal
+python setup.py sdist --universal
 ```
 
 pypitest
@@ -361,6 +370,6 @@ pip3 install json_logging --index-url https://test.pypi.org/simple/
 ```
 pypi
 ```
-twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
-pip3 install json_logging
+pip3 install json_loggingtwine upload --repository-url https://upload.pypi.org/legacy/ dist/*
+
 ```
