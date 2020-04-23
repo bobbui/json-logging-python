@@ -1,5 +1,5 @@
 # json-logging
-Python logging library to emit JSON log that can be easily indexed and searchable by logging infrastructure such as [ELK](https://www.elastic.co/elk-stack), [EFK](https://docs.fluentd.org/v0.12/articles/docker-logging-efk-compose) 
+Python logging library to emit JSON log that can be easily indexed and searchable by logging infrastructure such as [ELK](https://www.elastic.co/elk-stack), [EFK](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes) 
 
 If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-logging-support](https://github.com/SAP/cf-python-logging-support) which I'm also original author.
 # Content
@@ -19,11 +19,12 @@ If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-
 
 # 1. Features
 1. Emit JSON logs ([format detail](#0-full-logging-format-references))
-2. Auto extract **correlation-id** for distributed tracing [\[1\]](#1-what-is-correlation-idrequest-id)
-3. Lightweight, no dependencies, minimal configuration needed (1 LoC to get it working)
-4. Seamlessly integrate with Python native **logging** module. Support both Python 2.7.x and 3.x
+2. Lightweight, no dependencies, minimal configuration needed (1 LoC to get it working)
+3. Seamlessly integrate with Python native **logging** module. Support both Python 2.7.x and 3.x
+4. Auto extract **correlation-id** for distributed tracing [\[1\]](#1-what-is-correlation-idrequest-id)
 5. Support HTTP request instrumentation. Built in support for [Flask](https://github.com/pallets/flask/), [Sanic](https://github.com/channelcat/sanic), [Quart](https://gitlab.com/pgjones/quart), [Connexion](https://github.com/zalando/connexion). Extensible to support other web frameworks. PR welcome :smiley: .
 6. Highly customizable: support inject arbitrary extra properties to JSON log message, override logging formatter, etc.  
+7. Production ready, this has been used in production for 3 years+  
 
 # 2. Usage
 Install by running this command:
@@ -33,8 +34,6 @@ By default log will be emitted in normal format to ease the local development. T
 
 To configure, call **json_logging.init_< framework_name >()**. Once configured library will try to configure all loggers (existing and newly created) to emit log in JSON format.   
 See following use cases for more detail.
-
-TODO: update guide on how to use ELK stack to view log  
 
 ## 2.1 Non-web application log
 This mode don't support **correlation-id**.
@@ -360,7 +359,7 @@ password=
 build
 ```bash
 python setup.py bdist_wheel --universal
-python setup.py sdist --universal
+python setup.py sdist
 ```
 
 pypitest
@@ -370,6 +369,7 @@ pip3 install json_logging --index-url https://test.pypi.org/simple/
 ```
 pypi
 ```
-pip3 install json_loggingtwine upload --repository-url https://upload.pypi.org/legacy/ dist/*
+pip3 install json_logging
+twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
 
 ```

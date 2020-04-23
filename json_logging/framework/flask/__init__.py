@@ -51,7 +51,6 @@ class FlaskAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
         def after_request(response):
             request_info = g.request_info
             request_info.update_response_status(response)
-            # TODO:handle to print out request instrumentation in non-JSON mode
             self.request_logger.info("", extra={'request_info': request_info})
             return response
 
