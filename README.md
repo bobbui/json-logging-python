@@ -1,7 +1,7 @@
 # json-logging
 Python logging library to emit JSON log that can be easily indexed and searchable by logging infrastructure such as [ELK](https://www.elastic.co/elk-stack), [EFK](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes) 
 
-If you're using Cloud Foundry, it worth to check out the library [SAP/cf-python-logging-support](https://github.com/SAP/cf-python-logging-support) which I'm also original author.
+If you're using Cloud Foundry, it might worth to check out the library [SAP/cf-python-logging-support](https://github.com/SAP/cf-python-logging-support) which I'm also original author.
 # Content
 1. [Features](#1-features)
 2. [Usage](#2-usage)   
@@ -222,15 +222,7 @@ Take a look at [**json_logging/base_framework.py**](blob/master/json_logging/fra
 
     - Check whether the same handler is added to both parent and child loggers [2]
     - If you using flask, by default option **use_reloader** is set to **True** which will start 2 instances of web application. change it to False to disable this behaviour [\[3\]](#3-more-on-flask-use-reloader)
-3.  Can not install Sanic on Windows?
 
-you can install Sanic on windows by running these commands:
-```
-git clone --branch 0.7.0 https://github.com/channelcat/sanic.git
-set SANIC_NO_UVLOOP=true
-set SANIC_NO_UJSON=true
-pip3 install .
-```
 # 7. References
 ## [0] Full logging format references
 2 types of logging statement will be emitted by this library:
@@ -336,40 +328,3 @@ https://docs.python.org/2/library/logging.html#logging.Logger.propagate
 
 ## [3] more on flask use_reloader
 http://flask.pocoo.org/docs/0.12/errorhandling/#working-with-debuggers
-
-# Development 
-create file **.pypirc**
-
-```
-[distutils]
-index-servers =
-  pypi
-  pypitest
-
-[pypi]
-repository: https://upload.pypi.org/legacy/
-username:
-password:
-
-[pypitest]
-repository: https://test.pypi.org/legacy/
-username=
-password=
-```
-build
-```bash
-python setup.py bdist_wheel --universal
-python setup.py sdist
-```
-
-pypitest
-```
-twine upload --repository-url https://test.pypi.org/legacy/ dist/*
-pip3 install json_logging --index-url https://test.pypi.org/simple/
-```
-pypi
-```
-pip3 install json_logging
-twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
-
-```
