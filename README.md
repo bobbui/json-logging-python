@@ -152,7 +152,7 @@ if __name__ == "__main__":
 ```
 
 ### Custom handler for request instrumentation
-you need to explicitly set JSONRequestLogFormatter as default formatter for request_logger
+you need to explicitly set JSONRequestLogFormatter as default formatter for any extra handler that is added to request_logger
 
 ```python
 request_logger = json_logging.get_request_logger()
