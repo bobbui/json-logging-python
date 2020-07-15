@@ -151,6 +151,16 @@ if __name__ == "__main__":
     app.run()
 ```
 
+### Custom handler for request instrumentation
+you need to explicitly set JSONRequestLogFormatter as default formatter for request_logger
+
+```python
+request_logger = json_logging.get_request_logger()
+handler = logging.handlers.RotatingFileHandler(filename='log_req.log', maxBytes=5000000, backupCount=10)
+handler.setFormatter(json_logging.JSONRequestLogFormatter())
+request_logger.addHandler(handler)
+```
+
 ## 2.3 Get current correlation-id
 Current request correlation-id can be retrieved and pass to downstream services call as follow:
 
