@@ -56,11 +56,11 @@ class SanicAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
 
         @app.middleware('request')
         def before_request(request):
-            request['request_info'] = json_logging.RequestInfo(request)
+            request.ctx.request_info = json_logging.RequestInfo(request)
 
         @app.middleware('response')
         def after_request(request, response):
-            request_info = request['request_info']
+            request_info = request.ctx.request_info
             request_info.update_response_status(response)
             self.request_logger.info("", extra={'request_info': request_info, 'type': 'request'})
 
@@ -93,11 +93,14 @@ class SanicRequestAdapter(RequestAdapter):
             return request.headers.get(header_name)
         return default
 
-    def set_correlation_id(self, request_, value):
-        request_['correlation_id'] = value
+    def set_correlation_id(self, request, value):
+        request.ctx.correlation_id = value
 
     def get_correlation_id_in_request_context(self, request):
-        return request.get('correlation_id')
+        try:
+            return request.ctx.correlation_id
+        except AttributeError:
+            return None
 
     def get_protocol(self, request):
         return json_logging.EMPTY_VALUE
