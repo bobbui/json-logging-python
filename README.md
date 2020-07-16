@@ -1,5 +1,5 @@
 # json-logging
-Python logging library to emit JSON log that can be easily indexed and searchable by logging infrastructure such as [ELK](https://www.elastic.co/elk-stack), [EFK](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes) 
+Python logging library to emit JSON log that can be easily indexed and searchable by logging infrastructure such as [ELK](https://www.elastic.co/elk-stack), [EFK](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes), AWS Cloudwatch, GCP Stackdriver
 
 If you're using Cloud Foundry, it might worth to check out the library [SAP/cf-python-logging-support](https://github.com/SAP/cf-python-logging-support) which I'm also original author.
 # Content
@@ -24,13 +24,13 @@ If you're using Cloud Foundry, it might worth to check out the library [SAP/cf-p
 4. Auto extract **correlation-id** for distributed tracing [\[1\]](#1-what-is-correlation-idrequest-id)
 5. Support HTTP request instrumentation. Built in support for [Flask](https://github.com/pallets/flask/), [Sanic](https://github.com/channelcat/sanic), [Quart](https://gitlab.com/pgjones/quart), [Connexion](https://github.com/zalando/connexion). Extensible to support other web frameworks. PR welcome :smiley: .
 6. Highly customizable: support inject arbitrary extra properties to JSON log message, override logging formatter, etc.  
-7. Production ready, this has been used in production for 3 years+  
+7. Production ready, has been used in production since 2017
 
 # 2. Usage
 Install by running this command:
    > pip install json-logging  
 
-By default log will be emitted in normal format to ease the local development. To enable it on production set either **json_logging.ENABLE_JSON_LOGGING** or **ENABLE_JSON_LOGGING environment variable** to true.
+By default log will be emitted in normal format to ease the local development. To enable it on production either set **json_logging.ENABLE_JSON_LOGGING** or **ENABLE_JSON_LOGGING environment variable** to true.
 
 To configure, call **json_logging.init_< framework_name >()**. Once configured library will try to configure all loggers (existing and newly created) to emit log in JSON format.   
 See following use cases for more detail.
