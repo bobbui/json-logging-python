@@ -6,6 +6,7 @@ import json_logging
 import json_logging.framework
 from json_logging import JSONLogWebFormatter
 from json_logging.framework_base import AppRequestInstrumentationConfigurator, RequestAdapter, ResponseAdapter
+from json_logging.util import is_not_match_any_pattern
 
 
 def is_connexion_present():
@@ -30,7 +31,7 @@ if is_connexion_present():
 
 
 class ConnexionAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfigurator):
-    def config(self, app):
+    def config(self, app, exclude_url_patterns=[]):
         if not is_connexion_present():
             raise RuntimeError("connexion is not available in system runtime")
         from flask.app import Flask
@@ -45,18 +46,19 @@ class ConnexionAppRequestInstrumentationConfigurator(AppRequestInstrumentationCo
         # noinspection PyAttributeOutsideInit
         self.request_logger = logging.getLogger('connexion-request-logger')
 
-
         from flask import g
 
         @app.app.before_request
         def before_request():
-            g.request_info = json_logging.RequestInfo(_current_request)
+            if is_not_match_any_pattern(_current_request.path, exclude_url_patterns):
+                g.request_info = json_logging.RequestInfo(_current_request)
 
         @app.app.after_request
         def after_request(response):
-            request_info = g.request_info
-            request_info.update_response_status(response)
-            self.request_logger.info("", extra={'request_info': request_info})
+            if hasattr(g, 'request_info'):
+                request_info = g.request_info
+                request_info.update_response_status(response)
+                self.request_logger.info("", extra={'request_info': request_info})
             return response
 
 

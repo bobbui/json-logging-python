@@ -1,10 +1,11 @@
 # coding=utf-8
 import logging
-import sys
 
 import json_logging
 import json_logging.framework
 from json_logging.framework_base import AppRequestInstrumentationConfigurator, RequestAdapter, ResponseAdapter
+
+from json_logging.util import is_not_match_any_pattern
 
 
 def is_flask_present():
@@ -25,7 +26,7 @@ if is_flask_present():
 
 
 class FlaskAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfigurator):
-    def config(self, app):
+    def config(self, app, exclude_url_patterns=[]):
         if not is_flask_present():
             raise RuntimeError("flask is not available in system runtime")
         from flask.app import Flask
@@ -45,13 +46,15 @@ class FlaskAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
 
         @app.before_request
         def before_request():
-            g.request_info = json_logging.RequestInfo(_current_request)
+            if is_not_match_any_pattern(_current_request.path, exclude_url_patterns):
+                g.request_info = json_logging.RequestInfo(_current_request)
 
         @app.after_request
         def after_request(response):
-            request_info = g.request_info
-            request_info.update_response_status(response)
-            self.request_logger.info("", extra={'request_info': request_info})
+            if hasattr(g, 'request_info'):
+                request_info = g.request_info
+                request_info.update_response_status(response)
+                self.request_logger.info("", extra={'request_info': request_info})
             return response
 
 

@@ -8,7 +8,7 @@ import sys
 
 app = sanic.Sanic(name="sanic-web-app")
 json_logging.init_sanic(enable_json=True)
-json_logging.init_request_instrument(app)
+json_logging.init_request_instrument(app, exclude_url_patterns=[r'/exclude_from_request_instrumentation'])
 
 # init the logger as usual
 logger = logging.getLogger("sanic-integration-test-app")
@@ -29,6 +29,11 @@ def test(request):
         "hello world"
         "\ncorrelation_id                    : " + correlation_id +
         "\ncorrelation_id_without_request_obj: " + correlation_id_without_request_obj)
+
+
+@app.route('/exclude_from_request_instrumentation')
+def exclude_from_request_instrumentation(request):
+    return sanic.response.text("this request wont log request instrumentation information")
 
 
 if __name__ == "__main__":

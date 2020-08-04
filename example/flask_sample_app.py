@@ -7,7 +7,7 @@ import json_logging
 
 app = flask.Flask(__name__)
 json_logging.init_flask(enable_json=True)
-json_logging.init_request_instrument(app)
+json_logging.init_request_instrument(app, exclude_url_patterns=[r'/exclude_from_request_instrumentation'])
 
 # init the logger as usual
 logger = logging.getLogger("test logger")
@@ -32,6 +32,11 @@ def exception():
         logger.error("Error occurred", exc_info=e)
         logger.exception("Error occurred", exc_info=e)
     return "Error occurred, check log for detail"
+
+
+@app.route('/exclude_from_request_instrumentation')
+def exclude_from_request_instrumentation():
+    return "this request wont log request instrumentation information"
 
 
 if __name__ == "__main__":

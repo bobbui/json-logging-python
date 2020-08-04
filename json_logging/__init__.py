@@ -31,7 +31,6 @@ _logger = get_library_logger(__name__)
 _request_util = None
 _default_formatter = None
 
-
 def get_correlation_id(request=None):
     """
     Get current request correlation-id. If one is not present, a new one might be generated
@@ -152,7 +151,7 @@ def __init(framework_name=None, custom_formatter=None, enable_json=False):
     util.update_formatter_for_loggers(existing_loggers, _default_formatter)
 
 
-def init_request_instrument(app=None, custom_formatter=None):
+def init_request_instrument(app=None, custom_formatter=None, exclude_url_patterns=[]):
     """
     Configure the request instrumentation logging configuration for given web app. Must be called after init method
 
@@ -170,7 +169,7 @@ def init_request_instrument(app=None, custom_formatter=None):
             raise ValueError('custom_formatter is not subclass of logging.Formatter', custom_formatter)
 
     configurator = _current_framework['app_request_instrumentation_configurator']()
-    configurator.config(app)
+    configurator.config(app, exclude_url_patterns=exclude_url_patterns)
 
     formatter = custom_formatter if custom_formatter else JSONRequestLogFormatter
     request_logger = configurator.request_logger

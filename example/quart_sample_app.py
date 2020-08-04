@@ -8,7 +8,7 @@ import json_logging
 
 app = quart.Quart(__name__)
 json_logging.init_quart(enable_json=True)
-json_logging.init_request_instrument(app)
+json_logging.init_request_instrument(app, exclude_url_patterns=[r'/exclude_from_request_instrumentation'])
 
 # init the logger as usual
 logger = logging.getLogger("test logger")
@@ -23,6 +23,11 @@ async def home():
     correlation_id = json_logging.get_correlation_id()
     return "hello world" \
            "\ncorrelation_id                    : " + correlation_id
+
+
+@app.route('/exclude_from_request_instrumentation')
+def exclude_from_request_instrumentation():
+    return "this request wont log request instrumentation information"
 
 
 if __name__ == "__main__":

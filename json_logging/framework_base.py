@@ -189,7 +189,7 @@ class AppRequestInstrumentationConfigurator:
             cls._instance.request_logger = None
         return cls._instance
 
-    def config(self, app):
+    def config(self, app, exclude_url_patterns=None):
         """
         configuration logic
 

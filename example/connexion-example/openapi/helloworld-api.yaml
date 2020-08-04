@@ -28,3 +28,24 @@ paths:
           schema:
             type: string
             example: "dave"
+  /exclude_from_request_instrumentation:
+    get:
+      summary: Generate greeting
+      description: Generates a greeting message.
+      operationId: hello.exclude_from_request_instrumentation
+      responses:
+        200:
+          description: greeting response
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "hello dave!"
+      parameters:
+        - name: name
+          in: path
+          description: Name of the person to greet.
+          required: true
+          schema:
+            type: string
+            example: "dave"

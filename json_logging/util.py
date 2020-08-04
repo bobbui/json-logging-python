@@ -1,6 +1,7 @@
 # coding=utf-8
 import logging
 import os
+import re
 import sys
 from datetime import datetime
 from logging import Logger, StreamHandler
@@ -203,3 +204,7 @@ class RequestUtil(object):
             if value is not None:
                 return value
         return None
+
+
+def is_not_match_any_pattern(path, patterns):
+    return all(map(lambda pattern: re.search(pattern, path) is None, patterns))

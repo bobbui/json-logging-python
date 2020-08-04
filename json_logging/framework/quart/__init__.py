@@ -6,6 +6,7 @@ import json_logging
 import json_logging.framework
 from json_logging import JSONLogWebFormatter
 from json_logging.framework_base import AppRequestInstrumentationConfigurator, RequestAdapter, ResponseAdapter
+from json_logging.util import is_not_match_any_pattern
 
 
 def is_quart_present():
@@ -26,7 +27,7 @@ if is_quart_present():
 
 
 class QuartAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfigurator):
-    def config(self, app):
+    def config(self, app, exclude_url_patterns=[]):
         if not is_quart_present():
             raise RuntimeError("quart is not available in system runtime")
         from quart.app import Quart
@@ -34,30 +35,31 @@ class QuartAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
             raise RuntimeError("app is not a valid quart.app.Quart app instance")
 
         # Remove quart logging handlers
-        from quart.logging import default_handler, serving_handler
+        from quart.logging import default_handler
         logging.getLogger('quart.app').removeHandler(default_handler)
-        logging.getLogger('quart.serving').removeHandler(serving_handler)
-
         json_logging.util.update_formatter_for_loggers([
-            # logging.getLogger('quart.app'),
-            # logging.getLogger('quart.serving'),
+            logging.getLogger('quart.app'),
         ], JSONLogWebFormatter)
 
+        logging.getLogger('quart.serving').disabled = True
+
         # noinspection PyAttributeOutsideInit
-        self.request_logger = logging.getLogger('quart.app')
+        self.request_logger = logging.getLogger('quart-request-logger')
 
         from quart import g
 
         @app.before_request
         def before_request():
-            g.request_info = json_logging.RequestInfo(_current_request)
+            if is_not_match_any_pattern(_current_request.path, exclude_url_patterns):
+                g.request_info = json_logging.RequestInfo(_current_request)
 
         @app.after_request
         def after_request(response):
-            request_info = g.request_info
-            request_info.update_response_status(response)
-            # TODO:handle to print out request instrumentation in non-JSON mode
-            self.request_logger.info("", extra={'request_info': request_info})
+            if hasattr(g, 'request_info'):
+                request_info = g.request_info
+                request_info.update_response_status(response)
+                # TODO:handle to print out request instrumentation in non-JSON mode
+                self.request_logger.info("", extra={'request_info': request_info})
             return response
 
 

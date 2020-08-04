@@ -8,6 +8,7 @@ import json_logging
 import json_logging.framework
 from json_logging.framework_base import FrameworkConfigurator, AppRequestInstrumentationConfigurator, RequestAdapter, \
     ResponseAdapter
+from json_logging.util import is_not_match_any_pattern
 
 
 def is_sanic_present():
@@ -41,7 +42,7 @@ class SanicAppConfigurator(FrameworkConfigurator):
 
 
 class SanicAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfigurator):
-    def config(self, app):
+    def config(self, app, exclude_url_patterns=[]):
         if not is_sanic_present():
             raise RuntimeError("Sanic is not available in system runtime")
         # noinspection PyPackageRequirements
@@ -56,13 +57,15 @@ class SanicAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
 
         @app.middleware('request')
         def before_request(request):
-            request.ctx.request_info = json_logging.RequestInfo(request)
+            if is_not_match_any_pattern(request.path, exclude_url_patterns):
+                request.ctx.request_info = json_logging.RequestInfo(request)
 
         @app.middleware('response')
         def after_request(request, response):
-            request_info = request.ctx.request_info
-            request_info.update_response_status(response)
-            self.request_logger.info("", extra={'request_info': request_info, 'type': 'request'})
+            if hasattr(request.ctx, 'request_info'):
+                request_info = request.ctx.request_info
+                request_info.update_response_status(response)
+                self.request_logger.info("", extra={'request_info': request_info, 'type': 'request'})
 
     def get_request_logger(self):
         return self.request_logger

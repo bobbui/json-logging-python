@@ -11,6 +11,7 @@ If you're using Cloud Foundry, it might worth to check out the library [SAP/cf-p
    2.4 [Log extra properties](#24-log-extra-properties)  
    2.5 [Root logger](#25-root-logger)  
    2.6 [Custom log formatter](#26-custom-log-formatter)
+   2.7 [Exclude certain URl from request instrumentation](#27-exclude-certain-url-from-request-instrumentation)
 3. [Configuration](#3-configuration)  
 4. [Python References](#4-python-references)
 5. [Framework support plugin development](#5-framework-support-plugin-development)
@@ -189,6 +190,13 @@ json_logging.config_root_logger()
 ## 2.6 Custom log formatter
 Customer JSON log formatter can be passed to init method. see example for more detail: 
 https://github.com/thangbn/json-logging-python/blob/master/example/custom_log_format.py
+
+## 2.7 Exclude certain URl from request instrumentation
+Certain URL can be excluded from request instrumentation by specifying a list of regex into **init_request_instrument** method like below:
+
+```python
+json_logging.init_request_instrument(app, exclude_url_patterns=[r'/exclude_from_request_instrumentation'])
+```
 
 # 3. Configuration
 logging library can be configured by setting the value in json_logging, all configuration must be placed before json_logging.init method call
