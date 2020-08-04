@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).  
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 1.2.4 - 2020-08-03
+ - fix #51
+
 ## 1.2.2 - 2020-07-14
  - fix #50
  

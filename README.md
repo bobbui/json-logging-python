@@ -30,7 +30,7 @@ If you're using Cloud Foundry, it might worth to check out the library [SAP/cf-p
 Install by running this command:
    > pip install json-logging  
 
-By default log will be emitted in normal format to ease the local development. To enable it on production set either **json_logging.ENABLE_JSON_LOGGING** or **ENABLE_JSON_LOGGING environment variable** to true.
+By default log will be emitted in normal format to ease the local development. To enable it on production set enable_json in init_\<framework name\>(enable_json=True) method call (set **json_logging.ENABLE_JSON_LOGGING** or **ENABLE_JSON_LOGGING environment variable** to true is not recommended and will be deprecated in future versions).
 
 To configure, call **json_logging.init_< framework_name >()**. Once configured library will try to configure all loggers (existing and newly created) to emit log in JSON format.   
 See following use cases for more detail.
@@ -41,8 +41,7 @@ This mode don't support **correlation-id**.
 import json_logging, logging, sys
 
 # log is initialized without a web framework name
-json_logging.ENABLE_JSON_LOGGING = True
-json_logging.init_non_web()
+json_logging.init_non_web(enable_json=True)
 
 logger = logging.getLogger("test-logger")
 logger.setLevel(logging.DEBUG)
@@ -183,6 +182,7 @@ logger.info("test log statement", extra = {'props' : {'extra_property' : 'extra_
 If you want to use root logger as main logger to emit log. Made sure you call **config_root_logger()** after initialize root logger (by logging.basicConfig() or logging.getLogger('root')) [\[2\]](#2-python-logging-propagate)
 ```python
 logging.basicConfig()
+json_logging.init_<framework name >()
 json_logging.config_root_logger()
 ```
 
@@ -196,7 +196,6 @@ logging library can be configured by setting the value in json_logging, all conf
 Name | Description | Default value
  --- | --- | ---
 ENABLE_JSON_LOGGING | **DEPRECATED** Whether to enable JSON logging mode.Can be set as an environment variable, enable when set to to either one in following list (case-insensitive) **['true', '1', 'y', 'yes']** , this have no effect on request logger | false
-ENABLE_JSON_LOGGING_DEBUG |  Whether to enable debug logging for this library for development purpose. | true
 CORRELATION_ID_HEADERS | List of HTTP headers that will be used to look for correlation-id value. HTTP headers will be searched one by one according to list order| ['X-Correlation-ID','X-Request-ID']
 EMPTY_VALUE | Default value when a logging record property is None |  '-'
 CORRELATION_ID_GENERATOR | function to generate unique correlation-id | uuid.uuid1

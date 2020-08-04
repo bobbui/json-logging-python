@@ -82,23 +82,15 @@ def config_root_logger():
     """
     global _default_formatter
 
+    if len(logging.root.handlers) > 0:
+        _logger.error(
+            "No logging handlers found for root logger. Please made sure that you call this after you called "
+            "logging.basicConfig() or logging.getLogger('root')")
+
     if ENABLE_JSON_LOGGING:
         ENABLE_JSON_LOGGING_DEBUG and _logger.debug("Update root logger to using JSONLogFormatter")
 
-        if len(logging.root.handlers) > 0:
-            if _current_framework is None or _current_framework == '-':
-                util.update_formatter_for_loggers([logging.root], _default_formatter)
-            else:
-                util.update_formatter_for_loggers([logging.root], _default_formatter)
-                # remove all handlers for request logging
-                request_logger = _current_framework['app_request_instrumentation_configurator']().get_request_logger()
-                if request_logger:
-                    for handler in request_logger.handlers:
-                        request_logger.removeHandler(handler)
-        else:
-            _logger.error(
-                "No logging handlers found for root logger. Please made sure that you call this after you called "
-                "logging.basicConfig() or logging.getLogger('root')")
+        util.update_formatter_for_loggers([logging.root], _default_formatter)
 
 
 def init_non_web(*args, **kw):
@@ -119,6 +111,7 @@ def __init(framework_name=None, custom_formatter=None, enable_json=False):
     global _current_framework
     global ENABLE_JSON_LOGGING
     global _default_formatter
+    ENABLE_JSON_LOGGING = enable_json
     if _current_framework is not None:
         raise RuntimeError("Can not call init more than once")
 
@@ -184,6 +177,7 @@ def init_request_instrument(app=None, custom_formatter=None):
     request_logger.setLevel(logging.DEBUG)
     request_logger.addHandler(logging.StreamHandler(sys.stdout))
     util.update_formatter_for_loggers([request_logger], formatter)
+    request_logger.parent = None
 
 
 def get_request_logger():
