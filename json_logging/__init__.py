@@ -81,7 +81,7 @@ def config_root_logger():
     """
     global _default_formatter
 
-    if len(logging.root.handlers) > 0:
+    if not logging.root.handlers:
         _logger.error(
             "No logging handlers found for root logger. Please made sure that you call this after you called "
             "logging.basicConfig() or logging.getLogger('root')")
