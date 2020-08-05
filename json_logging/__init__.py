@@ -31,6 +31,7 @@ _logger = get_library_logger(__name__)
 _request_util = None
 _default_formatter = None
 
+
 def get_correlation_id(request=None):
     """
     Get current request correlation-id. If one is not present, a new one might be generated
@@ -79,16 +80,17 @@ def config_root_logger():
         & remove duplicate handlers for request instrumentation logging.
         Please made sure that you call this after you called "logging.basicConfig() or logging.getLogger('root')
     """
-    global _default_formatter
 
     if not logging.root.handlers:
         _logger.error(
             "No logging handlers found for root logger. Please made sure that you call this after you called "
             "logging.basicConfig() or logging.getLogger('root')")
+        return
 
     if ENABLE_JSON_LOGGING:
         ENABLE_JSON_LOGGING_DEBUG and _logger.debug("Update root logger to using JSONLogFormatter")
 
+        global _default_formatter
         util.update_formatter_for_loggers([logging.root], _default_formatter)
 
 
