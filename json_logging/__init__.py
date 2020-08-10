@@ -395,3 +395,16 @@ register_framework_support('connexion', None, connexion_support.ConnexionAppRequ
 
 def init_connexion(custom_formatter=None, enable_json=False):
     __init(framework_name='connexion', custom_formatter=custom_formatter, enable_json=enable_json)
+
+
+# register plain http server support
+# noinspection PyPep8
+import json_logging.framework.plainhttpserver as http_support
+
+register_framework_support('plain_http', None, http_support.PlainHTTPAppRequestInstrumentationConfigurator,
+                           http_support.PlainHTTPRequestAdapter,
+                           http_support.PlainHTTPResponseAdapter)
+
+
+def init_plain_http_server(custom_formatter=None, enable_json=False):
+    __init(framework_name='plain_http', custom_formatter=custom_formatter, enable_json=enable_json)
