@@ -180,7 +180,7 @@ Extra property can be added to logging statement as follow:
 logger.info("test log statement", extra = {'props' : {'extra_property' : 'extra_value'}})
 ```
 ## 2.5 Root logger
-If you want to use root logger as main logger to emit log. Made sure you call **config_root_logger()** after initialize root logger (by logging.basicConfig() or logging.getLogger('root')) [\[2\]](#2-python-logging-propagate)
+If you want to use root logger as main logger to emit log. Made sure you call **config_root_logger()** after initialize root logger (by logging.basicConfig() or logging.getLogger()) [\[2\]](#2-python-logging-propagate)
 ```python
 logging.basicConfig()
 json_logging.init_<framework name >()
