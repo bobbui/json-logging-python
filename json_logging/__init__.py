@@ -78,13 +78,13 @@ def config_root_logger():
         You must call this if you are using root logger.
         Make all root logger' handlers produce JSON format
         & remove duplicate handlers for request instrumentation logging.
-        Please made sure that you call this after you called "logging.basicConfig() or logging.getLogger('root')
+        Please made sure that you call this after you called "logging.basicConfig() or logging.getLogger()
     """
 
     if not logging.root.handlers:
         _logger.error(
             "No logging handlers found for root logger. Please made sure that you call this after you called "
-            "logging.basicConfig() or logging.getLogger('root')")
+            "logging.basicConfig() or logging.getLogger()")
         return
 
     if ENABLE_JSON_LOGGING:
@@ -105,7 +105,7 @@ def __init(framework_name=None, custom_formatter=None, enable_json=False):
 
     If **custom_formatter** is passed, it will (in non-web context) use this formatter over the default.
 
-    :param framework_name: type of framework logging should support.
+    :param framework_name: type of framework logging should support.DEFAULT_CORRELATION_ID_HEADERS
     :param custom_formatter: formatter to override default JSONLogFormatter.
     """
 
@@ -141,7 +141,7 @@ def __init(framework_name=None, custom_formatter=None, enable_json=False):
 
     if not enable_json and not ENABLE_JSON_LOGGING:
         _logger.warning(
-            "JSON format is not enable, normal log will be in plain text but request logging still in JSON format! "
+            "JSON format is not enabled, normal log will be in plain text but request logging still in JSON format! "
             "To enable set ENABLE_JSON_LOGGING env var to either one of following values: ['true', '1', 'y', 'yes']")
     else:
         ENABLE_JSON_LOGGING = True

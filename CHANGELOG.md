@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).  
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 1.2.7 - 2020-08-27
+ - Fix #57
+
 ## 1.2.6 - 2020-08-05
  - Fix condition for checking root logger handlers #53
 
