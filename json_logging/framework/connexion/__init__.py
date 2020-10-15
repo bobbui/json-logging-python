@@ -90,7 +90,10 @@ class ConnexionRequestAdapter(RequestAdapter):
         _connexion.g.correlation_id = value
 
     def get_correlation_id_in_request_context(self, request):
-        return _connexion.g.get('correlation_id', None)
+        try:
+            return _connexion.g.get('correlation_id', None)
+        except:
+            return None
 
     def get_protocol(self, request):
         return request.environ.get('SERVER_PROTOCOL')

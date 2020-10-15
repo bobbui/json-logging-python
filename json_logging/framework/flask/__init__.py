@@ -86,7 +86,10 @@ class FlaskRequestAdapter(RequestAdapter):
         _flask.g.correlation_id = value
 
     def get_correlation_id_in_request_context(self, request):
-        return _flask.g.get('correlation_id', None)
+        try:
+            return _flask.g.get('correlation_id', None)
+        except:
+            return None
 
     def get_protocol(self, request):
         return request.environ.get('SERVER_PROTOCOL')

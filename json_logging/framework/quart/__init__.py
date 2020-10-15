@@ -91,7 +91,10 @@ class QuartRequestAdapter(RequestAdapter):
         _quart.g.correlation_id = value
 
     def get_correlation_id_in_request_context(self, request):
-        return _quart.g.get('correlation_id', None)
+        try:
+            return _quart.g.get('correlation_id', None)
+        except:
+            return None
 
     def get_protocol(self, request):
         return request.scheme
