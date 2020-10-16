@@ -83,12 +83,18 @@ class QuartRequestAdapter(RequestAdapter):
             return json_logging.EMPTY_VALUE
 
     def get_http_header(self, request, header_name, default=None):
-        if header_name in request.headers:
-            return request.headers.get(header_name)
+        try:
+            if header_name in request.headers:
+                return request.headers.get(header_name)
+        except:
+            pass
         return default
 
     def set_correlation_id(self, request_, value):
-        _quart.g.correlation_id = value
+        try:
+            _quart.g.correlation_id = value
+        except:
+            pass
 
     def get_correlation_id_in_request_context(self, request):
         try:
