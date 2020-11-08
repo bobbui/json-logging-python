@@ -6,8 +6,12 @@ import sys
 
 import json_logging
 import json_logging.framework
-from json_logging.framework_base import FrameworkConfigurator, AppRequestInstrumentationConfigurator, RequestAdapter, \
-    ResponseAdapter
+from json_logging.framework_base import (
+    FrameworkConfigurator,
+    AppRequestInstrumentationConfigurator,
+    RequestAdapter,
+    ResponseAdapter,
+)
 from json_logging.util import is_not_match_any_pattern
 
 
@@ -16,13 +20,13 @@ def is_sanic_present():
     try:
         # noinspection PyPackageRequirements
         from sanic import Sanic
+
         return True
     except:
         return False
 
 
 class SanicAppConfigurator(FrameworkConfigurator):
-
     def config(self):
         if not is_sanic_present():
             raise RuntimeError("Sanic is not available in system runtime")
@@ -31,12 +35,16 @@ class SanicAppConfigurator(FrameworkConfigurator):
         # noinspection PyPackageRequirements
         from sanic.log import LOGGING_CONFIG_DEFAULTS
 
-        LOGGING_CONFIG_DEFAULTS['disable_existing_loggers'] = False
-        LOGGING_CONFIG_DEFAULTS['formatters']['generic']['class'] = "json_logging.JSONLogFormatter"
-        del LOGGING_CONFIG_DEFAULTS['formatters']['generic']['format']
+        LOGGING_CONFIG_DEFAULTS["disable_existing_loggers"] = False
+        LOGGING_CONFIG_DEFAULTS["formatters"]["generic"][
+            "class"
+        ] = "json_logging.JSONLogFormatter"
+        del LOGGING_CONFIG_DEFAULTS["formatters"]["generic"]["format"]
 
-        LOGGING_CONFIG_DEFAULTS['formatters']['access']['class'] = "json_logging.JSONLogFormatter"
-        del LOGGING_CONFIG_DEFAULTS['formatters']['access']['format']
+        LOGGING_CONFIG_DEFAULTS["formatters"]["access"][
+            "class"
+        ] = "json_logging.JSONLogFormatter"
+        del LOGGING_CONFIG_DEFAULTS["formatters"]["access"]["format"]
 
         # logging.config.dictConfig(LOGGING_CONFIG_DEFAULTS)
 
@@ -47,32 +55,34 @@ class SanicAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
             raise RuntimeError("Sanic is not available in system runtime")
         # noinspection PyPackageRequirements
         from sanic import Sanic
+
         if not isinstance(app, Sanic):
             raise RuntimeError("app is not a valid Sanic.app.Sanic app instance")
 
         # noinspection PyAttributeOutsideInit
-        self.request_logger = logging.getLogger('sanic-request')
+        self.request_logger = logging.getLogger("sanic-request")
 
-        logging.getLogger('sanic.access').disabled = True
+        logging.getLogger("sanic.access").disabled = True
 
-        @app.middleware('request')
+        @app.middleware("request")
         def before_request(request):
             if is_not_match_any_pattern(request.path, exclude_url_patterns):
                 request.ctx.request_info = json_logging.RequestInfo(request)
 
-        @app.middleware('response')
+        @app.middleware("response")
         def after_request(request, response):
-            if hasattr(request.ctx, 'request_info'):
+            if hasattr(request.ctx, "request_info"):
                 request_info = request.ctx.request_info
                 request_info.update_response_status(response)
-                self.request_logger.info("", extra={'request_info': request_info, 'type': 'request'})
+                self.request_logger.info(
+                    "", extra={"request_info": request_info, "type": "request"}
+                )
 
     def get_request_logger(self):
         return self.request_logger
 
 
 class SanicRequestAdapter(RequestAdapter):
-
     @staticmethod
     def get_current_request():
         raise NotImplementedError
@@ -85,6 +95,7 @@ class SanicRequestAdapter(RequestAdapter):
     @staticmethod
     def get_request_class_type():
         from sanic.request import Request
+
         return Request
 
     def get_remote_user(self, request):
@@ -118,14 +129,13 @@ class SanicRequestAdapter(RequestAdapter):
         return request.method
 
     def get_remote_ip(self, request):
-        return request.ip[0]
+        return request.ip
 
     def get_remote_port(self, request):
         return json_logging.EMPTY_VALUE
 
 
 class SanicResponseAdapter(ResponseAdapter):
-
     def get_status_code(self, response):
         return response.status
 
