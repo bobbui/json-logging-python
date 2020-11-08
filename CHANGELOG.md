@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).  
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 1.2.11 - 2020-11-07
+ - fix Sanip IP information is a str not a list #63
+ 
 ## 1.2.10 - 2020-10-15
  - re fix #61 Using root logger + flask outside of flask request context throws RuntimeError
 
