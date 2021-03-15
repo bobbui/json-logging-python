@@ -8,6 +8,7 @@ on:
 
 jobs:
   testing:
+    name: Code Quality Check
 
     runs-on: ubuntu-latest
 
@@ -40,7 +41,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.5, 3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.10]
 
     steps:
       - name: Set up Python ${{ matrix.python-version }}
