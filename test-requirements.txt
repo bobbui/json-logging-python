@@ -1,5 +1,8 @@
 wheel
-flask==1.0
+flask
 connexion[swagger-ui]
 quart
 sanic
+flake8
+pytest
+-e .
