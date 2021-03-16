@@ -7,8 +7,8 @@ on:
     branches: [ master ]
 
 jobs:
-  testing:
-    name: Code Quality Check
+  flake8:
+    name: Flake8
 
     runs-on: ubuntu-latest
 
@@ -22,26 +22,22 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r test-requirements.txt
-        pip install flake8 pytest
     - name: Flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Pytest
-      run: |
-        pytest
 
-  compatibilityCheck:
-    name: Compatibility Check
+  tests:
+    name: Tests
 
     runs-on: ubuntu-latest
 
     strategy:
-      max-parallel: 4
+      max-parallel: 3
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.10]
+        python-version: [3.6, 3.7, 3.8, 3.9, 3.10]
 
     steps:
       - name: Set up Python ${{ matrix.python-version }}
@@ -54,7 +50,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r test-requirements.txt
-          pip install pytest
       - name: Run tests
         run:  |
           pytest
