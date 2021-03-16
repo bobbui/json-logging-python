@@ -1,5 +1,5 @@
 wheel
-flask==1.0
+flask
 connexion[swagger-ui]
 quart
 sanic
