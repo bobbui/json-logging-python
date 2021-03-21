@@ -227,7 +227,7 @@ ResponseAdapter | Helper class help to extract logging-relevant information from
 FrameworkConfigurator |  Class to perform logging configuration for given framework as needed | no
 AppRequestInstrumentationConfigurator | Class to perform request instrumentation logging configuration | no
 
-Take a look at [**json_logging/base_framework.py**](blob/master/json_logging/framework_base.py), [**json_logging.flask**](tree/master/json_logging/framework/flask) and [**json_logging.sanic**](/tree/master/json_logging/framework/sanic) packages for reference implementations.
+Take a look at [**json_logging/base_framework.py**](json_logging/framework_base.py), [**json_logging.flask**](json_logging/framework/flask) and [**json_logging.sanic**](json_logging/framework/sanic) packages for reference implementations.
 
 # 6. FAQ & Troubleshooting
 1. I configured everything, but no logs are printed out?
