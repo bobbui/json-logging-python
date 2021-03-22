@@ -120,7 +120,7 @@ class RequestUtil(object):
 
         return cls._instance
 
-    def get_correlation_id(self, request=None,within_formatter=False):
+    def get_correlation_id(self, request=None, within_formatter=False):
         """
         Gets the correlation id from the header of the request. \
         It tries to search from json_logging.CORRELATION_ID_HEADERS list, one by one.\n

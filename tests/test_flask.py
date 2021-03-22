@@ -10,6 +10,7 @@ import pytest
 
 from helpers import constants
 from helpers.handler import FormattedMessageCollectorHandler
+from helpers.imports import undo_imports_from_package
 
 LOGGER_NAME = "flask-test"
 
@@ -29,7 +30,7 @@ def client_and_log_handler():
 
     # Add json_logging
     json_logging.init_flask(enable_json=True)
-    json_logging.init_request_instrument(app)
+    json_logging.init_request_instrument(app, exclude_url_patterns=["/no-request-instrumentation"])
 
     # Prepare test endpoints
     @app.route("/log/levels/debug")
@@ -67,12 +68,16 @@ def client_and_log_handler():
     def get_correlation_id():
         return {'correlation_id': json_logging.get_correlation_id()}
 
+    @app.route('/no-request-instrumentation')
+    def excluded_from_request_instrumentation():
+        return {}
+
     with app.test_client() as test_client:
         yield test_client, handler
 
     # Tear down test environment
     logger.removeHandler(handler)
-    del sys.modules["json_logging"]  # "de-import" because json_logging maintains global state
+    undo_imports_from_package("json_logging")  # Necessary because of json-logging's global state
 
 
 @pytest.mark.parametrize("level", ["debug", "info", "error"])
@@ -162,3 +167,26 @@ def test_exception_logged_with_stack_trace(client_and_log_handler):
     assert "Traceback (most recent call last):" in msg["exc_info"], "Not a stack trace"
     assert "RuntimeError" in msg["exc_info"], "Exception type not logged"
     assert len(msg["exc_info"].split("\n")) > 2, "Stacktrace doesn't have multiple lines"
+
+
+def test_request_instrumentation(client_and_log_handler):
+    api_client, _ = client_and_log_handler
+    request_logger = logging.getLogger("flask-request-logger")
+    handler = FormattedMessageCollectorHandler()
+    request_logger.addHandler(handler)
+
+    response = api_client.get("/log/levels/debug")
+
+    assert response.status_code == 200
+    assert len(handler.messages) == 1
+
+def test_excluded_from_request_instrumentation(client_and_log_handler):
+    api_client, _ = client_and_log_handler
+    request_logger = logging.getLogger("flask-request-logger")
+    handler = FormattedMessageCollectorHandler()
+    request_logger.addHandler(handler)
+
+    response = api_client.get("/no-request-instrumentation")
+
+    assert response.status_code == 200
+    assert len(handler.messages) == 0
