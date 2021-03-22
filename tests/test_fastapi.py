@@ -4,14 +4,14 @@ import logging
 import pathlib
 import re
 
-import flask
+import fastapi
+import fastapi.testclient
 import pytest
-
 from helpers import constants
 from helpers.handler import FormattedMessageCollectorHandler
 from helpers.imports import undo_imports_from_package
 
-LOGGER_NAME = "flask-test"
+LOGGER_NAME = "fastapi-test"
 
 
 @pytest.fixture
@@ -19,7 +19,7 @@ def client_and_log_handler():
     import json_logging
 
     # Init app
-    app = flask.Flask(__name__)
+    app = fastapi.FastAPI()
 
     # Init std logging
     logger = logging.getLogger(LOGGER_NAME)
@@ -28,51 +28,51 @@ def client_and_log_handler():
     logger.addHandler(handler)
 
     # Add json_logging
-    json_logging.init_flask(enable_json=True)
-    json_logging.init_request_instrument(app, exclude_url_patterns=["/no-request-instrumentation"])
+    json_logging.init_fastapi(enable_json=True)
+    json_logging.init_request_instrument(app, exclude_url_patterns=["^/no-request-instrumentation"])
 
     # Prepare test endpoints
-    @app.route("/log/levels/debug")
-    def log_debug():
+    @app.get("/log/levels/debug")
+    async def log_debug():
         logger.debug("debug message")
         return {}
 
-    @app.route("/log/levels/info")
-    def log_info():
+    @app.get("/log/levels/info")
+    async def log_info():
         logger.info("info message")
         return {}
 
-    @app.route("/log/levels/error")
-    def log_error():
+    @app.get("/log/levels/error")
+    async def log_error():
         logger.error("error message")
         return {}
 
-    @app.route("/log/extra_property")
-    def extra_property():
+    @app.get("/log/extra_property")
+    async def extra_property():
         logger.info(
             "test log statement with extra props",
             extra={"props": {"extra_property": "extra_value"}},
         )
         return {}
 
-    @app.route("/log/exception")
-    def log_exception():
+    @app.get("/log/exception")
+    async def log_exception():
         try:
             raise RuntimeError()
         except BaseException as e:
             logger.exception("Error occurred", exc_info=e)
         return {}
 
-    @app.route("/get-correlation-id")
-    def get_correlation_id():
+    @app.get("/get-correlation-id")
+    async def get_correlation_id():
         return {'correlation_id': json_logging.get_correlation_id()}
 
-    @app.route('/no-request-instrumentation')
-    def excluded_from_request_instrumentation():
+    @app.get('/no-request-instrumentation')
+    async def excluded_from_request_instrumentation():
         return {}
 
-    with app.test_client() as test_client:
-        yield test_client, handler
+    test_client = fastapi.testclient.TestClient(app)
+    yield test_client, handler
 
     # Tear down test environment
     logger.removeHandler(handler)
@@ -136,7 +136,7 @@ def test_get_correlation_id(client_and_log_handler):
     response = api_client.get("/get-correlation-id", headers={"X-Correlation-Id": "abc-def"})
 
     assert response.status_code == 200
-    assert response.json["correlation_id"] == "abc-def"
+    assert response.json()["correlation_id"] == "abc-def"
 
 
 def test_extra_property(client_and_log_handler):
@@ -171,7 +171,7 @@ def test_exception_logged_with_stack_trace(client_and_log_handler):
 def test_request_instrumentation(client_and_log_handler):
     """Test if a request log is written"""
     api_client, _ = client_and_log_handler
-    request_logger = logging.getLogger("flask-request-logger")
+    request_logger = logging.getLogger("fastapi-request-logger")
     handler = FormattedMessageCollectorHandler()
     request_logger.addHandler(handler)
 
@@ -184,7 +184,7 @@ def test_request_instrumentation(client_and_log_handler):
 def test_excluded_from_request_instrumentation(client_and_log_handler):
     """Test if endpoints can be excluded from the request log"""
     api_client, _ = client_and_log_handler
-    request_logger = logging.getLogger("flask-request-logger")
+    request_logger = logging.getLogger("fastapi-request-logger")
     handler = FormattedMessageCollectorHandler()
     request_logger.addHandler(handler)
 

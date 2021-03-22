@@ -395,3 +395,15 @@ register_framework_support('connexion', None, connexion_support.ConnexionAppRequ
 
 def init_connexion(custom_formatter=None, enable_json=False):
     __init(framework_name='connexion', custom_formatter=custom_formatter, enable_json=enable_json)
+
+
+# register FastAPI support
+import json_logging.framework.fastapi as fastapi_support
+
+register_framework_support('fastapi', app_configurator=None,
+                           app_request_instrumentation_configurator=fastapi_support.FastAPIAppRequestInstrumentationConfigurator,
+                           request_adapter_class=fastapi_support.FastAPIRequestAdapter,
+                           response_adapter_class=fastapi_support.FastAPIResponseAdapter)
+
+def init_fastapi(custom_formatter=None, enable_json=False):
+    __init(framework_name='fastapi', custom_formatter=custom_formatter, enable_json=enable_json)
