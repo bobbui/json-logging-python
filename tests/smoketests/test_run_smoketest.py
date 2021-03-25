@@ -39,9 +39,9 @@ def test_api_example(backend):
         stderr=subprocess.STDOUT,
     )
     try:
-        deadline = time.perf_counter() + 10.0
+        deadline = time.perf_counter() + 15.0
         while time.perf_counter() < deadline:
-            time.sleep(1)
+            time.sleep(3)
             session = requests.Session()
             session.trust_env = False
             os.environ['NO_PROXY'] = 'localhost'
