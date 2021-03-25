@@ -8,6 +8,7 @@ app = fastapi.FastAPI()
 
 # init the logger as usual
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 @app.get('/')
 async def home():
