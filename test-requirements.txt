@@ -3,6 +3,9 @@ flask
 connexion[swagger-ui]
 quart
 sanic
+fastapi
+uvicorn
+requests
 flake8
 pytest
 -e .

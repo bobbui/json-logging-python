@@ -1,0 +1,4 @@
+sanic
+requests
+pytest
+-e .

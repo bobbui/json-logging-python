@@ -23,7 +23,7 @@ If you're using Cloud Foundry, it might worth to check out the library [SAP/cf-p
 2. Lightweight, no dependencies, minimal configuration needed (1 LoC to get it working)
 3. Seamlessly integrate with Python native **logging** module. Support both Python 2.7.x and 3.x
 4. Auto extract **correlation-id** for distributed tracing [\[1\]](#1-what-is-correlation-idrequest-id)
-5. Support HTTP request instrumentation. Built in support for [Flask](https://github.com/pallets/flask/), [Sanic](https://github.com/channelcat/sanic), [Quart](https://gitlab.com/pgjones/quart), [Connexion](https://github.com/zalando/connexion). Extensible to support other web frameworks. PR welcome :smiley: .
+5. Support HTTP request instrumentation. Built in support for [FastAPI](https://fastapi.tiangolo.com/), [Flask](https://github.com/pallets/flask/), [Sanic](https://github.com/channelcat/sanic), [Quart](https://gitlab.com/pgjones/quart), [Connexion](https://github.com/zalando/connexion). Extensible to support other web frameworks. PR welcome :smiley: .
 6. Highly customizable: support inject arbitrary extra properties to JSON log message, override logging formatter, etc.  
 7. Production ready, has been used in production since 2017
 
@@ -52,8 +52,31 @@ logger.info("test logging statement")
 ```
 
 ## 2.2 Web application log
-### Flask
+### FastAPI
+```python
+import datetime, logging, sys, json_logging, fastapi, uvicorn
 
+app = fastapi.FastAPI()
+json_logging.init_fastapi(enable_json=True)
+json_logging.init_request_instrument(app)
+
+# init the logger as usual
+logger = logging.getLogger("test-logger")
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler(sys.stdout))
+
+@app.get('/')
+def home():
+    logger.info("test log statement")
+    logger.info("test log statement with extra props", extra={'props': {"extra_property": 'extra_value'}})
+    correlation_id = json_logging.get_correlation_id()
+    return "Hello world : " + str(datetime.datetime.now())
+
+if __name__ == "__main__":
+    uvicorn.run(app, host='0.0.0.0', port=5000)
+```
+
+### Flask
 ```python
 import datetime, logging, sys, json_logging, flask
 
@@ -102,7 +125,7 @@ async def home(request):
     return sanic.response.text("hello world")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+    app.run(host="0.0.0.0", port=5000)
 ```
 
 ### Quart
@@ -227,7 +250,7 @@ ResponseAdapter | Helper class help to extract logging-relevant information from
 FrameworkConfigurator |  Class to perform logging configuration for given framework as needed | no
 AppRequestInstrumentationConfigurator | Class to perform request instrumentation logging configuration | no
 
-Take a look at [**json_logging/base_framework.py**](blob/master/json_logging/framework_base.py), [**json_logging.flask**](tree/master/json_logging/framework/flask) and [**json_logging.sanic**](/tree/master/json_logging/framework/sanic) packages for reference implementations.
+Take a look at [**json_logging/base_framework.py**](json_logging/framework_base.py), [**json_logging.flask**](json_logging/framework/flask) and [**json_logging.sanic**](json_logging/framework/sanic) packages for reference implementations.
 
 # 6. FAQ & Troubleshooting
 1. I configured everything, but no logs are printed out?
