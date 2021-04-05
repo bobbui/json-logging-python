@@ -31,6 +31,10 @@ _logger = get_library_logger(__name__)
 _request_util = None
 _default_formatter = None
 
+def request_util():
+    if not _request_util:
+        raise RuntimeError("JSON logging support has not been initialized yet. Look at `init_xxxx` functions")
+    return _request_util
 
 def get_correlation_id(request=None):
     """
