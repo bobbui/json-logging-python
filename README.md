@@ -211,8 +211,10 @@ json_logging.config_root_logger()
 ```
 
 ## 2.6 Custom log formatter
-Customer JSON log formatter can be passed to init method. see example for more detail: 
-https://github.com/thangbn/json-logging-python/blob/master/example/custom_log_format.py
+Customer JSON log formatter can be passed to init method. see examples for more detail: [non web](https://github.com/thangbn/json-logging-python/blob/master/example/custom_log_format.py), 
+[web](https://github.com/thangbn/json-logging-python/blob/master/example/custom_log_format_request.py)
+
+
 
 ## 2.7 Exclude certain URl from request instrumentation
 Certain URL can be excluded from request instrumentation by specifying a list of regex into **init_request_instrument** method like below:
