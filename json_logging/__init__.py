@@ -202,7 +202,7 @@ def init_request_instrument(app=None, custom_formatter=None, exclude_url_pattern
 
     :param app: current web application instance
     :param custom_formatter: formatter to override default JSONRequestLogFormatter.
-    :param request_response_data_extractor_class: requestinfo to override default json_logging.RequestInfo.
+    :param request_response_data_extractor_class: request_response_data_extractor_class to override default json_logging.RequestResponseDataExtractor.
     """
 
     if _current_framework is None or _current_framework == '-':
