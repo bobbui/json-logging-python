@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).  
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 1.4.0rc - 2021-04-09
+ - add capability to customize extraction of request, response info #68
+
 ## 1.3.0 - 2021-03-25
  - add fastapi support #65
 

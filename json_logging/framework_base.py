@@ -189,11 +189,13 @@ class AppRequestInstrumentationConfigurator:
             cls._instance.request_logger = None
         return cls._instance
 
-    def config(self, app, exclude_url_patterns=None):
+    def config(self, app, request_response_data_extractor_class, exclude_url_patterns=[]):
         """
         configuration logic
 
-        :param app:
+        :param app: web application object instance
+        :param request_response_data_extractor_class: request info class
+        :param exclude_url_patterns: list of URL regex pattern to be excluded from request logging
         """
         raise NotImplementedError
 

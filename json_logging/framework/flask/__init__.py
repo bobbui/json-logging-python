@@ -26,7 +26,7 @@ if is_flask_present():
 
 
 class FlaskAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfigurator):
-    def config(self, app, exclude_url_patterns=[]):
+    def config(self, app, request_response_data_extractor_class, exclude_url_patterns=[]):
         if not is_flask_present():
             raise RuntimeError("flask is not available in system runtime")
         from flask.app import Flask
@@ -47,7 +47,7 @@ class FlaskAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
         @app.before_request
         def before_request():
             if is_not_match_any_pattern(_current_request.path, exclude_url_patterns):
-                g.request_info = json_logging.RequestInfo(_current_request)
+                g.request_info = request_response_data_extractor_class(_current_request)
 
         @app.after_request
         def after_request(response):

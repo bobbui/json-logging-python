@@ -15,6 +15,8 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
+_request_config_class = None
+
 
 class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp, exclude_url_patterns=tuple()) -> None:
@@ -29,7 +31,7 @@ class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
         if not log_request:
             return await call_next(request)
 
-        request_info = json_logging.RequestInfo(request)
+        request_info = _request_config_class(request)
         response = await call_next(request)
         request_info.update_response_status(response)
         self.request_logger.info(
@@ -39,9 +41,12 @@ class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
 
 
 class FastAPIAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfigurator):
-    def config(self, app, exclude_url_patterns=tuple()):
+    def config(self, app, request_response_data_extractor_class, exclude_url_patterns=[]):
         if not isinstance(app, fastapi.FastAPI):
             raise RuntimeError("app is not a valid fastapi.FastAPI instance")
+
+        global _request_config_class
+        _request_config_class = request_response_data_extractor_class
 
         # Disable standard logging
         logging.getLogger('uvicorn.access').disabled = True

@@ -98,6 +98,46 @@ def init_non_web(*args, **kw):
     __init(*args, **kw)
 
 
+class RequestResponseDataExtractorBase(dict):
+    """
+        class that keep HTTP request information for request instrumentation logging
+    """
+
+    def __init__(self, request, **kwargs):
+        super(RequestResponseDataExtractorBase, self).__init__(**kwargs)
+
+    def update_response_status(self, response):
+        pass
+
+
+class RequestResponseDataExtractor(RequestResponseDataExtractorBase):
+    """
+        default implementation
+    """
+
+    def __init__(self, request, **kwargs):
+        super(RequestResponseDataExtractor, self).__init__(request, **kwargs)
+        utcnow = datetime.utcnow()
+        self.request_start = utcnow
+        self.request = request
+        self.request_received_at = util.iso_time_format(utcnow)
+
+    # noinspection PyAttributeOutsideInit
+    def update_response_status(self, response):
+        """
+        update response information into this object, must be called before invoke request logging statement
+        :param response:
+        """
+        response_adapter = _request_util.response_adapter
+        utcnow = datetime.utcnow()
+        time_delta = utcnow - self.request_start
+        self.response_time_ms = int(time_delta.total_seconds()) * 1000 + int(time_delta.microseconds / 1000)
+        self.response_status = response_adapter.get_status_code(response)
+        self.response_size_b = response_adapter.get_response_size(response)
+        self.response_content_type = response_adapter.get_content_type(response)
+        self.response_sent_at = util.iso_time_format(utcnow)
+
+
 def __init(framework_name=None, custom_formatter=None, enable_json=False):
     """
     Initialize JSON logging support, if no **framework_name** passed, logging will be initialized in non-web context.
@@ -153,7 +193,8 @@ def __init(framework_name=None, custom_formatter=None, enable_json=False):
     util.update_formatter_for_loggers(existing_loggers, _default_formatter)
 
 
-def init_request_instrument(app=None, custom_formatter=None, exclude_url_patterns=[]):
+def init_request_instrument(app=None, custom_formatter=None, exclude_url_patterns=[],
+                            request_response_data_extractor_class=RequestResponseDataExtractor):
     """
     Configure the request instrumentation logging configuration for given web app. Must be called after init method
 
@@ -161,6 +202,7 @@ def init_request_instrument(app=None, custom_formatter=None, exclude_url_pattern
 
     :param app: current web application instance
     :param custom_formatter: formatter to override default JSONRequestLogFormatter.
+    :param request_response_data_extractor_class: requestinfo to override default json_logging.RequestInfo.
     """
 
     if _current_framework is None or _current_framework == '-':
@@ -170,8 +212,11 @@ def init_request_instrument(app=None, custom_formatter=None, exclude_url_pattern
         if not issubclass(custom_formatter, logging.Formatter):
             raise ValueError('custom_formatter is not subclass of logging.Formatter', custom_formatter)
 
+    if not issubclass(request_response_data_extractor_class, RequestResponseDataExtractorBase):
+        raise ValueError('request_response_data_extractor_class is not subclass of json_logging.RequestInfoBase', custom_formatter)
+
     configurator = _current_framework['app_request_instrumentation_configurator']()
-    configurator.config(app, exclude_url_patterns=exclude_url_patterns)
+    configurator.config(app, request_response_data_extractor_class, exclude_url_patterns=exclude_url_patterns)
 
     formatter = custom_formatter if custom_formatter else JSONRequestLogFormatter
     request_logger = configurator.request_logger
@@ -182,8 +227,6 @@ def init_request_instrument(app=None, custom_formatter=None, exclude_url_pattern
 
 
 def get_request_logger():
-    global _request_logger
-
     if _current_framework is None or _current_framework == '-':
         raise RuntimeError(
             "request_logger is only available if json_logging is inited with a web app, "
@@ -194,34 +237,6 @@ def get_request_logger():
         raise RuntimeError("please init request instrument first, call init_request_instrument(app) to do that")
 
     return instance.request_logger
-
-
-class RequestInfo(dict):
-    """
-        class that keep HTTP request information for request instrumentation logging
-    """
-
-    def __init__(self, request, **kwargs):
-        super(RequestInfo, self).__init__(**kwargs)
-        utcnow = datetime.utcnow()
-        self.request_start = utcnow
-        self.request = request
-        self.request_received_at = util.iso_time_format(utcnow)
-
-    # noinspection PyAttributeOutsideInit
-    def update_response_status(self, response):
-        """
-        update response information into this object, must be called before invoke request logging statement
-        :param response:
-        """
-        response_adapter = _request_util.response_adapter
-        utcnow = datetime.utcnow()
-        time_delta = utcnow - self.request_start
-        self.response_time_ms = int(time_delta.total_seconds()) * 1000 + int(time_delta.microseconds / 1000)
-        self.response_status = response_adapter.get_status_code(response)
-        self.response_size_b = response_adapter.get_response_size(response)
-        self.response_content_type = response_adapter.get_content_type(response)
-        self.response_sent_at = util.iso_time_format(utcnow)
 
 
 class BaseJSONFormatter(logging.Formatter):
@@ -405,6 +420,7 @@ if fastapi_support.is_fastapi_present():
                                app_request_instrumentation_configurator=fastapi_support.FastAPIAppRequestInstrumentationConfigurator,
                                request_adapter_class=fastapi_support.FastAPIRequestAdapter,
                                response_adapter_class=fastapi_support.FastAPIResponseAdapter)
+
 
 def init_fastapi(custom_formatter=None, enable_json=False):
     __init(framework_name='fastapi', custom_formatter=custom_formatter, enable_json=enable_json)

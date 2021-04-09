@@ -50,7 +50,7 @@ class SanicAppConfigurator(FrameworkConfigurator):
 
 
 class SanicAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfigurator):
-    def config(self, app, exclude_url_patterns=[]):
+    def config(self, app, request_response_data_extractor_class, exclude_url_patterns=[]):
         if not is_sanic_present():
             raise RuntimeError("Sanic is not available in system runtime")
         # noinspection PyPackageRequirements
@@ -67,7 +67,7 @@ class SanicAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
         @app.middleware("request")
         def before_request(request):
             if is_not_match_any_pattern(request.path, exclude_url_patterns):
-                request.ctx.request_info = json_logging.RequestInfo(request)
+                request.ctx.request_info = request_response_data_extractor_class(request)
 
         @app.middleware("response")
         def after_request(request, response):
@@ -77,9 +77,6 @@ class SanicAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
                 self.request_logger.info(
                     "", extra={"request_info": request_info, "type": "request"}
                 )
-
-    def get_request_logger(self):
-        return self.request_logger
 
 
 class SanicRequestAdapter(RequestAdapter):

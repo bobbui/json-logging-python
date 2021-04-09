@@ -14,6 +14,7 @@ class CustomRequestJSONLog(json_logging.JSONLogWebFormatter):
 
     def format(self, record):
         json_customized_log_object = ({
+            "type": "request",
             "customized_prop": "customized value",
             "correlation_id": json_logging.get_correlation_id(),
         })

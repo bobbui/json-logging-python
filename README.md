@@ -214,6 +214,7 @@ json_logging.config_root_logger()
 Customer JSON log formatter can be passed to init method. see examples for more detail: [non web](https://github.com/thangbn/json-logging-python/blob/master/example/custom_log_format.py), 
 [web](https://github.com/thangbn/json-logging-python/blob/master/example/custom_log_format_request.py)
 
+Custom extraction of request and response can be done by subclass **json_logging.RequestResponseDataExtractionBase**
 
 
 ## 2.7 Exclude certain URl from request instrumentation
