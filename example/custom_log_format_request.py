@@ -7,24 +7,41 @@ import flask
 import json_logging
 
 
-class CustomRequestJSONLog(json_logging.JSONLogWebFormatter):
+class CustomRequestJSONLog(json_logging.JSONRequestLogFormatter):
     """
     Customized logger
     """
 
-    def format(self, record):
-        json_customized_log_object = ({
-            "type": "request",
+    def _format_log_object(self, record, request_util):
+        # request and response object can be extracted from record like this
+        request = record.request_response_data._request
+        response = record.request_response_data._response
+
+        json_log_object = super(CustomRequestJSONLog, self)._format_log_object(record, request_util)
+        json_log_object.update({
             "customized_prop": "customized value",
-            "correlation_id": json_logging.get_correlation_id(),
         })
-        return json.dumps(json_customized_log_object)
+        return json_log_object
+
+
+class CustomDefaultRequestResponseDTO(json_logging.DefaultRequestResponseDTO):
+    """
+        custom implementation
+    """
+
+    def __init__(self, request, **kwargs):
+        super(CustomDefaultRequestResponseDTO, self).__init__(request, **kwargs)
+
+    def on_request_complete(self, response):
+        super(CustomDefaultRequestResponseDTO, self).on_request_complete(response)
+        self.status = response.status
 
 
 app = flask.Flask(__name__)
 json_logging.init_flask(enable_json=True)
 json_logging.init_request_instrument(app, exclude_url_patterns=[r'/exclude_from_request_instrumentation'],
-                                     custom_formatter=CustomRequestJSONLog)
+                                     custom_formatter=CustomRequestJSONLog,
+                                     request_response_data_extractor_class=CustomDefaultRequestResponseDTO)
 
 # init the logger as usual
 logger = logging.getLogger("test logger")

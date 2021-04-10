@@ -31,11 +31,11 @@ class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
         if not log_request:
             return await call_next(request)
 
-        request_info = _request_config_class(request)
+        request_response_data = _request_config_class(request)
         response = await call_next(request)
-        request_info.update_response_status(response)
+        request_response_data.on_request_complete(response)
         self.request_logger.info(
-            "", extra={"request_info": request_info, "type": "request"}
+            "", extra={"request_response_data": request_response_data, "type": "request"}
         )
         return response
 

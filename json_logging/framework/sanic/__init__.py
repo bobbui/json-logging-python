@@ -67,15 +67,15 @@ class SanicAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
         @app.middleware("request")
         def before_request(request):
             if is_not_match_any_pattern(request.path, exclude_url_patterns):
-                request.ctx.request_info = request_response_data_extractor_class(request)
+                request.ctx.request_response_data = request_response_data_extractor_class(request)
 
         @app.middleware("response")
         def after_request(request, response):
-            if hasattr(request.ctx, "request_info"):
-                request_info = request.ctx.request_info
-                request_info.update_response_status(response)
+            if hasattr(request.ctx, "request_response_data"):
+                request_response_data = request.ctx.request_response_data
+                request_response_data.on_request_complete(response)
                 self.request_logger.info(
-                    "", extra={"request_info": request_info, "type": "request"}
+                    "", extra={"request_response_data": request_response_data, "type": "request"}
                 )
 
 

@@ -98,44 +98,46 @@ def init_non_web(*args, **kw):
     __init(*args, **kw)
 
 
-class RequestResponseDataExtractorBase(dict):
+class RequestResponseDTOBase(dict):
     """
-        class that keep HTTP request information for request instrumentation logging
+        Data transfer object for HTTP request & response information for request instrumentation logging
+        Any key that is stored in this dict will be appended to final JSON log object
     """
 
     def __init__(self, request, **kwargs):
-        super(RequestResponseDataExtractorBase, self).__init__(**kwargs)
+        """
+        invoked when request start, where to extract any necessary information from the request object
+        :param request: request object
+        """
+        super(RequestResponseDTOBase, self).__init__(**kwargs)
+        self._request = request
 
-    def update_response_status(self, response):
-        pass
+    def on_request_complete(self, response):
+        """
+        invoked when request complete, update response information into this object, must be called before invoke request logging statement
+        :param response: response object
+        """
+        self._response = response
 
 
-class RequestResponseDataExtractor(RequestResponseDataExtractorBase):
+class DefaultRequestResponseDTO(RequestResponseDTOBase):
     """
         default implementation
     """
 
     def __init__(self, request, **kwargs):
-        super(RequestResponseDataExtractor, self).__init__(request, **kwargs)
+        super(DefaultRequestResponseDTO, self).__init__(request, **kwargs)
         utcnow = datetime.utcnow()
-        self.request_start = utcnow
-        self.request = request
-        self.request_received_at = util.iso_time_format(utcnow)
+        self._request_start = utcnow
+        self["request_received_at"] = util.iso_time_format(utcnow)
 
     # noinspection PyAttributeOutsideInit
-    def update_response_status(self, response):
-        """
-        update response information into this object, must be called before invoke request logging statement
-        :param response:
-        """
-        response_adapter = _request_util.response_adapter
+    def on_request_complete(self, response):
+        super(DefaultRequestResponseDTO, self).on_request_complete(response)
         utcnow = datetime.utcnow()
-        time_delta = utcnow - self.request_start
-        self.response_time_ms = int(time_delta.total_seconds()) * 1000 + int(time_delta.microseconds / 1000)
-        self.response_status = response_adapter.get_status_code(response)
-        self.response_size_b = response_adapter.get_response_size(response)
-        self.response_content_type = response_adapter.get_content_type(response)
-        self.response_sent_at = util.iso_time_format(utcnow)
+        time_delta = utcnow - self._request_start
+        self["response_time_ms"] = int(time_delta.total_seconds()) * 1000 + int(time_delta.microseconds / 1000)
+        self["response_sent_at"] = util.iso_time_format(utcnow)
 
 
 def __init(framework_name=None, custom_formatter=None, enable_json=False):
@@ -194,7 +196,7 @@ def __init(framework_name=None, custom_formatter=None, enable_json=False):
 
 
 def init_request_instrument(app=None, custom_formatter=None, exclude_url_patterns=[],
-                            request_response_data_extractor_class=RequestResponseDataExtractor):
+                            request_response_data_extractor_class=DefaultRequestResponseDTO):
     """
     Configure the request instrumentation logging configuration for given web app. Must be called after init method
 
@@ -212,8 +214,9 @@ def init_request_instrument(app=None, custom_formatter=None, exclude_url_pattern
         if not issubclass(custom_formatter, logging.Formatter):
             raise ValueError('custom_formatter is not subclass of logging.Formatter', custom_formatter)
 
-    if not issubclass(request_response_data_extractor_class, RequestResponseDataExtractorBase):
-        raise ValueError('request_response_data_extractor_class is not subclass of json_logging.RequestInfoBase', custom_formatter)
+    if not issubclass(request_response_data_extractor_class, RequestResponseDTOBase):
+        raise ValueError('request_response_data_extractor_class is not subclass of json_logging.RequestInfoBase',
+                         custom_formatter)
 
     configurator = _current_framework['app_request_instrumentation_configurator']()
     configurator.config(app, request_response_data_extractor_class, exclude_url_patterns=exclude_url_patterns)
@@ -275,10 +278,13 @@ class JSONRequestLogFormatter(BaseJSONFormatter):
 
     def _format_log_object(self, record, request_util):
         json_log_object = super(JSONRequestLogFormatter, self)._format_log_object(record, request_util)
-        request = record.request_info.request
         request_adapter = request_util.request_adapter
+        response_adapter = _request_util.response_adapter
+        request = record.request_response_data._request
+        response = record.request_response_data._response
 
         length = request_adapter.get_content_length(request)
+
         json_log_object.update({
             "type": "request",
             "correlation_id": request_util.get_correlation_id(request),
@@ -292,13 +298,13 @@ class JSONRequestLogFormatter(BaseJSONFormatter):
             "request_size_b": util.parse_int(length, -1),
             "remote_host": request_adapter.get_remote_ip(request),
             "remote_port": request_adapter.get_remote_port(request),
-            "request_received_at": record.request_info.request_received_at,
-            "response_time_ms": record.request_info.response_time_ms,
-            "response_status": record.request_info.response_status,
-            "response_size_b": record.request_info.response_size_b,
-            "response_content_type": record.request_info.response_content_type,
-            "response_sent_at": record.request_info.response_sent_at
+            "response_status": response_adapter.get_status_code(response),
+            "response_size_b": response_adapter.get_response_size(response),
+            "response_content_type": response_adapter.get_content_type(response),
         })
+
+        json_log_object.update(record.request_response_data)
+
         return json_log_object
 
 

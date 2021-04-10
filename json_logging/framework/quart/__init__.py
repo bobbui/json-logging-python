@@ -51,15 +51,15 @@ class QuartAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
         @app.before_request
         def before_request():
             if is_not_match_any_pattern(_current_request.path, exclude_url_patterns):
-                g.request_info = request_response_data_extractor_class(_current_request)
+                g.request_response_data = request_response_data_extractor_class(_current_request)
 
         @app.after_request
         def after_request(response):
-            if hasattr(g, 'request_info'):
-                request_info = g.request_info
-                request_info.update_response_status(response)
+            if hasattr(g, 'request_response_data'):
+                request_response_data = g.request_response_data
+                request_response_data.on_request_complete(response)
                 # TODO:handle to print out request instrumentation in non-JSON mode
-                self.request_logger.info("", extra={'request_info': request_info})
+                self.request_logger.info("", extra={'request_response_data': request_response_data})
             return response
 
 
