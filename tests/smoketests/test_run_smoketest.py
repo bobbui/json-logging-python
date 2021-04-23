@@ -26,7 +26,7 @@ def collect_backends():
         yield preset_backend
     else:
         for folder in Path(__file__).parent.iterdir():
-            if folder.is_dir():
+            if folder.is_dir() and folder.name != '__pycache__':
                 yield str(folder.name)
 
 

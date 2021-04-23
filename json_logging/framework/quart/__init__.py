@@ -12,7 +12,7 @@ from json_logging.util import is_not_match_any_pattern
 def is_quart_present():
     # noinspection PyPep8,PyBroadException
     try:
-        import quart
+        from quart import Quart
         return True
     except:
         return False
