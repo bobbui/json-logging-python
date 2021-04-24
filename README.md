@@ -1,8 +1,16 @@
 # json-logging
-Python logging library to emit JSON log that can be easily indexed and searchable by logging infrastructure such as [ELK](https://www.elastic.co/elk-stack), [EFK](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes), AWS Cloudwatch, GCP Stackdriver
 
-If you're using Cloud Foundry, it might worth to check out the library [SAP/cf-python-logging-support](https://github.com/SAP/cf-python-logging-support) which I'm also original author.
+Python logging library to emit JSON log that can be easily indexed and searchable by logging infrastructure such
+as [ELK](https://www.elastic.co/elk-stack)
+, [EFK](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes)
+, AWS Cloudwatch, GCP Stackdriver
+
+If you're using Cloud Foundry, it might worth to check out the
+library [SAP/cf-python-logging-support](https://github.com/SAP/cf-python-logging-support) which I'm also original
+author.
+
 # Content
+
 1. [Features](#1-features)
 2. [Usage](#2-usage)   
    2.1 [Non-web application log](#21-non-web-application-log)  
@@ -12,32 +20,42 @@ If you're using Cloud Foundry, it might worth to check out the library [SAP/cf-p
    2.5 [Root logger](#25-root-logger)  
    2.6 [Custom log formatter](#26-custom-log-formatter)  
    2.7 [Exclude certain URL from request instrumentation](#27-exclude-certain-url-from-request-instrumentation)
-3. [Configuration](#3-configuration)  
+3. [Configuration](#3-configuration)
 4. [Python References](#4-python-references)
 5. [Framework support plugin development](#5-framework-support-plugin-development)
 6. [FAQ & Troubleshooting](#6-faq--troubleshooting)
 7. [References](#7-references)
 
 # 1. Features
+
 1. Emit JSON logs ([format detail](#0-full-logging-format-references))
 2. Lightweight, no dependencies, minimal configuration needed (1 LoC to get it working)
 3. Seamlessly integrate with Python native **logging** module. Support both Python 2.7.x and 3.x
 4. Auto extract **correlation-id** for distributed tracing [\[1\]](#1-what-is-correlation-idrequest-id)
-5. Support HTTP request instrumentation. Built in support for [FastAPI](https://fastapi.tiangolo.com/), [Flask](https://github.com/pallets/flask/), [Sanic](https://github.com/channelcat/sanic), [Quart](https://gitlab.com/pgjones/quart), [Connexion](https://github.com/zalando/connexion). Extensible to support other web frameworks. PR welcome :smiley: .
-6. Highly customizable: support inject arbitrary extra properties to JSON log message, override logging formatter, etc.  
+5. Support HTTP request instrumentation. Built in support for [FastAPI](https://fastapi.tiangolo.com/)
+   , [Flask](https://github.com/pallets/flask/), [Sanic](https://github.com/channelcat/sanic)
+   , [Quart](https://gitlab.com/pgjones/quart), [Connexion](https://github.com/zalando/connexion). Extensible to support
+   other web frameworks. PR welcome :smiley: .
+6. Highly customizable: support inject arbitrary extra properties to JSON log message, override logging formatter, etc.
 7. Production ready, has been used in production since 2017
 
 # 2. Usage
+
 Install by running this command:
-   > pip install json-logging  
+> pip install json-logging
 
-By default log will be emitted in normal format to ease the local development. To enable it on production set enable_json in init_\<framework name\>(enable_json=True) method call (set **json_logging.ENABLE_JSON_LOGGING** or **ENABLE_JSON_LOGGING environment variable** to true is not recommended and will be deprecated in future versions).
+By default log will be emitted in normal format to ease the local development. To enable it on production set
+enable_json in init_\<framework name\>(enable_json=True) method call (set **json_logging.ENABLE_JSON_LOGGING** or **
+ENABLE_JSON_LOGGING environment variable** to true is not recommended and will be deprecated in future versions).
 
-To configure, call **json_logging.init_< framework_name >()**. Once configured library will try to configure all loggers (existing and newly created) to emit log in JSON format.   
+To configure, call **json_logging.init_< framework_name >()**. Once configured library will try to configure all
+loggers (existing and newly created) to emit log in JSON format.   
 See following use cases for more detail.
 
 ## 2.1 Non-web application log
+
 This mode don't support **correlation-id**.
+
 ```python
 import json_logging, logging, sys
 
@@ -52,7 +70,9 @@ logger.info("test logging statement")
 ```
 
 ## 2.2 Web application log
+
 ### FastAPI
+
 ```python
 import datetime, logging, sys, json_logging, fastapi, uvicorn
 
@@ -65,6 +85,7 @@ logger = logging.getLogger("test-logger")
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
+
 @app.get('/')
 def home():
     logger.info("test log statement")
@@ -72,11 +93,13 @@ def home():
     correlation_id = json_logging.get_correlation_id()
     return "Hello world : " + str(datetime.datetime.now())
 
+
 if __name__ == "__main__":
     uvicorn.run(app, host='0.0.0.0', port=5000)
 ```
 
 ### Flask
+
 ```python
 import datetime, logging, sys, json_logging, flask
 
@@ -89,6 +112,7 @@ logger = logging.getLogger("test-logger")
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
+
 @app.route('/')
 def home():
     logger.info("test log statement")
@@ -96,11 +120,13 @@ def home():
     correlation_id = json_logging.get_correlation_id()
     return "Hello world : " + str(datetime.datetime.now())
 
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(5000), use_reloader=False)
 ```
 
 ### Sanic
+
 ```python
 import logging, sys, json_logging, sanic
 
@@ -113,6 +139,7 @@ logger = logging.getLogger("sanic-integration-test-app")
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
+
 @app.route("/")
 async def home(request):
     logger.info("test log statement")
@@ -123,6 +150,7 @@ async def home(request):
     correlation_id_without_request_obj = json_logging.get_correlation_id()
 
     return sanic.response.text("hello world")
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
@@ -142,12 +170,14 @@ logger = logging.getLogger("test logger")
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
+
 @app.route('/')
 async def home():
     logger.info("test log statement")
     logger.info("test log statement with extra props", extra={'props': {"extra_property": 'extra_value'}})
     correlation_id = json_logging.get_correlation_id()
     return "Hello world"
+
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
@@ -175,7 +205,9 @@ if __name__ == "__main__":
 ```
 
 ### Custom handler for request instrumentation
-you need to explicitly set JSONRequestLogFormatter as default formatter for any extra handler that is added to request_logger
+
+you need to explicitly set JSONRequestLogFormatter as default formatter for any extra handler that is added to
+request_logger
 
 ```python
 request_logger = json_logging.get_request_logger()
@@ -185,6 +217,7 @@ request_logger.addHandler(handler)
 ```
 
 ## 2.3 Get current correlation-id
+
 Current request correlation-id can be retrieved and pass to downstream services call as follow:
 
 ```python
@@ -192,42 +225,74 @@ Current request correlation-id can be retrieved and pass to downstream services 
 correlation_id = json_logging.get_correlation_id(request=request)
 # this will be slower, but will work in context where you couldn't get a reference of request object
 correlation_id_without_request_obj = json_logging.get_correlation_id()
-# use correlation id for downstream service calls here
+# use correlation id for upstream service calls here
 ```
 
-In request context, if one is not present, a new one might be generated depends on CREATE_CORRELATION_ID_IF_NOT_EXISTS setting value.
+In request context, if one is not present, a new one might be generated depends on CREATE_CORRELATION_ID_IF_NOT_EXISTS
+setting value.
+
+## 2.3 Get current correlation-id
+
+Current request correlation-id can be retrieved and pass to downstream services call as follow:
+
+```python
+# this will be faster
+correlation_id = json_logging.get_correlation_id(request=request)
+# this will be slower, but will work in context where you couldn't get a reference of request object
+correlation_id_without_request_obj = json_logging.get_correlation_id()
+# use correlation id for upstream service calls here
+```
 
 ## 2.4 Log extra properties
+
 Extra property can be added to logging statement as follow:
+
 ```python
-logger.info("test log statement", extra = {'props' : {'extra_property' : 'extra_value'}})
+logger.info("test log statement", extra={'props': {'extra_property': 'extra_value'}})
 ```
+
+### Forced overriding correlation-id
+A custom correlation id can be passed to logging statement as follow:
+```
+logger.info("test log statement", extra={'props': {'correlation_id': 'custom_correlation_id'}})
+```
+
 ## 2.5 Root logger
-If you want to use root logger as main logger to emit log. Made sure you call **config_root_logger()** after initialize root logger (by logging.basicConfig() or logging.getLogger()) [\[2\]](#2-python-logging-propagate)
+
+If you want to use root logger as main logger to emit log. Made sure you call **config_root_logger()** after initialize
+root logger (by logging.basicConfig() or logging.getLogger()) [\[2\]](#2-python-logging-propagate)
+
 ```python
 logging.basicConfig()
-json_logging.init_<framework name >()
+json_logging.init_ < framework
+name > ()
 json_logging.config_root_logger()
 ```
 
 ## 2.6 Custom log formatter
-Customer JSON log formatter can be passed to init method. see examples for more detail: [non web](https://github.com/thangbn/json-logging-python/blob/master/example/custom_log_format.py), 
+
+Customer JSON log formatter can be passed to init method. see examples for more
+detail: [non web](https://github.com/thangbn/json-logging-python/blob/master/example/custom_log_format.py),
 [web](https://github.com/thangbn/json-logging-python/blob/master/example/custom_log_format_request.py)
 
-
 ## 2.7 Exclude certain URl from request instrumentation
-Certain URL can be excluded from request instrumentation by specifying a list of regex into **init_request_instrument** method like below:
+
+Certain URL can be excluded from request instrumentation by specifying a list of regex into **init_request_instrument**
+method like below:
 
 ```python
 json_logging.init_request_instrument(app, exclude_url_patterns=[r'/exclude_from_request_instrumentation'])
 ```
 
 # 3. Configuration
-logging library can be configured by setting the value in json_logging, all configuration must be placed before json_logging.init method call
+
+logging library can be configured by setting the value in json_logging, all configuration must be placed before
+json_logging.init method call
 
 Name | Description | Default value
  --- | --- | ---
-ENABLE_JSON_LOGGING | **DEPRECATED** Whether to enable JSON logging mode.Can be set as an environment variable, enable when set to to either one in following list (case-insensitive) **['true', '1', 'y', 'yes']** , this have no effect on request logger | false
+ENABLE_JSON_LOGGING | **
+DEPRECATED** Whether to enable JSON logging mode.Can be set as an environment variable, enable when set to to either one in following list (case-insensitive) **['true', '1', 'y', 'yes']** , this have no effect on request logger | false
 CORRELATION_ID_HEADERS | List of HTTP headers that will be used to look for correlation-id value. HTTP headers will be searched one by one according to list order| ['X-Correlation-ID','X-Request-ID']
 EMPTY_VALUE | Default value when a logging record property is None |  '-'
 CORRELATION_ID_GENERATOR | function to generate unique correlation-id | uuid.uuid1
@@ -242,7 +307,11 @@ CREATE_CORRELATION_ID_IF_NOT_EXISTS |  Whether to generate a new correlation-id 
 TODO: update Python API docs on Github page
 
 # 5. Framework support plugin development
-To add support for a new web framework, you need to extend following classes in [**framework_base**](/blob/master/json_logging/framework_base.py) and register support using [**json_logging.register_framework_support**](https://github.com/thangbn/json-logging-python/blob/master/json_logging/__init__.py#L38) method:
+
+To add support for a new web framework, you need to extend following classes in [**
+framework_base**](/blob/master/json_logging/framework_base.py) and register support using [**
+json_logging.register_framework_support**](https://github.com/thangbn/json-logging-python/blob/master/json_logging/__init__.py#L38)
+method:
 
 Class | Description | Mandatory
 --- | --- | ---
@@ -251,9 +320,12 @@ ResponseAdapter | Helper class help to extract logging-relevant information from
 FrameworkConfigurator |  Class to perform logging configuration for given framework as needed | no
 AppRequestInstrumentationConfigurator | Class to perform request instrumentation logging configuration | no
 
-Take a look at [**json_logging/base_framework.py**](json_logging/framework_base.py), [**json_logging.flask**](json_logging/framework/flask) and [**json_logging.sanic**](json_logging/framework/sanic) packages for reference implementations.
+Take a look at [**json_logging/base_framework.py**](json_logging/framework_base.py), [**
+json_logging.flask**](json_logging/framework/flask) and [**json_logging.sanic**](json_logging/framework/sanic) packages
+for reference implementations.
 
 # 6. FAQ & Troubleshooting
+
 1. I configured everything, but no logs are printed out?
 
     - Forgot to add handlers to your logger?
@@ -262,13 +334,17 @@ Take a look at [**json_logging/base_framework.py**](json_logging/framework_base.
 2. Same log statement is printed out multiple times.
 
     - Check whether the same handler is added to both parent and child loggers [2]
-    - If you using flask, by default option **use_reloader** is set to **True** which will start 2 instances of web application. change it to False to disable this behaviour [\[3\]](#3-more-on-flask-use-reloader)
+    - If you using flask, by default option **use_reloader** is set to **True** which will start 2 instances of web
+      application. change it to False to disable this behaviour [\[3\]](#3-more-on-flask-use-reloader)
 
 # 7. References
+
 ## [0] Full logging format references
+
 2 types of logging statement will be emitted by this library:
-- Application log: normal logging statement
-e.g.:
+
+- Application log: normal logging statement e.g.:
+
 ```
 {
 	"type": "log",
@@ -288,7 +364,10 @@ e.g.:
 	"msg": "This is a message"
 }
 ```
-- Request log: request instrumentation logging statement which recorded request information such as response time, request size, etc.
+
+- Request log: request instrumentation logging statement which recorded request information such as response time,
+  request size, etc.
+
 ```
 {
 	"type": "request",
@@ -316,7 +395,9 @@ e.g.:
 	"response_sent_at": "2017-12-23T16:55:37.280Z"
 }
 ```
+
 See following tables for detail format explanation:
+
 - Common field
 
 Field | Description | Format | Example
@@ -362,10 +443,14 @@ referer | For HTTP requests, identifies the address of the webpage (i.e. the URI
 x_forwarded_for | Comma-separated list of IP addresses, the left-most being the original client, followed by proxy server addresses that forwarded the client request. | string |  192.0.2.60,10.12.9.23
 
 ## [1] What is correlation-id/request id
+
 https://stackoverflow.com/questions/25433258/what-is-the-x-request-id-http-header
+
 ## [2] Python logging propagate
+
 https://docs.python.org/3/library/logging.html#logging.Logger.propagate
 https://docs.python.org/2/library/logging.html#logging.Logger.propagate
 
 ## [3] more on flask use_reloader
+
 http://flask.pocoo.org/docs/0.12/errorhandling/#working-with-debuggers

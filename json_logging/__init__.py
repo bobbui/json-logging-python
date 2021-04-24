@@ -358,9 +358,10 @@ class JSONLogWebFormatter(JSONLogFormatter):
 
     def _format_log_object(self, record, request_util):
         json_log_object = super(JSONLogWebFormatter, self)._format_log_object(record, request_util)
-        json_log_object.update({
-            "correlation_id": request_util.get_correlation_id(within_formatter=True),
-        })
+        if "correlation_id" not in json_log_object:
+            json_log_object.update({
+                "correlation_id": request_util.get_correlation_id(within_formatter=True),
+            })
         return json_log_object
 
 

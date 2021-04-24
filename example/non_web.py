@@ -12,3 +12,4 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 
 logger.info("test log statement")
 logger.info("test log statement with extra props", extra={'props': {"extra_property": 'extra_value'}})
+logger.info("test log statement with custom correlation id", extra={'props': {'correlation_id': 'custom_correlation_id'}})
