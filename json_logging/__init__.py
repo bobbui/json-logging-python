@@ -19,7 +19,6 @@ if is_env_var_toggle("ENABLE_JSON_LOGGING"):
 ENABLE_JSON_LOGGING_DEBUG = False
 EMPTY_VALUE = '-'
 CREATE_CORRELATION_ID_IF_NOT_EXISTS = True
-JSON_SERIALIZER = lambda log: json.dumps(log, ensure_ascii=False)
 CORRELATION_ID_HEADERS = ['X-Correlation-ID', 'X-Request-ID']
 COMPONENT_ID = EMPTY_VALUE
 COMPONENT_NAME = EMPTY_VALUE
@@ -259,7 +258,7 @@ class BaseJSONFormatter(logging.Formatter):
 
     def format(self, record):
         log_object = self._format_log_object(record, request_util=_request_util)
-        return JSON_SERIALIZER(log_object)
+        return self._serialize(log_object)
 
     def _format_log_object(self, record, request_util):
         utcnow = datetime.utcnow()
@@ -269,6 +268,10 @@ class BaseJSONFormatter(logging.Formatter):
         }
         base_obj.update(self.base_object_common)
         return base_obj
+
+    @staticmethod
+    def _serialize(log_object):
+        return json.dumps(log_object, ensure_ascii=False)
 
 
 class JSONRequestLogFormatter(BaseJSONFormatter):
