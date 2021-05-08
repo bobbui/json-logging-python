@@ -34,7 +34,7 @@ def collect_backends():
 def test_api_example(backend):
     """For each of the examples start the API and see if the root endpoint is reachable"""
     api_process = subprocess.Popen(
-        [sys.executable, Path(__file__).parent / backend / "api.py"],
+        [sys.executable, str(os.path.join(Path(__file__).parent, backend, "api.py"))],
         stdout=sys.stdout,
         stderr=subprocess.STDOUT,
     )
