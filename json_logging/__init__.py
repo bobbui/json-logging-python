@@ -31,8 +31,9 @@ RECORD_ATTR_SKIP_LIST = [
     'asctime', 'created', 'exc_info', 'exc_text', 'filename', 'args',
     'funcName', 'id', 'levelname', 'levelno', 'lineno', 'module', 'msg',
     'msecs', 'msecs', 'message', 'name', 'pathname', 'process',
-    'processName', 'props', 'relativeCreated', 'thread', 'threadName',
-    'extra',
+    'processName', 'relativeCreated', 'thread', 'threadName', 'extra',
+    # Also exclude legacy 'props'
+    'props',
 ]
 
 if sys.version_info < (3, 0):
