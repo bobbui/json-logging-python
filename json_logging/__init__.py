@@ -25,6 +25,22 @@ COMPONENT_ID = EMPTY_VALUE
 COMPONENT_NAME = EMPTY_VALUE
 COMPONENT_INSTANCE_INDEX = 0
 
+# The list contains all the attributes listed in
+# http://docs.python.org/library/logging.html#logrecord-attributes
+RECORD_ATTR_SKIP_LIST = [
+    'asctime', 'created', 'exc_info', 'exc_text', 'filename', 'args',
+    'funcName', 'id', 'levelname', 'levelno', 'lineno', 'module', 'msg',
+    'msecs', 'msecs', 'message', 'name', 'pathname', 'process',
+    'processName', 'props', 'relativeCreated', 'thread', 'threadName',
+    'extra',
+]
+
+if sys.version_info < (3, 0):
+    EASY_TYPES = (basestring, bool, dict, float, int, list, type(None))
+else:
+    RECORD_ATTR_SKIP_LIST.append('stack_info')
+    EASY_TYPES = (str, bool, dict, float, int, list, type(None))
+
 _framework_support_map = {}
 _current_framework = None
 _logger = get_library_logger(__name__)
@@ -268,7 +284,28 @@ class BaseJSONFormatter(logging.Formatter):
             "written_ts": util.epoch_nano_second(utcnow),
         }
         base_obj.update(self.base_object_common)
+        # Add extra fields
+        base_obj.update(self._get_extra_fields(record))
         return base_obj
+
+    def _get_extra_fields(self, record):
+        fields = {}
+
+        if record.args:
+            fields['msg'] = record.msg
+
+        for key, value in record.__dict__.items():
+            if key not in RECORD_ATTR_SKIP_LIST:
+                if isinstance(value, EASY_TYPES):
+                    fields[key] = value
+                else:
+                    fields[key] = repr(value)
+
+        # Always add 'props' to the root of the log, assumes props is a dict
+        if hasattr(record, 'props') and isinstance(record.props, dict):
+            fields.update(record.props)
+
+        return fields
 
 
 class JSONRequestLogFormatter(BaseJSONFormatter):
@@ -342,8 +379,6 @@ class JSONLogFormatter(BaseJSONFormatter):
             "module": record.module,
             "line_no": record.lineno,
         })
-        if hasattr(record, 'props'):
-            json_log_object.update(record.props)
 
         if record.exc_info or record.exc_text:
             json_log_object.update(self.get_exc_fields(record))
