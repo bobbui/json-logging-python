@@ -51,7 +51,15 @@ def client_and_log_handler():
     def extra_property():
         logger.info(
             "test log statement with extra props",
-            extra={"props": {"extra_property": "extra_value"}},
+            extra={"props": {"extra_property": "extra_value"}, "tags": ["app:name"], "extra_property": "extra_value2"},
+        )
+        return {}
+
+    @app.route("/log/extra_property_no_props")
+    def extra_property_no_props():
+        logger.info(
+            "test log statement with extra and no 'props' property",
+            extra={"tags": ["app:name"], "extra_property": "extra_value2"},
         )
         return {}
 
@@ -148,8 +156,23 @@ def test_extra_property(client_and_log_handler):
     assert response.status_code == 200
     assert len(handler.messages) == 1
     msg = json.loads(handler.messages[0])
-    assert set(msg.keys()) == constants.STANDARD_MSG_ATTRIBUTES.union({"extra_property"})
+    assert set(msg.keys()) == constants.STANDARD_MSG_ATTRIBUTES.union({"extra_property", "tags"})
     assert msg["extra_property"] == "extra_value"
+    assert msg["tags"] == ["app:name"]
+
+
+def test_extra_property_no_props(client_and_log_handler):
+    """Test adding an extra property to a log message"""
+    api_client, handler = client_and_log_handler
+
+    response = api_client.get("/log/extra_property_no_props")
+
+    assert response.status_code == 200
+    assert len(handler.messages) == 1
+    msg = json.loads(handler.messages[0])
+    assert set(msg.keys()) == constants.STANDARD_MSG_ATTRIBUTES.union({"extra_property", "tags"})
+    assert msg["extra_property"] == "extra_value2"
+    assert msg["tags"] == ["app:name"]
 
 
 def test_exception_logged_with_stack_trace(client_and_log_handler):

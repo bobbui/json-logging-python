@@ -245,11 +245,13 @@ correlation_id_without_request_obj = json_logging.get_correlation_id()
 
 ## 2.4 Log extra properties
 
-Extra property can be added to logging statement as follow:
+Extra property can be added to logging statement as follows:
 
 ```python
-logger.info("test log statement", extra={'props': {'extra_property': 'extra_value'}})
+logger.info("test log statement", extra={'props': {'extra_property': 'extra_value'}, 'tags': ['app:name']})
 ```
+
+_For backwards compatibility, properties added in `props` are extracted to the root and take precedence over those set directly in the root of `extra`. This is relevant only for logs formatted by `JSONLogFormatter`, other formatters never printed the `props` details._
 
 ### Forced overriding correlation-id
 A custom correlation id can be passed to logging statement as follow:
