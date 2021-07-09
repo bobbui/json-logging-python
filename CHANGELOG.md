@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).  
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## 1.4.1rc0 - 2021-04-23
+
+- fix #77 Implement extra properties from json-logging-py
+
 ## 1.4.0rc2 - 2021-04-23
 
 - allow overriding of correlation id
