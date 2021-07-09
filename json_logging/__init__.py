@@ -36,6 +36,11 @@ RECORD_ATTR_SKIP_LIST = [
     'props',
 ]
 
+try:
+    basestring
+except NameError:
+    basestring = str
+
 if sys.version_info < (3, 0):
     EASY_TYPES = (basestring, bool, dict, float, int, list, type(None))
 else:
