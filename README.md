@@ -44,12 +44,8 @@ author.
 Install by running this command:
 > pip install json-logging
 
-By default log will be emitted in normal format to ease the local development. To enable it on production set
-enable_json in init_\<framework name\>(enable_json=True) method call.
-
-To configure, call **json_logging.init_< framework_name >()**. Once configured library will try to configure all
-loggers (existing and newly created) to emit log in JSON format.   
-See following use cases for more detail.
+By default log will be emitted in normal format to ease the local development. To enable it on production set enable_json in **json_logging.init_< framework_name >()** method call.
+Once configured library will try to configure all loggers (existing and newly created) to emit log in JSON format. See following use cases for more detail.
 
 ## 2.1 Non-web application log
 
