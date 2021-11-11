@@ -261,8 +261,7 @@ root logger (by logging.basicConfig() or logging.getLogger()) [\[2\]](#2-python-
 
 ```python
 logging.basicConfig()
-json_logging.init_ < framework
-name > ()
+json_logging.init_ < framework_name > ()
 json_logging.config_root_logger()
 ```
 
