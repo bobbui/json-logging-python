@@ -4,6 +4,7 @@ import logging
 import sys
 
 import json_logging
+import json_logging.formatters
 
 
 def extra(**kw):
@@ -11,7 +12,7 @@ def extra(**kw):
     return {'extra': {'props': kw}}
 
 
-class CustomJSONLog(json_logging.JSONLogFormatter):
+class CustomJSONLog(json_logging.formatters.JSONLogFormatter):
     """
     Customized logger
     """

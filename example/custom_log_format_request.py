@@ -5,9 +5,11 @@ import sys
 import flask
 
 import json_logging
+import json_logging.dto
+import json_logging.formatters
 
 
-class CustomRequestJSONLog(json_logging.JSONRequestLogFormatter):
+class CustomRequestJSONLog(json_logging.formatters.JSONRequestLogFormatter):
     """
     Customized logger
     """
@@ -24,7 +26,7 @@ class CustomRequestJSONLog(json_logging.JSONRequestLogFormatter):
         return json_log_object
 
 
-class CustomDefaultRequestResponseDTO(json_logging.DefaultRequestResponseDTO):
+class CustomDefaultRequestResponseDTO(json_logging.dto.DefaultRequestResponseDTO):
     """
         custom implementation
     """

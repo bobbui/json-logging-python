@@ -2,6 +2,7 @@
 import logging
 
 import json_logging
+import json_logging.formatters
 import json_logging.framework
 from json_logging.framework_base import AppRequestInstrumentationConfigurator, RequestAdapter, ResponseAdapter
 
@@ -37,7 +38,7 @@ class FlaskAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
         logging.getLogger('werkzeug').disabled = True
 
         json_logging.util.update_formatter_for_loggers([logging.getLogger('werkzeug')],
-                                                       json_logging.JSONLogWebFormatter)
+                                                       json_logging.formatters.JSONLogWebFormatter)
 
         # noinspection PyAttributeOutsideInit
         self.request_logger = logging.getLogger('flask-request-logger')

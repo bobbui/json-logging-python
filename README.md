@@ -205,9 +205,11 @@ you need to explicitly set JSONRequestLogFormatter as default formatter for any 
 request_logger
 
 ```python
+import json_logging.formatters
+
 request_logger = json_logging.get_request_logger()
 handler = logging.handlers.RotatingFileHandler(filename='log_req.log', maxBytes=5000000, backupCount=10)
-handler.setFormatter(json_logging.JSONRequestLogFormatter())
+handler.setFormatter(json_logging.formatters.JSONRequestLogFormatter())
 request_logger.addHandler(handler)
 ```
 
