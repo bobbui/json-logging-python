@@ -4,7 +4,8 @@ import logging
 import json_logging
 import json_logging.formatters
 import json_logging.framework
-from json_logging.framework_base import AppRequestInstrumentationConfigurator, RequestAdapter, ResponseAdapter
+from json_logging.framework_base import BaseAppRequestInstrumentationConfigurator, BaseRequestInfoExtractor, \
+    BaseResponseInfoExtractor
 
 from json_logging.util import is_not_match_any_pattern
 
@@ -26,10 +27,11 @@ if is_flask_present():
     _flask = flask
 
 
-class FlaskAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfigurator):
-    def config(self, app, request_response_data_extractor_class, exclude_url_patterns=[]):
+class FlaskAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationConfigurator):
+    def config(self, app, request_response_dto_class, exclude_url_patterns=[]):
         if not is_flask_present():
             raise RuntimeError("flask is not available in system runtime")
+
         from flask.app import Flask
         if not isinstance(app, Flask):
             raise RuntimeError("app is not a valid flask.app.Flask app instance")
@@ -48,7 +50,7 @@ class FlaskAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
         @app.before_request
         def before_request():
             if is_not_match_any_pattern(_current_request.path, exclude_url_patterns):
-                g.request_response_data = request_response_data_extractor_class(_current_request)
+                g.request_response_data = request_response_dto_class(_current_request)
 
         @app.after_request
         def after_request(response):
@@ -59,7 +61,7 @@ class FlaskAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
             return response
 
 
-class FlaskRequestAdapter(RequestAdapter):
+class FlaskRequestInfoExtractor(BaseRequestInfoExtractor):
     @staticmethod
     def get_request_class_type():
         raise NotImplementedError
@@ -117,7 +119,7 @@ class FlaskRequestAdapter(RequestAdapter):
         return request.environ.get('REMOTE_PORT')
 
 
-class FlaskResponseAdapter(ResponseAdapter):
+class FlaskResponseInfoExtractor(BaseResponseInfoExtractor):
     def get_status_code(self, response):
         return response.status_code
 

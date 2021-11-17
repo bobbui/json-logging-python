@@ -103,19 +103,19 @@ class RequestUtil(object):
 
     def __new__(cls, *args, **kw):
         if not hasattr(cls, '_instance'):
-            request_adapter_class = kw['request_adapter_class']
-            response_adapter_class = kw['response_adapter_class']
+            request_info_extractor_class = kw['request_info_extractor_class']
+            response_info_extractor_class = kw['response_info_extractor_class']
 
-            validate_subclass(request_adapter_class, json_logging.RequestAdapter)
-            validate_subclass(response_adapter_class, json_logging.ResponseAdapter)
+            validate_subclass(request_info_extractor_class, json_logging.BaseRequestInfoExtractor)
+            validate_subclass(response_info_extractor_class, json_logging.BaseResponseInfoExtractor)
 
             cls._instance = object.__new__(cls)
 
-            cls._instance.request_adapter_class = request_adapter_class
-            cls._instance.response_adapter_class = response_adapter_class
-            cls._instance.request_adapter = request_adapter_class()
-            cls._instance.response_adapter = response_adapter_class()
-            cls._instance.is_support_global_request_object = request_adapter_class.support_global_request_object()
+            cls._instance.request_info_extractor_class = request_info_extractor_class
+            cls._instance.response_info_extractor_class = response_info_extractor_class
+            cls._instance.request_adapter = request_info_extractor_class()
+            cls._instance.response_adapter = response_info_extractor_class()
+            cls._instance.is_support_global_request_object = request_info_extractor_class.support_global_request_object()
             cls._instance.create_correlation_id_if_not_exists = json_logging.CREATE_CORRELATION_ID_IF_NOT_EXISTS
 
         return cls._instance
@@ -132,7 +132,7 @@ class RequestUtil(object):
         #
         if request is None:
             if self.is_support_global_request_object:
-                request = self.request_adapter_class.get_current_request()
+                request = self.request_info_extractor_class.get_current_request()
             else:
                 request = self.get_request_from_call_stack()
 
@@ -173,7 +173,7 @@ class RequestUtil(object):
         """
         module = inspect.getmodule(inspect.currentframe().f_back)
 
-        class_type = self.request_adapter_class.get_request_class_type()
+        class_type = self.request_info_extractor_class.get_request_class_type()
         no_of_go_up_level = 11 if within_formatter else 1
 
         # FIXME: find out the depth of logging call stack in Python 2.7

@@ -10,4 +10,5 @@ def is_fastapi_present():
 
 
 if is_fastapi_present():
-    from .implementation import FastAPIAppRequestInstrumentationConfigurator, FastAPIRequestAdapter, FastAPIResponseAdapter
+    from .implementation import FastAPIAppRequestInstrumentationConfigurator, FastAPIRequestInfoExtractor, \
+        FastAPIResponseInfoExtractor

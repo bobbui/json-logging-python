@@ -313,10 +313,10 @@ method:
 
 Class | Description | Mandatory
 --- | --- | ---
-RequestAdapter | Helper class help to extract logging-relevant information from HTTP request object | yes
-ResponseAdapter | Helper class help to extract logging-relevant information from HTTP response object | yes
-FrameworkConfigurator |  Class to perform logging configuration for given framework as needed | no
-AppRequestInstrumentationConfigurator | Class to perform request instrumentation logging configuration | no
+BaseRequestInfoExtractor | Helper class help to extract logging-relevant information from HTTP request object | yes
+BaseResponseInfoExtractor | Helper class help to extract logging-relevant information from HTTP response object | yes
+BaseFrameworkConfigurator |  Class to perform logging configuration for given framework as needed | no
+BaseAppRequestInstrumentationConfigurator | Class to perform request instrumentation logging configuration | no
 
 Take a look at [**json_logging/base_framework.py**](json_logging/framework_base.py), [**
 json_logging.flask**](json_logging/framework/flask) and [**json_logging.sanic**](json_logging/framework/sanic) packages

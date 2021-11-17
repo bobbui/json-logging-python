@@ -5,7 +5,7 @@ from datetime import datetime
 
 import json_logging
 
-# The list contains all the attributes listed in
+# The list contains all the attributes listed in that will not be overwritten by custom extra props
 # http://docs.python.org/library/logging.html#logrecord-attributes
 RECORD_ATTR_SKIP_LIST = [
     'asctime', 'created', 'exc_info', 'exc_text', 'filename', 'args',
@@ -23,13 +23,18 @@ except NameError:
     basestring = str
 
 if sys.version_info < (3, 0):
-    EASY_TYPES = (basestring, bool, dict, float, int, list, type(None))
+    EASY_SERIALIZABLE_TYPES = (basestring, bool, dict, float, int, list, type(None))
 else:
     RECORD_ATTR_SKIP_LIST.append('stack_info')
-    EASY_TYPES = (str, bool, dict, float, int, list, type(None))
+    EASY_SERIALIZABLE_TYPES = (str, bool, dict, float, int, list, type(None))
 
 
 def _sanitize_log_msg(record):
+    """
+    Sanitize log message to make sure we can print out properly formatted JSON string
+    :param record: log object
+    :return: sanitized log object
+    """
     return record.getMessage().replace('\n', '_').replace('\r', '_').replace('\t', '_')
 
 
@@ -49,21 +54,32 @@ class BaseJSONFormatter(logging.Formatter):
             self.base_object_common["component_instance_idx"] = json_logging.COMPONENT_INSTANCE_INDEX
 
     def format(self, record):
+        """
+            Format the specified record as text. Overriding default python logging implementation
+        """
         log_object = self._format_log_object(record, request_util=json_logging._request_util)
         return json_logging.JSON_SERIALIZER(log_object)
 
     def _format_log_object(self, record, request_util):
         utcnow = datetime.utcnow()
+
         base_obj = {
             "written_at": json_logging.util.iso_time_format(utcnow),
             "written_ts": json_logging.util.epoch_nano_second(utcnow),
         }
+
         base_obj.update(self.base_object_common)
         # Add extra fields
         base_obj.update(self._get_extra_fields(record))
+
         return base_obj
 
     def _get_extra_fields(self, record):
+        """
+        Get the dict of custom extra fields passed to the log statement
+        :param record: log record
+        :return:
+        """
         fields = {}
 
         if record.args:
@@ -71,9 +87,10 @@ class BaseJSONFormatter(logging.Formatter):
 
         for key, value in record.__dict__.items():
             if key not in RECORD_ATTR_SKIP_LIST:
-                if isinstance(value, EASY_TYPES):
+                if isinstance(value, EASY_SERIALIZABLE_TYPES):
                     fields[key] = value
                 else:
+                    # try to cast it to a string representation
                     fields[key] = repr(value)
 
         # Always add 'props' to the root of the log, assumes props is a dict
@@ -83,6 +100,59 @@ class BaseJSONFormatter(logging.Formatter):
         return fields
 
 
+class JSONLogFormatter(BaseJSONFormatter):
+    """
+    Default formatter for non-web application log
+    """
+
+    def get_exc_fields(self, record):
+        if record.exc_info:
+            exc_info = self.format_exception(record.exc_info)
+        else:
+            exc_info = record.exc_text
+        return {
+            'exc_info': exc_info,
+            'filename': record.filename,
+        }
+
+    @classmethod
+    def format_exception(cls, exc_info):
+        return ''.join(traceback.format_exception(*exc_info)) if exc_info else ''
+
+    def _format_log_object(self, record, request_util):
+        json_log_object = super(JSONLogFormatter, self)._format_log_object(record, request_util)
+
+        json_log_object.update({
+            "msg": _sanitize_log_msg(record),
+            "type": "log",
+            "logger": record.name,
+            "thread": record.threadName,
+            "level": record.levelname,
+            "module": record.module,
+            "line_no": record.lineno,
+        })
+
+        if record.exc_info or record.exc_text:
+            json_log_object.update(self.get_exc_fields(record))
+
+        return json_log_object
+
+
+class JSONLogWebFormatter(JSONLogFormatter):
+    """
+    Formatter for web application log with correlation-id
+    """
+
+    def _format_log_object(self, record, request_util):
+        json_log_object = super(JSONLogWebFormatter, self)._format_log_object(record, request_util)
+
+        if "correlation_id" not in json_log_object:
+            json_log_object.update({
+                "correlation_id": request_util.get_correlation_id(within_formatter=True),
+            })
+        return json_log_object
+
+
 class JSONRequestLogFormatter(BaseJSONFormatter):
     """
        Formatter for HTTP request instrumentation logging
@@ -90,8 +160,10 @@ class JSONRequestLogFormatter(BaseJSONFormatter):
 
     def _format_log_object(self, record, request_util):
         json_log_object = super(JSONRequestLogFormatter, self)._format_log_object(record, request_util)
+
         request_adapter = request_util.request_adapter
         response_adapter = json_logging._request_util.response_adapter
+
         request = record.request_response_data._request
         response = record.request_response_data._response
 
@@ -117,55 +189,4 @@ class JSONRequestLogFormatter(BaseJSONFormatter):
 
         json_log_object.update(record.request_response_data)
 
-        return json_log_object
-
-
-class JSONLogFormatter(BaseJSONFormatter):
-    """
-    Formatter for non-web application log
-    """
-
-    def get_exc_fields(self, record):
-        if record.exc_info:
-            exc_info = self.format_exception(record.exc_info)
-        else:
-            exc_info = record.exc_text
-        return {
-            'exc_info': exc_info,
-            'filename': record.filename,
-        }
-
-    @classmethod
-    def format_exception(cls, exc_info):
-        return ''.join(traceback.format_exception(*exc_info)) if exc_info else ''
-
-    def _format_log_object(self, record, request_util):
-        json_log_object = super(JSONLogFormatter, self)._format_log_object(record, request_util)
-        json_log_object.update({
-            "msg": _sanitize_log_msg(record),
-            "type": "log",
-            "logger": record.name,
-            "thread": record.threadName,
-            "level": record.levelname,
-            "module": record.module,
-            "line_no": record.lineno,
-        })
-
-        if record.exc_info or record.exc_text:
-            json_log_object.update(self.get_exc_fields(record))
-
-        return json_log_object
-
-
-class JSONLogWebFormatter(JSONLogFormatter):
-    """
-    Formatter for web application log
-    """
-
-    def _format_log_object(self, record, request_util):
-        json_log_object = super(JSONLogWebFormatter, self)._format_log_object(record, request_util)
-        if "correlation_id" not in json_log_object:
-            json_log_object.update({
-                "correlation_id": request_util.get_correlation_id(within_formatter=True),
-            })
         return json_log_object

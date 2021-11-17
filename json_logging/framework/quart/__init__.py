@@ -5,7 +5,8 @@ import sys
 import json_logging
 import json_logging.framework
 from json_logging import JSONLogWebFormatter
-from json_logging.framework_base import AppRequestInstrumentationConfigurator, RequestAdapter, ResponseAdapter
+from json_logging.framework_base import BaseAppRequestInstrumentationConfigurator, BaseRequestInfoExtractor, \
+    BaseResponseInfoExtractor
 from json_logging.util import is_not_match_any_pattern
 
 
@@ -26,8 +27,8 @@ if is_quart_present():
     _quart = quart
 
 
-class QuartAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfigurator):
-    def config(self, app, request_response_data_extractor_class, exclude_url_patterns=[]):
+class QuartAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationConfigurator):
+    def config(self, app, request_response_dto_class, exclude_url_patterns=[]):
         if not is_quart_present():
             raise RuntimeError("quart is not available in system runtime")
         from quart.app import Quart
@@ -51,7 +52,7 @@ class QuartAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
         @app.before_request
         def before_request():
             if is_not_match_any_pattern(_current_request.path, exclude_url_patterns):
-                g.request_response_data = request_response_data_extractor_class(_current_request)
+                g.request_response_data = request_response_dto_class(_current_request)
 
         @app.after_request
         def after_request(response):
@@ -63,7 +64,7 @@ class QuartAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
             return response
 
 
-class QuartRequestAdapter(RequestAdapter):
+class QuartRequestInfoExtractor(BaseRequestInfoExtractor):
     @staticmethod
     def get_request_class_type():
         raise NotImplementedError
@@ -125,7 +126,7 @@ class QuartRequestAdapter(RequestAdapter):
         )
 
 
-class QuartResponseAdapter(ResponseAdapter):
+class QuartResponseInfoExtractor(BaseResponseInfoExtractor):
     def get_status_code(self, response):
         return response.status_code
 

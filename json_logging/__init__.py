@@ -7,8 +7,9 @@ import uuid
 from json_logging import util
 from json_logging.dto import RequestResponseDTOBase, DefaultRequestResponseDTO
 from json_logging.formatters import JSONRequestLogFormatter, JSONLogFormatter, JSONLogWebFormatter
-from json_logging.framework_base import RequestAdapter, ResponseAdapter, AppRequestInstrumentationConfigurator, \
-    FrameworkConfigurator
+from json_logging.framework_base import BaseRequestInfoExtractor, BaseResponseInfoExtractor, \
+    BaseAppRequestInstrumentationConfigurator, \
+    BaseFrameworkConfigurator
 from json_logging.util import get_library_logger, is_env_var_toggle
 
 CORRELATION_ID_GENERATOR = uuid.uuid1
@@ -64,6 +65,11 @@ def config_root_logger():
 
 
 def init_non_web(*args, **kw):
+    """
+    Initialize for a non HTTP application
+    :param args:
+    :param kw:
+    """
     __init(*args, **kw)
 
 
@@ -106,8 +112,9 @@ def __init(framework_name=None, custom_formatter=None, enable_json=False):
         global _request_util
 
         _current_framework = _framework_support_map[framework_name]
-        _request_util = util.RequestUtil(request_adapter_class=_current_framework['request_adapter_class'],
-                                         response_adapter_class=_current_framework['response_adapter_class'])
+        _request_util = util.RequestUtil(
+            request_info_extractor_class=_current_framework['request_info_extractor_class'],
+            response_info_extractor_class=_current_framework['response_info_extractor_class'])
 
         if ENABLE_JSON_LOGGING and _current_framework['app_configurator'] is not None:
             _current_framework['app_configurator']().config()
@@ -126,7 +133,7 @@ def __init(framework_name=None, custom_formatter=None, enable_json=False):
 
 
 def init_request_instrument(app=None, custom_formatter=None, exclude_url_patterns=[],
-                            request_response_data_extractor_class=DefaultRequestResponseDTO):
+                            request_response_dto_class=DefaultRequestResponseDTO):
     """
     Configure the request instrumentation logging configuration for given web app. Must be called after init method
 
@@ -134,7 +141,7 @@ def init_request_instrument(app=None, custom_formatter=None, exclude_url_pattern
 
     :param app: current web application instance
     :param custom_formatter: formatter to override default JSONRequestLogFormatter.
-    :param request_response_data_extractor_class: request_response_data_extractor_class to override default json_logging.RequestResponseDataExtractor.
+    :param request_response_dto_class: request_response_dto_class to override default json_logging.RequestResponseDataExtractor.
     """
 
     if _current_framework is None or _current_framework == '-':
@@ -144,12 +151,12 @@ def init_request_instrument(app=None, custom_formatter=None, exclude_url_pattern
         if not issubclass(custom_formatter, logging.Formatter):
             raise ValueError('custom_formatter is not subclass of logging.Formatter', custom_formatter)
 
-    if not issubclass(request_response_data_extractor_class, RequestResponseDTOBase):
-        raise ValueError('request_response_data_extractor_class is not subclass of json_logging.RequestInfoBase',
+    if not issubclass(request_response_dto_class, RequestResponseDTOBase):
+        raise ValueError('request_response_dto_class is not subclass of json_logging.RequestInfoBase',
                          custom_formatter)
 
     configurator = _current_framework['app_request_instrumentation_configurator']()
-    configurator.config(app, request_response_data_extractor_class, exclude_url_patterns=exclude_url_patterns)
+    configurator.config(app, request_response_dto_class, exclude_url_patterns=exclude_url_patterns)
 
     formatter = custom_formatter if custom_formatter else JSONRequestLogFormatter
     request_logger = configurator.request_logger

@@ -7,10 +7,10 @@ import sys
 import json_logging
 import json_logging.framework
 from json_logging.framework_base import (
-    FrameworkConfigurator,
-    AppRequestInstrumentationConfigurator,
-    RequestAdapter,
-    ResponseAdapter,
+    BaseFrameworkConfigurator,
+    BaseAppRequestInstrumentationConfigurator,
+    BaseRequestInfoExtractor,
+    BaseResponseInfoExtractor,
 )
 from json_logging.util import is_not_match_any_pattern
 
@@ -26,7 +26,7 @@ def is_sanic_present():
         return False
 
 
-class SanicAppConfigurator(FrameworkConfigurator):
+class SanicAppConfigurator(BaseFrameworkConfigurator):
     def config(self):
         if not is_sanic_present():
             raise RuntimeError("Sanic is not available in system runtime")
@@ -49,8 +49,8 @@ class SanicAppConfigurator(FrameworkConfigurator):
         # logging.config.dictConfig(LOGGING_CONFIG_DEFAULTS)
 
 
-class SanicAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfigurator):
-    def config(self, app, request_response_data_extractor_class, exclude_url_patterns=[]):
+class SanicAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationConfigurator):
+    def config(self, app, request_response_dto_class, exclude_url_patterns=[]):
         if not is_sanic_present():
             raise RuntimeError("Sanic is not available in system runtime")
         # noinspection PyPackageRequirements
@@ -67,7 +67,7 @@ class SanicAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
         @app.middleware("request")
         def before_request(request):
             if is_not_match_any_pattern(request.path, exclude_url_patterns):
-                request.ctx.request_response_data = request_response_data_extractor_class(request)
+                request.ctx.request_response_data = request_response_dto_class(request)
 
         @app.middleware("response")
         def after_request(request, response):
@@ -79,7 +79,7 @@ class SanicAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfig
                 )
 
 
-class SanicRequestAdapter(RequestAdapter):
+class SanicRequestInfoExtractor(BaseRequestInfoExtractor):
     @staticmethod
     def get_current_request():
         raise NotImplementedError
@@ -132,7 +132,7 @@ class SanicRequestAdapter(RequestAdapter):
         return json_logging.EMPTY_VALUE
 
 
-class SanicResponseAdapter(ResponseAdapter):
+class SanicResponseInfoExtractor(BaseResponseInfoExtractor):
     def get_status_code(self, response):
         return response.status
 

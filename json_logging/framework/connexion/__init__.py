@@ -5,7 +5,8 @@ import sys
 import json_logging
 import json_logging.framework
 from json_logging import JSONLogWebFormatter
-from json_logging.framework_base import AppRequestInstrumentationConfigurator, RequestAdapter, ResponseAdapter
+from json_logging.framework_base import BaseAppRequestInstrumentationConfigurator, BaseRequestInfoExtractor, \
+    BaseResponseInfoExtractor
 from json_logging.util import is_not_match_any_pattern
 
 
@@ -30,8 +31,8 @@ if is_connexion_present():
     _connexion.g = g
 
 
-class ConnexionAppRequestInstrumentationConfigurator(AppRequestInstrumentationConfigurator):
-    def config(self, app, request_response_data_extractor_class, exclude_url_patterns=[]):
+class ConnexionAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationConfigurator):
+    def config(self, app, request_response_dto_class, exclude_url_patterns=[]):
         if not is_connexion_present():
             raise RuntimeError("connexion is not available in system runtime")
         from flask.app import Flask
@@ -51,7 +52,7 @@ class ConnexionAppRequestInstrumentationConfigurator(AppRequestInstrumentationCo
         @app.app.before_request
         def before_request():
             if is_not_match_any_pattern(_current_request.path, exclude_url_patterns):
-                g.request_response_data = request_response_data_extractor_class(_current_request)
+                g.request_response_data = request_response_dto_class(_current_request)
 
         @app.app.after_request
         def after_request(response):
@@ -62,7 +63,7 @@ class ConnexionAppRequestInstrumentationConfigurator(AppRequestInstrumentationCo
             return response
 
 
-class ConnexionRequestAdapter(RequestAdapter):
+class ConnexionRequestInfoExtractor(BaseRequestInfoExtractor):
     @staticmethod
     def get_request_class_type():
         raise NotImplementedError
@@ -120,7 +121,7 @@ class ConnexionRequestAdapter(RequestAdapter):
         return request.environ.get('REMOTE_PORT')
 
 
-class ConnexionResponseAdapter(ResponseAdapter):
+class ConnexionResponseInfoExtractor(BaseResponseInfoExtractor):
     def get_status_code(self, response):
         return response.status_code
 

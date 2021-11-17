@@ -43,7 +43,7 @@ app = flask.Flask(__name__)
 json_logging.init_flask(enable_json=True)
 json_logging.init_request_instrument(app, exclude_url_patterns=[r'/exclude_from_request_instrumentation'],
                                      custom_formatter=CustomRequestJSONLog,
-                                     request_response_data_extractor_class=CustomDefaultRequestResponseDTO)
+                                     request_response_dto_class=CustomDefaultRequestResponseDTO)
 
 # init the logger as usual
 logger = logging.getLogger("test logger")

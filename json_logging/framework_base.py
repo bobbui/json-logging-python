@@ -1,5 +1,5 @@
 # coding=utf-8
-class RequestAdapter:
+class BaseRequestInfoExtractor:
     """
         Helper class help to extract logging-relevant information from HTTP request object
     """
@@ -122,7 +122,7 @@ class RequestAdapter:
         raise NotImplementedError
 
 
-class ResponseAdapter:
+class BaseResponseInfoExtractor:
     """
         Helper class help to extract logging-relevant information from HTTP response object
     """
@@ -157,7 +157,7 @@ class ResponseAdapter:
         raise NotImplementedError
 
 
-class FrameworkConfigurator:
+class BaseFrameworkConfigurator:
     """
        Class to perform logging configuration for given framework as needed, like disable built in request logging and other utils logging
     """
@@ -174,7 +174,7 @@ class FrameworkConfigurator:
         raise NotImplementedError
 
 
-class AppRequestInstrumentationConfigurator:
+class BaseAppRequestInstrumentationConfigurator:
     """
         Class to perform request instrumentation logging configuration. Should at least contains:
         1- register before-request hook and create a RequestInfo object, store it to request context
@@ -189,12 +189,12 @@ class AppRequestInstrumentationConfigurator:
             cls._instance.request_logger = None
         return cls._instance
 
-    def config(self, app, request_response_data_extractor_class, exclude_url_patterns=[]):
+    def config(self, app, request_response_dto_class, exclude_url_patterns=[]):
         """
         configuration logic
 
         :param app: web application object instance
-        :param request_response_data_extractor_class: request info class
+        :param request_response_dto_class: request info class
         :param exclude_url_patterns: list of URL regex pattern to be excluded from request logging
         """
         raise NotImplementedError
