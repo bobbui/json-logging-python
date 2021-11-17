@@ -37,7 +37,7 @@ author.
    , [Quart](https://gitlab.com/pgjones/quart), [Connexion](https://github.com/zalando/connexion). Extensible to support
    other web frameworks. PR welcome :smiley: .
 6. Highly customizable: support inject arbitrary extra properties to JSON log message, override logging formatter, etc.
-7. Production ready, has been used in production since 2017 with more than 6 millions downloads
+7. Production ready, has been used in production since 2017 with more than 8 millions downloads
 
 # 2. Usage
 
