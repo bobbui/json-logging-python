@@ -228,17 +228,6 @@ correlation_id_without_request_obj = json_logging.get_correlation_id()
 In request context, if one is not present, a new one might be generated depends on CREATE_CORRELATION_ID_IF_NOT_EXISTS
 setting value.
 
-## 2.3 Get current correlation-id
-
-Current request correlation-id can be retrieved and pass to downstream services call as follow:
-
-```python
-# this will be faster
-correlation_id = json_logging.get_correlation_id(request=request)
-# this will be slower, but will work in context where you couldn't get a reference of request object
-correlation_id_without_request_obj = json_logging.get_correlation_id()
-# use correlation id for upstream service calls here
-```
 
 ## 2.4 Log extra properties
 
