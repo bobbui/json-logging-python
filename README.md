@@ -3,7 +3,7 @@
 Python logging library to emit JSON log that can be easily indexed and searchable by logging infrastructure such
 as [ELK](https://www.elastic.co/elk-stack)
 , [EFK](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes)
-, AWS Cloudwatch, GCP Stackdriver
+, AWS Cloudwatch, GCP Stackdriver, etc.
 
 If you're using Cloud Foundry, it might worth to check out the
 library [SAP/cf-python-logging-support](https://github.com/SAP/cf-python-logging-support) which I'm also original
