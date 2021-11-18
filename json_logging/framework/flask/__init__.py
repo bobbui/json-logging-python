@@ -58,6 +58,7 @@ class FlaskAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationCo
                 request_response_data = g.request_response_data
                 request_response_data.on_request_complete(response)
                 self.request_logger.info("", extra={'request_response_data': request_response_data})
+
             return response
 
 

@@ -5,8 +5,7 @@ from json_logging import util
 
 class RequestResponseDTOBase(dict):
     """
-        Data transfer object (DTO) for HTTP request & response information for each request instrumentation logging
-        Any key that is stored in this dict will be appended to final JSON log object
+        Data transfer object (DTO) for request instrumentation logging
         Served as base class for any actual RequestResponseDTO implementation
     """
 

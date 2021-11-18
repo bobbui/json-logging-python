@@ -7,7 +7,7 @@ import json_logging
 
 # The list contains all the attributes listed in that will not be overwritten by custom extra props
 # http://docs.python.org/library/logging.html#logrecord-attributes
-RECORD_ATTR_SKIP_LIST = [
+LOG_RECORD_BUILT_IN_ATTRS = [
     'asctime', 'created', 'exc_info', 'exc_text', 'filename', 'args',
     'funcName', 'id', 'levelname', 'levelno', 'lineno', 'module', 'msg',
     'msecs', 'msecs', 'message', 'name', 'pathname', 'process',
@@ -25,7 +25,7 @@ except NameError:
 if sys.version_info < (3, 0):
     EASY_SERIALIZABLE_TYPES = (basestring, bool, dict, float, int, list, type(None))
 else:
-    RECORD_ATTR_SKIP_LIST.append('stack_info')
+    LOG_RECORD_BUILT_IN_ATTRS.append('stack_info')
     EASY_SERIALIZABLE_TYPES = (str, bool, dict, float, int, list, type(None))
 
 
@@ -86,7 +86,7 @@ class BaseJSONFormatter(logging.Formatter):
             fields['msg'] = record.msg
 
         for key, value in record.__dict__.items():
-            if key not in RECORD_ATTR_SKIP_LIST:
+            if key not in LOG_RECORD_BUILT_IN_ATTRS:
                 if isinstance(value, EASY_SERIALIZABLE_TYPES):
                     fields[key] = value
                 else:
@@ -150,6 +150,7 @@ class JSONLogWebFormatter(JSONLogFormatter):
             json_log_object.update({
                 "correlation_id": request_util.get_correlation_id(within_formatter=True),
             })
+
         return json_log_object
 
 
@@ -162,7 +163,7 @@ class JSONRequestLogFormatter(BaseJSONFormatter):
         json_log_object = super(JSONRequestLogFormatter, self)._format_log_object(record, request_util)
 
         request_adapter = request_util.request_adapter
-        response_adapter = json_logging._request_util.response_adapter
+        response_adapter = request_util.response_adapter
 
         request = record.request_response_data._request
         response = record.request_response_data._response

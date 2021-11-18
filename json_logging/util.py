@@ -102,6 +102,7 @@ class RequestUtil(object):
     """
 
     def __new__(cls, *args, **kw):
+        # make this request util a singleton object
         if not hasattr(cls, '_instance'):
             request_info_extractor_class = kw['request_info_extractor_class']
             response_info_extractor_class = kw['response_info_extractor_class']
@@ -128,8 +129,7 @@ class RequestUtil(object):
         :param request: request object
         :return: correlation id string
         """
-        # _logger.debug("Getting correlation", extra={'correlation_id': '-'})
-        #
+
         if request is None:
             if self.is_support_global_request_object:
                 request = self.request_info_extractor_class.get_current_request()
@@ -139,13 +139,12 @@ class RequestUtil(object):
             if request is None:
                 return json_logging.EMPTY_VALUE
 
-        # _logger.debug("Attempt to get correlation from request context", extra={'correlation_id': '-'})
         correlation_id = self.request_adapter.get_correlation_id_in_request_context(request)
         if correlation_id is not None:
             return correlation_id
 
         correlation_id = self._get_correlation_id_in_request_header(self.request_adapter, request)
-        # exists = json_logging.CREATE_CORRELATION_ID_IF_NOT_EXISTS
+
         if correlation_id is None and self.create_correlation_id_if_not_exists:
             correlation_id = str(json_logging.CORRELATION_ID_GENERATOR())
             self.request_adapter.set_correlation_id(request, correlation_id)
@@ -203,6 +202,7 @@ class RequestUtil(object):
             value = request_adapter.get_http_header(request, header)
             if value is not None:
                 return value
+
         return None
 
 
