@@ -12,7 +12,7 @@ else:
 
 setup(
     name="json-logging",
-    version='1.4.1-rc0',
+    version='1.5.0-rc0',
     packages=find_packages(exclude=['contrib', 'docs', 'tests*', 'example', 'dist', 'build']),
     license='Apache License 2.0',
     description="JSON Python Logging",
