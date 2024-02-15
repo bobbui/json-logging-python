@@ -12,6 +12,7 @@ from json_logging.framework_base import BaseRequestInfoExtractor, BaseResponseIn
     BaseFrameworkConfigurator
 from json_logging.util import get_library_logger, is_env_var_toggle
 
+CORRELATION_ID_FIELD = 'correlation_id'
 CORRELATION_ID_GENERATOR = uuid.uuid1
 ENABLE_JSON_LOGGING = False
 if is_env_var_toggle("ENABLE_JSON_LOGGING"):

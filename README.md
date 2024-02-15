@@ -280,6 +280,7 @@ Name | Description | Default value
  --- | --- | ---
 ENABLE_JSON_LOGGING | **
 DEPRECATED** Whether to enable JSON logging mode.Can be set as an environment variable, enable when set to to either one in following list (case-insensitive) **['true', '1', 'y', 'yes']** , this have no effect on request logger | false
+CORRELATION_ID_FIELD | Name of field in generated log messages containing the correlation-id value | 'correlation_id'
 CORRELATION_ID_HEADERS | List of HTTP headers that will be used to look for correlation-id value. HTTP headers will be searched one by one according to list order| ['X-Correlation-ID','X-Request-ID']
 EMPTY_VALUE | Default value when a logging record property is None |  '-'
 CORRELATION_ID_GENERATOR | function to generate unique correlation-id | uuid.uuid1
