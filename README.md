@@ -247,7 +247,7 @@ logger.info("test log statement", extra={'props': {'correlation_id': 'custom_cor
 
 ## 2.5 Root logger
 
-If you want to use root logger as main logger to emit log. Made sure you call **config_root_logger()** after initialize
+If you want to use root logger as main logger to emit log. Make sure you call **config_root_logger()** after initialize
 root logger (by logging.basicConfig() or logging.getLogger()) [\[2\]](#2-python-logging-propagate)
 
 ```python
