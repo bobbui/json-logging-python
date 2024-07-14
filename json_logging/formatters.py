@@ -1,7 +1,7 @@
 import logging
 import sys
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 
 import json_logging
 
@@ -61,7 +61,7 @@ class BaseJSONFormatter(logging.Formatter):
         return json_logging.JSON_SERIALIZER(log_object)
 
     def _format_log_object(self, record, request_util):
-        utcnow = datetime.utcnow()
+        utcnow = datetime.now(timezone.utc).replace(tzinfo=None)
 
         base_obj = {
             "written_at": json_logging.util.iso_time_format(utcnow),
