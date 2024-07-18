@@ -51,7 +51,12 @@ class ConnexionAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentati
 
         @app.app.before_request
         def before_request():
-            if is_not_match_any_pattern(_current_request.path, exclude_url_patterns):
+            # for connexion 3.0+, requests use starlette
+            if hasattr(_current_request, "_starlette_request"):
+                path = _current_request.url.path
+            else:
+                path = _current_request.path
+            if is_not_match_any_pattern(path, exclude_url_patterns):
                 g.request_response_data = request_response_dto_class(_current_request)
 
         @app.app.after_request
