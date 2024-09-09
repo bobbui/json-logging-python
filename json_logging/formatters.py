@@ -1,7 +1,7 @@
 import logging
 import sys
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 
 import json_logging
 
@@ -15,12 +15,6 @@ LOG_RECORD_BUILT_IN_ATTRS = [
     # Also exclude legacy 'props'
     'props',
 ]
-
-# python 2 compatible check
-try:
-    basestring
-except NameError:
-    basestring = str
 
 LOG_RECORD_BUILT_IN_ATTRS.append('stack_info')
 EASY_SERIALIZABLE_TYPES = (str, bool, dict, float, int, list, type(None))
@@ -58,7 +52,7 @@ class BaseJSONFormatter(logging.Formatter):
         return json_logging.JSON_SERIALIZER(log_object)
 
     def _format_log_object(self, record, request_util):
-        utcnow = datetime.utcnow()
+        utcnow = datetime.now(timezone.utc)
 
         base_obj = {
             "written_at": json_logging.util.iso_time_format(utcnow),
