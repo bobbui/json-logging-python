@@ -22,11 +22,8 @@ try:
 except NameError:
     basestring = str
 
-if sys.version_info < (3, 0):
-    EASY_SERIALIZABLE_TYPES = (basestring, bool, dict, float, int, list, type(None))
-else:
-    LOG_RECORD_BUILT_IN_ATTRS.append('stack_info')
-    EASY_SERIALIZABLE_TYPES = (str, bool, dict, float, int, list, type(None))
+LOG_RECORD_BUILT_IN_ATTRS.append('stack_info')
+EASY_SERIALIZABLE_TYPES = (str, bool, dict, float, int, list, type(None))
 
 
 def _sanitize_log_msg(record):
@@ -45,7 +42,7 @@ class BaseJSONFormatter(logging.Formatter):
     base_object_common = {}
 
     def __init__(self, *args, **kw):
-        super(BaseJSONFormatter, self).__init__(*args, **kw)
+        super().__init__(*args, **kw)
         if json_logging.COMPONENT_ID and json_logging.COMPONENT_ID != json_logging.EMPTY_VALUE:
             self.base_object_common["component_id"] = json_logging.COMPONENT_ID
         if json_logging.COMPONENT_NAME and json_logging.COMPONENT_NAME != json_logging.EMPTY_VALUE:
@@ -120,7 +117,7 @@ class JSONLogFormatter(BaseJSONFormatter):
         return ''.join(traceback.format_exception(*exc_info)) if exc_info else ''
 
     def _format_log_object(self, record, request_util):
-        json_log_object = super(JSONLogFormatter, self)._format_log_object(record, request_util)
+        json_log_object = super()._format_log_object(record, request_util)
 
         json_log_object.update({
             "msg": _sanitize_log_msg(record),
@@ -144,7 +141,7 @@ class JSONLogWebFormatter(JSONLogFormatter):
     """
 
     def _format_log_object(self, record, request_util):
-        json_log_object = super(JSONLogWebFormatter, self)._format_log_object(record, request_util)
+        json_log_object = super()._format_log_object(record, request_util)
 
         if json_logging.CORRELATION_ID_FIELD not in json_log_object:
             json_log_object.update({
@@ -160,7 +157,7 @@ class JSONRequestLogFormatter(BaseJSONFormatter):
     """
 
     def _format_log_object(self, record, request_util):
-        json_log_object = super(JSONRequestLogFormatter, self)._format_log_object(record, request_util)
+        json_log_object = super()._format_log_object(record, request_util)
 
         request_adapter = request_util.request_adapter
         response_adapter = request_util.response_adapter

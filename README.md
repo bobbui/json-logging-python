@@ -12,13 +12,13 @@ author.
 # Content
 
 1. [Features](#1-features)
-2. [Usage](#2-usage)   
-   2.1 [Non-web application log](#21-non-web-application-log)  
-   2.2 [Web application log](#22-web-application-log)  
-   2.3 [Get current correlation-id](#23-get-current-correlation-id)  
-   2.4 [Log extra properties](#24-log-extra-properties)  
-   2.5 [Root logger](#25-root-logger)  
-   2.6 [Custom log formatter](#26-custom-log-formatter)  
+2. [Usage](#2-usage)
+   2.1 [Non-web application log](#21-non-web-application-log)
+   2.2 [Web application log](#22-web-application-log)
+   2.3 [Get current correlation-id](#23-get-current-correlation-id)
+   2.4 [Log extra properties](#24-log-extra-properties)
+   2.5 [Root logger](#25-root-logger)
+   2.6 [Custom log formatter](#26-custom-log-formatter)
    2.7 [Exclude certain URL from request instrumentation](#27-exclude-certain-url-from-request-instrumentation)
 3. [Configuration](#3-configuration)
 4. [Python References](#4-python-references)
@@ -259,8 +259,8 @@ json_logging.config_root_logger()
 ## 2.6 Custom log formatter
 
 Customer JSON log formatter can be passed to init method. see examples for more
-detail: [non web](https://github.com/thangbn/json-logging-python/blob/master/example/custom_log_format.py),
-[web](https://github.com/thangbn/json-logging-python/blob/master/example/custom_log_format_request.py)
+detail: [non web](https://github.com/virajkanwade/json-logging-python/blob/master/example/custom_log_format.py),
+[web](https://github.com/virajkanwade/json-logging-python/blob/master/example/custom_log_format_request.py)
 
 ## 2.7 Exclude certain URl from request instrumentation
 
@@ -298,7 +298,7 @@ TODO: update Python API docs on Github page
 
 To add support for a new web framework, you need to extend following classes in [**
 framework_base**](/blob/master/json_logging/framework_base.py) and register support using [**
-json_logging.register_framework_support**](https://github.com/thangbn/json-logging-python/blob/master/json_logging/__init__.py#L38)
+json_logging.register_framework_support**](https://github.com/virajkanwade/json-logging-python/blob/master/json_logging/__init__.py#L38)
 method:
 
 Class | Description | Mandatory

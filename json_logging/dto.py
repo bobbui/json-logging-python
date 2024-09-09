@@ -14,7 +14,7 @@ class RequestResponseDTOBase(dict):
         invoked when request start, where to extract any necessary information from the request object
         :param request: request object
         """
-        super(RequestResponseDTOBase, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._request = request
 
     def on_request_complete(self, response):
@@ -31,14 +31,14 @@ class DefaultRequestResponseDTO(RequestResponseDTOBase):
     """
 
     def __init__(self, request, **kwargs):
-        super(DefaultRequestResponseDTO, self).__init__(request, **kwargs)
+        super().__init__(request, **kwargs)
         utcnow = datetime.utcnow()
         self._request_start = utcnow
         self["request_received_at"] = util.iso_time_format(utcnow)
 
     # noinspection PyAttributeOutsideInit
     def on_request_complete(self, response):
-        super(DefaultRequestResponseDTO, self).on_request_complete(response)
+        super().on_request_complete(response)
         utcnow = datetime.utcnow()
         time_delta = utcnow - self._request_start
         self["response_time_ms"] = int(time_delta.total_seconds()) * 1000 + int(time_delta.microseconds / 1000)

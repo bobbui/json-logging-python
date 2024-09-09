@@ -1,4 +1,3 @@
-# coding=utf-8
 import logging
 import os
 import re
@@ -96,7 +95,7 @@ else:  # pragma: no cover
             return sys.exc_info()[_no_of_go_up_level - 1].tb_frame.f_back
 
 
-class RequestUtil(object):
+class RequestUtil:
     """
         util for extract request's information
     """

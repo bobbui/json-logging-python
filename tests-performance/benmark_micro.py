@@ -1,4 +1,3 @@
-# coding=utf-8
 import time
 import timeit
 from datetime import datetime
