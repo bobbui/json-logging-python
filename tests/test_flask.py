@@ -1,4 +1,5 @@
 """Test suite for the flask backend"""
+
 import json
 import logging
 import pathlib
@@ -6,7 +7,6 @@ import re
 
 import flask
 import pytest
-
 from helpers import constants
 from helpers.handler import FormattedMessageCollectorHandler
 from helpers.imports import undo_imports_from_package
@@ -73,9 +73,9 @@ def client_and_log_handler():
 
     @app.route("/get-correlation-id")
     def get_correlation_id():
-        return {'correlation_id': json_logging.get_correlation_id()}
+        return {"correlation_id": json_logging.get_correlation_id()}
 
-    @app.route('/no-request-instrumentation')
+    @app.route("/no-request-instrumentation")
     def excluded_from_request_instrumentation():
         return {}
 

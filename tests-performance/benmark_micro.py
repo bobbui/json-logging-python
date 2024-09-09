@@ -35,12 +35,14 @@ timeit1 = timeit.timeit(lambda: time.mktime(utcnow.timetuple()), number=numbers)
 print(timeit1)
 
 print((utcnow - _epoch).total_seconds())
-timeit2 = timeit.timeit(lambda: int((utcnow - _epoch).total_seconds()) * 1000000000 + utcnow.microsecond * 1000,
-                        number=numbers)
+timeit2 = timeit.timeit(
+    lambda: int((utcnow - _epoch).total_seconds()) * 1000000000 + utcnow.microsecond * 1000, number=numbers
+)
 print(timeit2)
 
-timeit3 = timeit.timeit(lambda: (int((utcnow - _epoch).total_seconds()) * 1000000 + utcnow.microsecond) * 1000,
-                        number=numbers)
+timeit3 = timeit.timeit(
+    lambda: (int((utcnow - _epoch).total_seconds()) * 1000000 + utcnow.microsecond) * 1000, number=numbers
+)
 print(timeit3)
 # 1456820553816849408
 # 1496635859

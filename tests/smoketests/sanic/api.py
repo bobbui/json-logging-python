@@ -1,5 +1,10 @@
+import logging
 import os
-import logging, sys, json_logging, sanic
+import sys
+
+import sanic
+
+import json_logging
 
 app = sanic.Sanic(name="sanic-web-app")
 json_logging.init_sanic(enable_json=True)
@@ -10,10 +15,11 @@ logger = logging.getLogger("sanic-integration-test-app")
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
+
 @app.route("/")
 async def home(request):
     logger.info("test log statement")
-    logger.info("test log statement with extra props", extra={'props': {"extra_property": 'extra_value'}})
+    logger.info("test log statement with extra props", extra={"props": {"extra_property": "extra_value"}})
     # this will be faster
     correlation_id = json_logging.get_correlation_id(request=request)
     # this will be slower, but will work in context you cant get a reference of request object
@@ -21,6 +27,7 @@ async def home(request):
 
     return sanic.response.text("hello world")
 
+
 if __name__ == "__main__":
-    port = os.getenv('PORT', '5000')
+    port = os.getenv("PORT", "5000")
     app.run(host="0.0.0.0", port=int(port))

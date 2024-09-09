@@ -5,8 +5,8 @@ from json_logging import util
 
 class RequestResponseDTOBase(dict):
     """
-        Data transfer object (DTO) for request instrumentation logging
-        Served as base class for any actual RequestResponseDTO implementation
+    Data transfer object (DTO) for request instrumentation logging
+    Served as base class for any actual RequestResponseDTO implementation
     """
 
     def __init__(self, request, **kwargs):
@@ -27,7 +27,7 @@ class RequestResponseDTOBase(dict):
 
 class DefaultRequestResponseDTO(RequestResponseDTOBase):
     """
-        default implementation
+    default implementation
     """
 
     def __init__(self, request, **kwargs):

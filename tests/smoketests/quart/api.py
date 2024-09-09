@@ -1,5 +1,11 @@
+import asyncio
+import logging
 import os
-import asyncio, logging, sys, json_logging, quart
+import sys
+
+import quart
+
+import json_logging
 
 app = quart.Quart(__name__)
 json_logging.init_quart(enable_json=True)
@@ -10,14 +16,16 @@ logger = logging.getLogger("test logger")
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
-@app.route('/')
+
+@app.route("/")
 async def home():
     logger.info("test log statement")
-    logger.info("test log statement with extra props", extra={'props': {"extra_property": 'extra_value'}})
+    logger.info("test log statement with extra props", extra={"props": {"extra_property": "extra_value"}})
     correlation_id = json_logging.get_correlation_id()
     return "Hello world"
 
+
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    port = os.getenv('PORT', '5000')
-    app.run(host='0.0.0.0', port=int(port), use_reloader=False, loop=loop)
+    port = os.getenv("PORT", "5000")
+    app.run(host="0.0.0.0", port=int(port), use_reloader=False, loop=loop)

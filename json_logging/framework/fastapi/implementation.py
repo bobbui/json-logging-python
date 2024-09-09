@@ -1,20 +1,21 @@
 import logging
 
-import json_logging
-import json_logging.framework
-from json_logging.framework_base import BaseAppRequestInstrumentationConfigurator, BaseRequestInfoExtractor, \
-    BaseResponseInfoExtractor
-
-from json_logging.util import is_not_match_any_pattern
-
 import fastapi
 import starlette.requests
 import starlette.responses
-
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
+
+import json_logging
+import json_logging.framework
+from json_logging.framework_base import (
+    BaseAppRequestInstrumentationConfigurator,
+    BaseRequestInfoExtractor,
+    BaseResponseInfoExtractor,
+)
+from json_logging.util import is_not_match_any_pattern
 
 _request_config_class = None
 
@@ -22,7 +23,7 @@ _request_config_class = None
 class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp, exclude_url_patterns=tuple()) -> None:
         super().__init__(app)
-        self.request_logger = logging.getLogger('fastapi-request-logger')
+        self.request_logger = logging.getLogger("fastapi-request-logger")
         self.exclude_url_patterns = exclude_url_patterns
         logging.getLogger("uvicorn.access").propagate = False
 
@@ -35,9 +36,7 @@ class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
         request_response_data = _request_config_class(request)
         response = await call_next(request)
         request_response_data.on_request_complete(response)
-        self.request_logger.info(
-            "", extra={"request_response_data": request_response_data, "type": "request"}
-        )
+        self.request_logger.info("", extra={"request_response_data": request_response_data, "type": "request"})
         return response
 
 
@@ -50,10 +49,10 @@ class FastAPIAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentation
         _request_config_class = request_response_dto_class
 
         # Disable standard logging
-        logging.getLogger('uvicorn.access').disabled = True
+        logging.getLogger("uvicorn.access").disabled = True
 
         # noinspection PyAttributeOutsideInit
-        self.request_logger = logging.getLogger('fastapi-request-logger')
+        self.request_logger = logging.getLogger("fastapi-request-logger")
 
         app.add_middleware(JSONLoggingASGIMiddleware, exclude_url_patterns=exclude_url_patterns)
 
@@ -95,9 +94,9 @@ class FastAPIRequestInfoExtractor(BaseRequestInfoExtractor):
             return None
 
     def get_protocol(self, request: starlette.requests.Request):
-        protocol = str(request.scope.get('type', ''))
-        http_version = str(request.scope.get('http_version', ''))
-        if protocol.lower() == 'http' and http_version:
+        protocol = str(request.scope.get("type", ""))
+        http_version = str(request.scope.get("http_version", ""))
+        if protocol.lower() == "http" and http_version:
             return protocol.upper() + "/" + http_version
         return json_logging.EMPTY_VALUE
 
@@ -105,7 +104,7 @@ class FastAPIRequestInfoExtractor(BaseRequestInfoExtractor):
         return request.url.path
 
     def get_content_length(self, request: starlette.requests.Request):
-        return request.headers.get('content-length', json_logging.EMPTY_VALUE)
+        return request.headers.get("content-length", json_logging.EMPTY_VALUE)
 
     def get_method(self, request: starlette.requests.Request):
         return request.method
@@ -122,7 +121,7 @@ class FastAPIResponseInfoExtractor(BaseResponseInfoExtractor):
         return response.status_code
 
     def get_response_size(self, response: starlette.responses.Response):
-        return response.headers.get('content-length', json_logging.EMPTY_VALUE)
+        return response.headers.get("content-length", json_logging.EMPTY_VALUE)
 
     def get_content_type(self, response: starlette.responses.Response):
-        return response.headers.get('content-type', json_logging.EMPTY_VALUE)
+        return response.headers.get("content-type", json_logging.EMPTY_VALUE)

@@ -4,24 +4,27 @@ import sys
 import uuid
 
 from json_logging import util
-from json_logging.dto import RequestResponseDTOBase, DefaultRequestResponseDTO
-from json_logging.formatters import JSONRequestLogFormatter, JSONLogFormatter, JSONLogWebFormatter
-from json_logging.framework_base import BaseRequestInfoExtractor, BaseResponseInfoExtractor, \
-    BaseAppRequestInstrumentationConfigurator, \
-    BaseFrameworkConfigurator
+from json_logging.dto import DefaultRequestResponseDTO, RequestResponseDTOBase
+from json_logging.formatters import JSONLogFormatter, JSONLogWebFormatter, JSONRequestLogFormatter
+from json_logging.framework_base import (
+    BaseAppRequestInstrumentationConfigurator,
+    BaseFrameworkConfigurator,
+    BaseRequestInfoExtractor,
+    BaseResponseInfoExtractor,
+)
 from json_logging.util import get_library_logger, is_env_var_toggle
 
-CORRELATION_ID_FIELD = 'correlation_id'
+CORRELATION_ID_FIELD = "correlation_id"
 CORRELATION_ID_GENERATOR = uuid.uuid1
 ENABLE_JSON_LOGGING = False
 if is_env_var_toggle("ENABLE_JSON_LOGGING"):
     ENABLE_JSON_LOGGING = True
 
 ENABLE_JSON_LOGGING_DEBUG = False
-EMPTY_VALUE = '-'
+EMPTY_VALUE = "-"
 CREATE_CORRELATION_ID_IF_NOT_EXISTS = True
 JSON_SERIALIZER = lambda log: json.dumps(log, ensure_ascii=False, default=str)
-CORRELATION_ID_HEADERS = ['X-Correlation-ID', 'X-Request-ID']
+CORRELATION_ID_HEADERS = ["X-Correlation-ID", "X-Request-ID"]
 COMPONENT_ID = EMPTY_VALUE
 COMPONENT_NAME = EMPTY_VALUE
 COMPONENT_INSTANCE_INDEX = 0
@@ -45,16 +48,17 @@ def get_correlation_id(request=None):
 
 def config_root_logger():
     """
-        You must call this if you are using root logger.
-        Make all root logger' handlers produce JSON format
-        & remove duplicate handlers for request instrumentation logging.
-        Please made sure that you call this after you called "logging.basicConfig() or logging.getLogger()
+    You must call this if you are using root logger.
+    Make all root logger' handlers produce JSON format
+    & remove duplicate handlers for request instrumentation logging.
+    Please made sure that you call this after you called "logging.basicConfig() or logging.getLogger()
     """
 
     if not logging.root.handlers:
         _logger.error(
             "No logging handlers found for root logger. Please made sure that you call this after you called "
-            "logging.basicConfig() or logging.getLogger()")
+            "logging.basicConfig() or logging.getLogger()"
+        )
         return
 
     if ENABLE_JSON_LOGGING:
@@ -93,12 +97,13 @@ def __init(framework_name=None, custom_formatter=None, enable_json=False):
 
     if custom_formatter:
         if not issubclass(custom_formatter, logging.Formatter):
-            raise ValueError('custom_formatter is not subclass of logging.Formatter', custom_formatter)
+            raise ValueError("custom_formatter is not subclass of logging.Formatter", custom_formatter)
 
     if not enable_json and not ENABLE_JSON_LOGGING:
         _logger.warning(
             "JSON format is not enabled, normal log will be in plain text but request logging still in JSON format! "
-            "To enable set ENABLE_JSON_LOGGING env var to either one of following values: ['true', '1', 'y', 'yes']")
+            "To enable set ENABLE_JSON_LOGGING env var to either one of following values: ['true', '1', 'y', 'yes']"
+        )
     else:
         ENABLE_JSON_LOGGING = True
 
@@ -113,11 +118,12 @@ def __init(framework_name=None, custom_formatter=None, enable_json=False):
 
         _current_framework = _framework_support_map[framework_name]
         _request_util = util.RequestUtil(
-            request_info_extractor_class=_current_framework['request_info_extractor_class'],
-            response_info_extractor_class=_current_framework['response_info_extractor_class'])
+            request_info_extractor_class=_current_framework["request_info_extractor_class"],
+            response_info_extractor_class=_current_framework["response_info_extractor_class"],
+        )
 
-        if ENABLE_JSON_LOGGING and _current_framework['app_configurator'] is not None:
-            _current_framework['app_configurator']().config()
+        if ENABLE_JSON_LOGGING and _current_framework["app_configurator"] is not None:
+            _current_framework["app_configurator"]().config()
 
         _default_formatter = custom_formatter if custom_formatter else JSONLogWebFormatter
     else:
@@ -132,8 +138,9 @@ def __init(framework_name=None, custom_formatter=None, enable_json=False):
         util.update_formatter_for_loggers(existing_loggers, _default_formatter)
 
 
-def init_request_instrument(app=None, custom_formatter=None, exclude_url_patterns=[],
-                            request_response_dto_class=DefaultRequestResponseDTO):
+def init_request_instrument(
+    app=None, custom_formatter=None, exclude_url_patterns=[], request_response_dto_class=DefaultRequestResponseDTO
+):
     """
     Configure the request instrumentation logging configuration for given web app. Must be called after init method
 
@@ -144,18 +151,19 @@ def init_request_instrument(app=None, custom_formatter=None, exclude_url_pattern
     :param request_response_dto_class: request_response_dto_class to override default json_logging.RequestResponseDataExtractor.
     """
 
-    if _current_framework is None or _current_framework == '-':
+    if _current_framework is None or _current_framework == "-":
         raise RuntimeError("please init the logging first, call init(framework_name) first")
 
     if custom_formatter:
         if not issubclass(custom_formatter, logging.Formatter):
-            raise ValueError('custom_formatter is not subclass of logging.Formatter', custom_formatter)
+            raise ValueError("custom_formatter is not subclass of logging.Formatter", custom_formatter)
 
     if not issubclass(request_response_dto_class, RequestResponseDTOBase):
-        raise ValueError('request_response_dto_class is not subclass of json_logging.RequestInfoBase',
-                         custom_formatter)
+        raise ValueError(
+            "request_response_dto_class is not subclass of json_logging.RequestInfoBase", custom_formatter
+        )
 
-    configurator = _current_framework['app_request_instrumentation_configurator']()
+    configurator = _current_framework["app_request_instrumentation_configurator"]()
     configurator.config(app, request_response_dto_class, exclude_url_patterns=exclude_url_patterns)
 
     formatter = custom_formatter if custom_formatter else JSONRequestLogFormatter
@@ -167,12 +175,13 @@ def init_request_instrument(app=None, custom_formatter=None, exclude_url_pattern
 
 
 def get_request_logger():
-    if _current_framework is None or _current_framework == '-':
+    if _current_framework is None or _current_framework == "-":
         raise RuntimeError(
             "request_logger is only available if json_logging is inited with a web app, "
-            "call init_<framework_name>() to do that")
+            "call init_<framework_name>() to do that"
+        )
 
-    instance = _current_framework['app_request_instrumentation_configurator']._instance
+    instance = _current_framework["app_request_instrumentation_configurator"]._instance
     if instance is None:
         raise RuntimeError("please init request instrument first, call init_request_instrument(app) to do that")
 
@@ -183,20 +192,20 @@ import json_logging.frameworks
 
 
 def init_flask(custom_formatter=None, enable_json=False):
-    __init(framework_name='flask', custom_formatter=custom_formatter, enable_json=enable_json)
+    __init(framework_name="flask", custom_formatter=custom_formatter, enable_json=enable_json)
 
 
 def init_sanic(custom_formatter=None, enable_json=False):
-    __init(framework_name='sanic', custom_formatter=custom_formatter, enable_json=enable_json)
+    __init(framework_name="sanic", custom_formatter=custom_formatter, enable_json=enable_json)
 
 
 def init_quart(custom_formatter=None, enable_json=False):
-    __init(framework_name='quart', custom_formatter=custom_formatter, enable_json=enable_json)
+    __init(framework_name="quart", custom_formatter=custom_formatter, enable_json=enable_json)
 
 
 def init_connexion(custom_formatter=None, enable_json=False):
-    __init(framework_name='connexion', custom_formatter=custom_formatter, enable_json=enable_json)
+    __init(framework_name="connexion", custom_formatter=custom_formatter, enable_json=enable_json)
 
 
 def init_fastapi(custom_formatter=None, enable_json=False):
-    __init(framework_name='fastapi', custom_formatter=custom_formatter, enable_json=enable_json)
+    __init(framework_name="fastapi", custom_formatter=custom_formatter, enable_json=enable_json)

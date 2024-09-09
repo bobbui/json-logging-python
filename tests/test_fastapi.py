@@ -1,4 +1,5 @@
 """Test suite for the flask backend"""
+
 import json
 import logging
 import pathlib
@@ -73,9 +74,9 @@ def client_and_log_handler():
 
     @app.get("/get-correlation-id")
     async def get_correlation_id():
-        return {'correlation_id': json_logging.get_correlation_id()}
+        return {"correlation_id": json_logging.get_correlation_id()}
 
-    @app.get('/no-request-instrumentation')
+    @app.get("/no-request-instrumentation")
     async def excluded_from_request_instrumentation():
         return {}
 

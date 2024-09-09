@@ -3,11 +3,15 @@ def is_fastapi_present():
     try:
         import fastapi
         import starlette
+
         return True
     except:
         return False
 
 
 if is_fastapi_present():
-    from .implementation import FastAPIAppRequestInstrumentationConfigurator, FastAPIRequestInfoExtractor, \
-        FastAPIResponseInfoExtractor
+    from .implementation import (
+        FastAPIAppRequestInstrumentationConfigurator,
+        FastAPIRequestInfoExtractor,
+        FastAPIResponseInfoExtractor,
+    )

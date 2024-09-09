@@ -1,3 +1,4 @@
+import inspect
 import logging
 import os
 import re
@@ -6,12 +7,11 @@ from datetime import datetime, timezone
 from logging import Logger, StreamHandler
 
 import json_logging
-import inspect
 
 
 def is_env_var_toggle(var_name):
     enable_json_setting = str(os.getenv(var_name)).lower()
-    _env_toggle = enable_json_setting.lower() in ['true', '1', 'y', 'yes']
+    _env_toggle = enable_json_setting.lower() in ["true", "1", "y", "yes"]
     return _env_toggle
 
 
@@ -65,7 +65,7 @@ def validate_subclass(subclass, superclass):
     :return: bool
     """
     if not issubclass(subclass, superclass):
-        raise RuntimeError(str(subclass) + ' is not a subclass of ' + str(superclass))
+        raise RuntimeError(str(subclass) + " is not a subclass of " + str(superclass))
 
     return True
 
@@ -78,12 +78,18 @@ def epoch_nano_second(datetime_):
 
 
 def iso_time_format(datetime_):
-    return '%04d-%02d-%02dT%02d:%02d:%02d.%03dZ' % (
-        datetime_.year, datetime_.month, datetime_.day, datetime_.hour, datetime_.minute, datetime_.second,
-        int(datetime_.microsecond / 1000))
+    return "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ" % (
+        datetime_.year,
+        datetime_.month,
+        datetime_.day,
+        datetime_.hour,
+        datetime_.minute,
+        datetime_.second,
+        int(datetime_.microsecond / 1000),
+    )
 
 
-if hasattr(sys, '_getframe'):
+if hasattr(sys, "_getframe"):
     currentframe = lambda _no_of_go_up_level: sys._getframe(_no_of_go_up_level)
 else:  # pragma: no cover
     # noinspection PyBroadException
@@ -97,14 +103,14 @@ else:  # pragma: no cover
 
 class RequestUtil:
     """
-        util for extract request's information
+    util for extract request's information
     """
 
     def __new__(cls, *args, **kw):
         # make this request util a singleton object
-        if not hasattr(cls, '_instance'):
-            request_info_extractor_class = kw['request_info_extractor_class']
-            response_info_extractor_class = kw['response_info_extractor_class']
+        if not hasattr(cls, "_instance"):
+            request_info_extractor_class = kw["request_info_extractor_class"]
+            response_info_extractor_class = kw["response_info_extractor_class"]
 
             validate_subclass(request_info_extractor_class, json_logging.BaseRequestInfoExtractor)
             validate_subclass(response_info_extractor_class, json_logging.BaseResponseInfoExtractor)
@@ -115,7 +121,9 @@ class RequestUtil:
             cls._instance.response_info_extractor_class = response_info_extractor_class
             cls._instance.request_adapter = request_info_extractor_class()
             cls._instance.response_adapter = response_info_extractor_class()
-            cls._instance.is_support_global_request_object = request_info_extractor_class.support_global_request_object()
+            cls._instance.is_support_global_request_object = (
+                request_info_extractor_class.support_global_request_object()
+            )
             cls._instance.create_correlation_id_if_not_exists = json_logging.CREATE_CORRELATION_ID_IF_NOT_EXISTS
 
         return cls._instance
@@ -178,16 +186,16 @@ class RequestUtil:
         f = currentframe(no_of_go_up_level)
         while True:
             f_locals = f.f_locals
-            if 'request' in f_locals:
-                if isinstance(f_locals['request'], class_type):
-                    return f_locals['request']
+            if "request" in f_locals:
+                if isinstance(f_locals["request"], class_type):
+                    return f_locals["request"]
 
-            if 'req' in f_locals:
-                if isinstance(f_locals['req'], class_type):
-                    return f_locals['req']
+            if "req" in f_locals:
+                if isinstance(f_locals["req"], class_type):
+                    return f_locals["req"]
 
             for key in f_locals:
-                if key not in {'request', 'req'} and isinstance(f_locals[key], class_type):
+                if key not in {"request", "req"} and isinstance(f_locals[key], class_type):
                     return f_locals[key]
             if f.f_back is not None:
                 f = f.f_back

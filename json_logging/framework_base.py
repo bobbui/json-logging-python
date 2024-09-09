@@ -1,31 +1,31 @@
 class BaseRequestInfoExtractor:
     """
-        Helper class help to extract logging-relevant information from HTTP request object
+    Helper class help to extract logging-relevant information from HTTP request object
     """
 
     def __new__(cls, *arg, **kwargs):
-        if not hasattr(cls, '_instance'):
+        if not hasattr(cls, "_instance"):
             cls._instance = object.__new__(cls)
         return cls._instance
 
     @staticmethod
     def support_global_request_object():
         """
-            whether current framework supports global request object like Flask
+        whether current framework supports global request object like Flask
         """
         raise NotImplementedError
 
     @staticmethod
     def get_current_request():
         """
-            get current request, should only implement for framework that support global request object
+        get current request, should only implement for framework that support global request object
         """
         raise NotImplementedError
 
     @staticmethod
     def get_request_class_type():
         """
-            class type of request object, only need to specify in case the framework dont support global request object
+        class type of request object, only need to specify in case the framework dont support global request object
         """
         raise NotImplementedError
 
@@ -77,10 +77,10 @@ class BaseRequestInfoExtractor:
 
     def get_path(self, request):
         """
-        We can safely assume that request is valid request object.\n
-        Gets the request path.
+         We can safely assume that request is valid request object.\n
+         Gets the request path.
 
-       :return: the request path (e.g. /index.html)
+        :return: the request path (e.g. /index.html)
         """
         raise NotImplementedError
 
@@ -123,11 +123,11 @@ class BaseRequestInfoExtractor:
 
 class BaseResponseInfoExtractor:
     """
-        Helper class help to extract logging-relevant information from HTTP response object
+    Helper class help to extract logging-relevant information from HTTP response object
     """
 
     def __new__(cls, *arg, **kwargs):
-        if not hasattr(cls, '_instance'):
+        if not hasattr(cls, "_instance"):
             cls._instance = object.__new__(cls)
         return cls._instance
 
@@ -158,32 +158,32 @@ class BaseResponseInfoExtractor:
 
 class BaseFrameworkConfigurator:
     """
-       Class to perform logging configuration for given framework as needed, like disable built in request logging and other utils logging
+    Class to perform logging configuration for given framework as needed, like disable built in request logging and other utils logging
     """
 
     def __new__(cls, *args, **kw):
-        if not hasattr(cls, '_instance'):
+        if not hasattr(cls, "_instance"):
             cls._instance = object.__new__(cls)
         return cls._instance
 
     def config(self):
         """
-            app logging configuration logic
+        app logging configuration logic
         """
         raise NotImplementedError
 
 
 class BaseAppRequestInstrumentationConfigurator:
     """
-        Class to perform request instrumentation logging configuration. Should at least contains:
-        1- register before-request hook and create a RequestInfo object, store it to request context
-        2- register after-request hook and update response to stored RequestInfo object
-        3 - re-configure framework loggers.
-        NOTE: logger that is used to emit request instrumentation logs will need to assign to **self.request_logger**
+    Class to perform request instrumentation logging configuration. Should at least contains:
+    1- register before-request hook and create a RequestInfo object, store it to request context
+    2- register after-request hook and update response to stored RequestInfo object
+    3 - re-configure framework loggers.
+    NOTE: logger that is used to emit request instrumentation logs will need to assign to **self.request_logger**
     """
 
     def __new__(cls, *args, **kw):
-        if not hasattr(cls, '_instance'):
+        if not hasattr(cls, "_instance"):
             cls._instance = object.__new__(cls)
             cls._instance.request_logger = None
         return cls._instance

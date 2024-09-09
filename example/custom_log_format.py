@@ -8,8 +8,8 @@ import json_logging.formatters
 
 
 def extra(**kw):
-    '''Add the required nested props layer'''
-    return {'extra': {'props': kw}}
+    """Add the required nested props layer"""
+    return {"extra": {"props": kw}}
 
 
 class CustomJSONLog(json_logging.formatters.JSONLogFormatter):
@@ -18,10 +18,7 @@ class CustomJSONLog(json_logging.formatters.JSONLogFormatter):
     """
 
     def format(self, record):
-        json_customized_log_object = ({
-            "customized_prop": "customized value",
-            "message": record.getMessage()
-        })
+        json_customized_log_object = {"customized_prop": "customized value", "message": record.getMessage()}
 
         return json.dumps(json_customized_log_object)
 
@@ -35,4 +32,4 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler(sys.stderr))
 
-logger.info('sample log message')
+logger.info("sample log message")

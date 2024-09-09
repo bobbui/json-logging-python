@@ -20,15 +20,17 @@ class CustomRequestJSONLog(json_logging.formatters.JSONRequestLogFormatter):
         response = record.request_response_data._response
 
         json_log_object = super()._format_log_object(record, request_util)
-        json_log_object.update({
-            "customized_prop": "customized value",
-        })
+        json_log_object.update(
+            {
+                "customized_prop": "customized value",
+            }
+        )
         return json_log_object
 
 
 class CustomDefaultRequestResponseDTO(json_logging.dto.DefaultRequestResponseDTO):
     """
-        custom implementation
+    custom implementation
     """
 
     def __init__(self, request, **kwargs):
@@ -41,9 +43,12 @@ class CustomDefaultRequestResponseDTO(json_logging.dto.DefaultRequestResponseDTO
 
 app = flask.Flask(__name__)
 json_logging.init_flask(enable_json=True)
-json_logging.init_request_instrument(app, exclude_url_patterns=[r'/exclude_from_request_instrumentation'],
-                                     custom_formatter=CustomRequestJSONLog,
-                                     request_response_dto_class=CustomDefaultRequestResponseDTO)
+json_logging.init_request_instrument(
+    app,
+    exclude_url_patterns=[r"/exclude_from_request_instrumentation"],
+    custom_formatter=CustomRequestJSONLog,
+    request_response_dto_class=CustomDefaultRequestResponseDTO,
+)
 
 # init the logger as usual
 logger = logging.getLogger("test logger")
@@ -51,16 +56,15 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
-@app.route('/')
+@app.route("/")
 def home():
     logger.info("test log statement")
-    logger.info("test log statement with extra props", extra={'props': {"extra_property": 'extra_value'}})
+    logger.info("test log statement with extra props", extra={"props": {"extra_property": "extra_value"}})
     correlation_id = json_logging.get_correlation_id()
-    return "hello world" \
-           "\ncorrelation_id                    : " + correlation_id
+    return f"hello world\ncorrelation_id                    : {correlation_id}"
 
 
-@app.route('/exception')
+@app.route("/exception")
 def exception():
     try:
         raise RuntimeError
@@ -70,10 +74,10 @@ def exception():
     return "Error occurred, check log for detail"
 
 
-@app.route('/exclude_from_request_instrumentation')
+@app.route("/exclude_from_request_instrumentation")
 def exclude_from_request_instrumentation():
     return "this request wont log request instrumentation information"
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=int(5000), use_reloader=False)
+    app.run(host="0.0.0.0", port=int(5000), use_reloader=False)

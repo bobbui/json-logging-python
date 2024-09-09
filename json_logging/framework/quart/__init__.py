@@ -4,8 +4,11 @@ import sys
 import json_logging
 import json_logging.framework
 from json_logging import JSONLogWebFormatter
-from json_logging.framework_base import BaseAppRequestInstrumentationConfigurator, BaseRequestInfoExtractor, \
-    BaseResponseInfoExtractor
+from json_logging.framework_base import (
+    BaseAppRequestInstrumentationConfigurator,
+    BaseRequestInfoExtractor,
+    BaseResponseInfoExtractor,
+)
 from json_logging.util import is_not_match_any_pattern
 
 
@@ -13,14 +16,15 @@ def is_quart_present():
     # noinspection PyPep8,PyBroadException
     try:
         from quart import Quart
+
         return True
     except:
         return False
 
 
 if is_quart_present():
-    from quart import request as request_obj
     import quart as quart
+    from quart import request as request_obj
 
     _current_request = request_obj
     _quart = quart
@@ -31,20 +35,25 @@ class QuartAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationCo
         if not is_quart_present():
             raise RuntimeError("quart is not available in system runtime")
         from quart.app import Quart
+
         if not isinstance(app, Quart):
             raise RuntimeError("app is not a valid quart.app.Quart app instance")
 
         # Remove quart logging handlers
         from quart.logging import default_handler
-        logging.getLogger('quart.app').removeHandler(default_handler)
-        json_logging.util.update_formatter_for_loggers([
-            logging.getLogger('quart.app'),
-        ], JSONLogWebFormatter)
 
-        logging.getLogger('quart.serving').disabled = True
+        logging.getLogger("quart.app").removeHandler(default_handler)
+        json_logging.util.update_formatter_for_loggers(
+            [
+                logging.getLogger("quart.app"),
+            ],
+            JSONLogWebFormatter,
+        )
+
+        logging.getLogger("quart.serving").disabled = True
 
         # noinspection PyAttributeOutsideInit
-        self.request_logger = logging.getLogger('quart-request-logger')
+        self.request_logger = logging.getLogger("quart-request-logger")
 
         from quart import g
 
@@ -55,11 +64,11 @@ class QuartAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationCo
 
         @app.after_request
         def after_request(response):
-            if hasattr(g, 'request_response_data'):
+            if hasattr(g, "request_response_data"):
                 request_response_data = g.request_response_data
                 request_response_data.on_request_complete(response)
                 # TODO:handle to print out request instrumentation in non-JSON mode
-                self.request_logger.info("", extra={'request_response_data': request_response_data})
+                self.request_logger.info("", extra={"request_response_data": request_response_data})
             return response
 
 
@@ -98,7 +107,7 @@ class QuartRequestInfoExtractor(BaseRequestInfoExtractor):
 
     def get_correlation_id_in_request_context(self, request):
         try:
-            return _quart.g.get('correlation_id', None)
+            return _quart.g.get("correlation_id", None)
         except:
             return None
 
@@ -118,11 +127,7 @@ class QuartRequestInfoExtractor(BaseRequestInfoExtractor):
         return request.remote_addr
 
     def get_remote_port(self, request):
-        return (
-            request.host.split(":", 2)[1]
-            if len(request.host.split(":", 2)) == 2
-            else None
-        )
+        return request.host.split(":", 2)[1] if len(request.host.split(":", 2)) == 2 else None
 
 
 class QuartResponseInfoExtractor(BaseResponseInfoExtractor):

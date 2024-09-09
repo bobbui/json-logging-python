@@ -4,8 +4,11 @@ import sys
 import json_logging
 import json_logging.framework
 from json_logging import JSONLogWebFormatter
-from json_logging.framework_base import BaseAppRequestInstrumentationConfigurator, BaseRequestInfoExtractor, \
-    BaseResponseInfoExtractor
+from json_logging.framework_base import (
+    BaseAppRequestInstrumentationConfigurator,
+    BaseRequestInfoExtractor,
+    BaseResponseInfoExtractor,
+)
 from json_logging.util import is_not_match_any_pattern
 
 
@@ -13,15 +16,16 @@ def is_connexion_present():
     # noinspection PyPep8,PyBroadException
     try:
         import connexion
+
         return True
     except:
         return False
 
 
 if is_connexion_present():
-    from connexion import request as request_obj
     import connexion as connexion
     import flask as flask
+    from connexion import request as request_obj
     from flask import g
 
     _current_request = request_obj
@@ -35,16 +39,17 @@ class ConnexionAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentati
         if not is_connexion_present():
             raise RuntimeError("connexion is not available in system runtime")
         from flask.app import Flask
+
         if not isinstance(app.app, Flask):
             raise RuntimeError("app is not a valid connexion.app.Connexion app instance")
 
         # Disable standard logging
-        logging.getLogger('werkzeug').disabled = True
+        logging.getLogger("werkzeug").disabled = True
 
-        json_logging.util.update_formatter_for_loggers([logging.getLogger('werkzeug')], JSONLogWebFormatter)
+        json_logging.util.update_formatter_for_loggers([logging.getLogger("werkzeug")], JSONLogWebFormatter)
 
         # noinspection PyAttributeOutsideInit
-        self.request_logger = logging.getLogger('connexion-request-logger')
+        self.request_logger = logging.getLogger("connexion-request-logger")
 
         from flask import g
 
@@ -55,10 +60,10 @@ class ConnexionAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentati
 
         @app.app.after_request
         def after_request(response):
-            if hasattr(g, 'request_response_data'):
+            if hasattr(g, "request_response_data"):
                 request_response_data = g.request_response_data
                 request_response_data.on_request_complete(response)
-                self.request_logger.info("", extra={'request_response_data': request_response_data})
+                self.request_logger.info("", extra={"request_response_data": request_response_data})
             return response
 
 
@@ -97,12 +102,12 @@ class ConnexionRequestInfoExtractor(BaseRequestInfoExtractor):
 
     def get_correlation_id_in_request_context(self, request):
         try:
-            return _connexion.g.get('correlation_id', None)
+            return _connexion.g.get("correlation_id", None)
         except:
             return None
 
     def get_protocol(self, request):
-        return request.environ.get('SERVER_PROTOCOL')
+        return request.environ.get("SERVER_PROTOCOL")
 
     def get_path(self, request):
         return request.path
@@ -117,7 +122,7 @@ class ConnexionRequestInfoExtractor(BaseRequestInfoExtractor):
         return request.remote_addr
 
     def get_remote_port(self, request):
-        return request.environ.get('REMOTE_PORT')
+        return request.environ.get("REMOTE_PORT")
 
 
 class ConnexionResponseInfoExtractor(BaseResponseInfoExtractor):

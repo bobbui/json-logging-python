@@ -3,9 +3,11 @@ import logging
 import json_logging
 import json_logging.formatters
 import json_logging.framework
-from json_logging.framework_base import BaseAppRequestInstrumentationConfigurator, BaseRequestInfoExtractor, \
-    BaseResponseInfoExtractor
-
+from json_logging.framework_base import (
+    BaseAppRequestInstrumentationConfigurator,
+    BaseRequestInfoExtractor,
+    BaseResponseInfoExtractor,
+)
 from json_logging.util import is_not_match_any_pattern
 
 
@@ -13,14 +15,15 @@ def is_flask_present():
     # noinspection PyPep8,PyBroadException
     try:
         import flask
+
         return True
     except:
         return False
 
 
 if is_flask_present():
-    from flask import request as request_obj
     import flask as flask
+    from flask import request as request_obj
 
     _current_request = request_obj
     _flask = flask
@@ -32,17 +35,19 @@ class FlaskAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationCo
             raise RuntimeError("flask is not available in system runtime")
 
         from flask.app import Flask
+
         if not isinstance(app, Flask):
             raise RuntimeError("app is not a valid flask.app.Flask app instance")
 
         # Disable standard logging
-        logging.getLogger('werkzeug').disabled = True
+        logging.getLogger("werkzeug").disabled = True
 
-        json_logging.util.update_formatter_for_loggers([logging.getLogger('werkzeug')],
-                                                       json_logging.formatters.JSONLogWebFormatter)
+        json_logging.util.update_formatter_for_loggers(
+            [logging.getLogger("werkzeug")], json_logging.formatters.JSONLogWebFormatter
+        )
 
         # noinspection PyAttributeOutsideInit
-        self.request_logger = logging.getLogger('flask-request-logger')
+        self.request_logger = logging.getLogger("flask-request-logger")
 
         from flask import g
 
@@ -53,10 +58,10 @@ class FlaskAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationCo
 
         @app.after_request
         def after_request(response):
-            if hasattr(g, 'request_response_data'):
+            if hasattr(g, "request_response_data"):
                 request_response_data = g.request_response_data
                 request_response_data.on_request_complete(response)
-                self.request_logger.info("", extra={'request_response_data': request_response_data})
+                self.request_logger.info("", extra={"request_response_data": request_response_data})
 
             return response
 
@@ -96,12 +101,12 @@ class FlaskRequestInfoExtractor(BaseRequestInfoExtractor):
 
     def get_correlation_id_in_request_context(self, request):
         try:
-            return _flask.g.get('correlation_id', None)
+            return _flask.g.get("correlation_id", None)
         except:
             return None
 
     def get_protocol(self, request):
-        return request.environ.get('SERVER_PROTOCOL')
+        return request.environ.get("SERVER_PROTOCOL")
 
     def get_path(self, request):
         return request.path
@@ -116,7 +121,7 @@ class FlaskRequestInfoExtractor(BaseRequestInfoExtractor):
         return request.remote_addr
 
     def get_remote_port(self, request):
-        return request.environ.get('REMOTE_PORT')
+        return request.environ.get("REMOTE_PORT")
 
 
 class FlaskResponseInfoExtractor(BaseResponseInfoExtractor):

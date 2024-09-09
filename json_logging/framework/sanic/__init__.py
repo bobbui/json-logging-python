@@ -1,13 +1,12 @@
 import logging
 import logging.config
-
 import sys
 
 import json_logging
 import json_logging.framework
 from json_logging.framework_base import (
-    BaseFrameworkConfigurator,
     BaseAppRequestInstrumentationConfigurator,
+    BaseFrameworkConfigurator,
     BaseRequestInfoExtractor,
     BaseResponseInfoExtractor,
 )
@@ -35,13 +34,9 @@ class SanicAppConfigurator(BaseFrameworkConfigurator):
         from sanic.log import LOGGING_CONFIG_DEFAULTS
 
         LOGGING_CONFIG_DEFAULTS["disable_existing_loggers"] = False
-        LOGGING_CONFIG_DEFAULTS["formatters"]["generic"][
-            "class"
-        ] = "json_logging.JSONLogFormatter"
+        LOGGING_CONFIG_DEFAULTS["formatters"]["generic"]["class"] = "json_logging.JSONLogFormatter"
 
-        LOGGING_CONFIG_DEFAULTS["formatters"]["access"][
-            "class"
-        ] = "json_logging.JSONLogFormatter"
+        LOGGING_CONFIG_DEFAULTS["formatters"]["access"]["class"] = "json_logging.JSONLogFormatter"
 
         # logging.config.dictConfig(LOGGING_CONFIG_DEFAULTS)
 
@@ -71,9 +66,7 @@ class SanicAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationCo
             if hasattr(request.ctx, "request_response_data"):
                 request_response_data = request.ctx.request_response_data
                 request_response_data.on_request_complete(response)
-                self.request_logger.info(
-                    "", extra={"request_response_data": request_response_data, "type": "request"}
-                )
+                self.request_logger.info("", extra={"request_response_data": request_response_data, "type": "request"})
 
 
 class SanicRequestInfoExtractor(BaseRequestInfoExtractor):

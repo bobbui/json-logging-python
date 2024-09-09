@@ -17,24 +17,31 @@ app = Flask(__name__)
 json_logging.init_flask()
 json_logging.init_request_instrument(app)
 
-FORMAT = 'important: %s'
-MESSAGE = 'some important information to be logged'
+FORMAT = "important: %s"
+MESSAGE = "some important information to be logged"
 
 
-@app.route('/')
+@app.route("/")
 def home________________():
     count_ = 10
-    if 'count' in request.args:
-        count_ = int(request.args['count'])
+    if "count" in request.args:
+        count_ = int(request.args["count"])
     simple_logging = Timer(lambda: logger.info(MESSAGE)).timeit(number=count_)
     formatted_logging = Timer(lambda: logger.info(FORMAT, MESSAGE)).timeit(number=count_)
-    return "simple_logging : " + str(simple_logging) + " </br>" \
-           + "formatted_logging " + str(formatted_logging) + " </br>" \
-           + "aggregated " + str(formatted_logging)
+    return (
+        "simple_logging : "
+        + str(simple_logging)
+        + " </br>"
+        + "formatted_logging "
+        + str(formatted_logging)
+        + " </br>"
+        + "aggregated "
+        + str(formatted_logging)
+    )
 
 
-port = os.getenv('PORT', '5002')
+port = os.getenv("PORT", "5002")
 if __name__ == "__main__":
-    app.debug = not os.getenv('PORT')
+    app.debug = not os.getenv("PORT")
     logger.info("App started")
-    app.run(host='0.0.0.0', port=int(port), use_reloader=False)
+    app.run(host="0.0.0.0", port=int(port), use_reloader=False)
