@@ -1,3 +1,4 @@
+import os
 import datetime, logging, sys, json_logging, fastapi, uvicorn
 
 app = fastapi.FastAPI()
@@ -17,4 +18,5 @@ def home():
     return "Hello world : " + str(datetime.datetime.now())
 
 if __name__ == "__main__":
-    uvicorn.run(app, host='0.0.0.0', port=5000)
+    port = os.getenv('PORT', '5000')
+    uvicorn.run(app, host='0.0.0.0', port=int(port))

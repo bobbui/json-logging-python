@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 
 import flask
@@ -43,4 +44,5 @@ def exclude_from_request_instrumentation():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=int(5000), use_reloader=False)
+    port = os.getenv('PORT', '5000')
+    app.run(host='0.0.0.0', port=int(port), use_reloader=False)

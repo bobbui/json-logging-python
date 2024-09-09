@@ -11,4 +11,5 @@ STANDARD_MSG_ATTRIBUTES = {
     "module",
     "line_no",
     "correlation_id",
+    "taskName",
 }

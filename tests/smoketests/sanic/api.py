@@ -1,3 +1,4 @@
+import os
 import logging, sys, json_logging, sanic
 
 app = sanic.Sanic(name="sanic-web-app")
@@ -21,4 +22,5 @@ async def home(request):
     return sanic.response.text("hello world")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = os.getenv('PORT', '5000')
+    app.run(host="0.0.0.0", port=int(port))

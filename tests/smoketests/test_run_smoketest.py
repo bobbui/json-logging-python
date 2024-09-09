@@ -47,7 +47,8 @@ def test_api_example(backend):
             os.environ['NO_PROXY'] = 'localhost'
             os.environ['no_proxy'] = 'localhost'
             try:
-                response = requests.get("http://localhost:5000/", timeout=1)
+                port = os.getenv('PORT', '5000')
+                response = requests.get(f"http://localhost:{port}/", timeout=1)
                 assert response.status_code == 200
                 return
             except requests.exceptions.Timeout:

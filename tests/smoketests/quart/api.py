@@ -1,3 +1,4 @@
+import os
 import asyncio, logging, sys, json_logging, quart
 
 app = quart.Quart(__name__)
@@ -18,4 +19,5 @@ async def home():
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    app.run(host='0.0.0.0', port=int(5000), use_reloader=False, loop=loop)
+    port = os.getenv('PORT', '5000')
+    app.run(host='0.0.0.0', port=int(port), use_reloader=False, loop=loop)
