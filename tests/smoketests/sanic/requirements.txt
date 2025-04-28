@@ -1,4 +1,4 @@
-sanic
+sanic==20.3.0
 requests
 pytest
 -e .
