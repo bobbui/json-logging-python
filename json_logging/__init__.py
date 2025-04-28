@@ -61,7 +61,6 @@ def config_root_logger():
     if ENABLE_JSON_LOGGING:
         ENABLE_JSON_LOGGING_DEBUG and _logger.debug("Update root logger to using JSONLogFormatter")
 
-        global _default_formatter
         util.update_formatter_for_loggers([logging.root], _default_formatter)
 
 
