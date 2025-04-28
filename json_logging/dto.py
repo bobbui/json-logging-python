@@ -32,14 +32,14 @@ class DefaultRequestResponseDTO(RequestResponseDTOBase):
 
     def __init__(self, request, **kwargs):
         super(DefaultRequestResponseDTO, self).__init__(request, **kwargs)
-        utcnow = datetime.now(timezone.utc).replace(tzinfo=None)
+        utcnow = datetime.now(timezone.utc)
         self._request_start = utcnow
         self["request_received_at"] = util.iso_time_format(utcnow)
 
     # noinspection PyAttributeOutsideInit
     def on_request_complete(self, response):
         super(DefaultRequestResponseDTO, self).on_request_complete(response)
-        utcnow = datetime.now(timezone.utc).replace(tzinfo=None)
+        utcnow = datetime.now(timezone.utc)
         time_delta = utcnow - self._request_start
         self["response_time_ms"] = int(time_delta.total_seconds()) * 1000 + int(time_delta.microseconds / 1000)
         self["response_sent_at"] = util.iso_time_format(utcnow)
