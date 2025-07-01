@@ -1,14 +1,6 @@
-import io
-import sys
-
 from setuptools import setup, find_packages
 
-version_info_major = sys.version_info[0]
-if version_info_major == 3:
-    long_description = open('README.rst', encoding="utf8").read()
-else:
-    io_open = io.open('README.rst', encoding="utf8")
-    long_description = io_open.read()
+long_description = open('README.rst', encoding="utf8").read()
 
 setup(
     name="json-logging",
@@ -21,7 +13,7 @@ setup(
     keywords=["json", "elastic", "python", "python3", "python2", "logging", "logging-library", "json", "elasticsearch",
               "elk", "elk-stack", "logstash", "kibana"],
     platforms='any',
-    url="https://github.com/thangbn/json-logging",
+    url="https://github.com/virajkanwade/json-logging",
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',

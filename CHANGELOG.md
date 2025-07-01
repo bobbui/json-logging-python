@@ -2,8 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-This project adheres to [Semantic Versioning](http://semver.org/).  
+This project adheres to [Semantic Versioning](http://semver.org/).
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
+
+## [Unreleased]
+
+### Changed
+
+- refactor for Python 3.12
 
 ## 1.4.1rc0 - 2021-04-23
 
