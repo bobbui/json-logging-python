@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](http://semver.org/).  
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
+## 1.5.1 - 2025-07-06
+
+- fix: wrap debug log when logger upated to using JSONLogFormatter #105
+- fix: add connexion 3 support #108
+- fix: update utcnow for python 3.12 deprecation #107
+
+## 1.5.0-rc0 - 2022-02-01 
+
+- refactoring to have cleaner structure and smaller module
 
 ## 1.4.1rc0 - 2021-04-23
 
