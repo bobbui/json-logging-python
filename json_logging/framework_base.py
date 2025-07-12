@@ -1,4 +1,3 @@
-# coding=utf-8
 class BaseRequestInfoExtractor:
     """
         Helper class help to extract logging-relevant information from HTTP request object

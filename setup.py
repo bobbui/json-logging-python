@@ -7,7 +7,7 @@ version_info_major = sys.version_info[0]
 if version_info_major == 3:
     long_description = open('README.rst', encoding="utf8").read()
 else:
-    io_open = io.open('README.rst', encoding="utf8")
+    io_open = open('README.rst', encoding="utf8")
     long_description = io_open.read()
 
 setup(
