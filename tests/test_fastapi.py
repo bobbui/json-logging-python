@@ -215,3 +215,22 @@ def test_excluded_from_request_instrumentation(client_and_log_handler):
 
     assert response.status_code == 200
     assert len(handler.messages) == 0
+
+
+def test_request_info_extractor_handles_missing_client():
+    """Test if missing request client information falls back to empty values"""
+    import json_logging
+    from json_logging.framework.fastapi.implementation import FastAPIRequestInfoExtractor
+
+    request = fastapi.Request({
+        "type": "http",
+        "method": "GET",
+        "path": "/",
+        "headers": [],
+        "query_string": b"",
+        "client": None,
+    })
+    extractor = FastAPIRequestInfoExtractor()
+
+    assert extractor.get_remote_ip(request) == json_logging.EMPTY_VALUE
+    assert extractor.get_remote_port(request) == json_logging.EMPTY_VALUE

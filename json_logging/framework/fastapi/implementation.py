@@ -111,10 +111,14 @@ class FastAPIRequestInfoExtractor(BaseRequestInfoExtractor):
         return request.method
 
     def get_remote_ip(self, request: starlette.requests.Request):
-        return request.client.host
+        if request.client:
+            return request.client.host
+        return json_logging.EMPTY_VALUE
 
     def get_remote_port(self, request: starlette.requests.Request):
-        return request.client.port
+        if request.client:
+            return request.client.port
+        return json_logging.EMPTY_VALUE
 
 
 class FastAPIResponseInfoExtractor(BaseResponseInfoExtractor):
