@@ -9,7 +9,7 @@ class FormattedMessageCollectorHandler(logging.Handler):
         """Create a new log handler."""
         super().__init__(level=level)
         self.level = level
-        self.messages: List[str] = []
+        self.messages: list[str] = []
 
     def emit(self, record: logging.LogRecord) -> None:
         """Keep the log records in a list in addition to the log text."""
