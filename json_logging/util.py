@@ -187,9 +187,9 @@ class RequestUtil(object):
                 if isinstance(f_locals['req'], class_type):
                     return f_locals['req']
 
-            for key in f_locals:
-                if key not in {'request', 'req'} and isinstance(f_locals[key], class_type):
-                    return f_locals[key]
+            for value in tuple(f_locals.values()):
+                if isinstance(value, class_type):
+                    return value
             if f.f_back is not None:
                 f = f.f_back
             else:
