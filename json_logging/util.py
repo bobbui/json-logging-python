@@ -1,9 +1,8 @@
-# coding=utf-8
 import logging
 import os
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from logging import Logger, StreamHandler
 
 import json_logging
@@ -71,7 +70,7 @@ def validate_subclass(subclass, superclass):
     return True
 
 
-_epoch = datetime(1970, 1, 1)
+_epoch = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
 def epoch_nano_second(datetime_):
@@ -96,7 +95,7 @@ else:  # pragma: no cover
             return sys.exc_info()[_no_of_go_up_level - 1].tb_frame.f_back
 
 
-class RequestUtil(object):
+class RequestUtil:
     """
         util for extract request's information
     """

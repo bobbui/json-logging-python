@@ -19,7 +19,7 @@ class CustomRequestJSONLog(json_logging.formatters.JSONRequestLogFormatter):
         request = record.request_response_data._request
         response = record.request_response_data._response
 
-        json_log_object = super(CustomRequestJSONLog, self)._format_log_object(record, request_util)
+        json_log_object = super()._format_log_object(record, request_util)
         json_log_object.update({
             "customized_prop": "customized value",
         })
@@ -32,10 +32,10 @@ class CustomDefaultRequestResponseDTO(json_logging.dto.DefaultRequestResponseDTO
     """
 
     def __init__(self, request, **kwargs):
-        super(CustomDefaultRequestResponseDTO, self).__init__(request, **kwargs)
+        super().__init__(request, **kwargs)
 
     def on_request_complete(self, response):
-        super(CustomDefaultRequestResponseDTO, self).on_request_complete(response)
+        super().on_request_complete(response)
         self.status = response.status
 
 
