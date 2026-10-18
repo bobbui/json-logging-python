@@ -36,12 +36,17 @@ def wait_for_api(session, url, timeout, poll_interval=3.0):
     Connection errors and timeouts are expected while the API is still starting up.
     """
     deadline = time.perf_counter() + timeout
-    while time.perf_counter() < deadline:
-        time.sleep(poll_interval)
+    while (remaining := deadline - time.perf_counter()) > 0:
+        time.sleep(min(poll_interval, remaining))
+        remaining = deadline - time.perf_counter()
+        if remaining <= 0:
+            break
         try:
-            response = session.get(url, timeout=1)
+            response = session.get(url, timeout=min(1, remaining))
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             continue
+        if time.perf_counter() >= deadline:
+            break
         assert response.status_code == 200
         return True
     return False
@@ -100,6 +105,38 @@ def test_wait_for_api_gives_up_at_timeout():
     session = _StartingUpSession(failures=float('inf'))
     assert not wait_for_api(session, "http://localhost:5000/", timeout=0.05, poll_interval=0.01)
     assert session.calls > 1
+
+
+def test_wait_for_api_does_not_request_after_deadline(monkeypatch):
+    clock = {'now': 100.0}
+    monkeypatch.setattr(time, 'perf_counter', lambda: clock['now'])
+    monkeypatch.setattr(time, 'sleep', lambda seconds: clock.__setitem__('now', clock['now'] + seconds))
+
+    session = _StartingUpSession(failures=0)
+    assert not wait_for_api(session, "http://localhost:5000/", timeout=0.5, poll_interval=3.0)
+    assert session.calls == 0
+
+
+def test_wait_for_api_does_not_accept_late_response(monkeypatch):
+    clock = {'now': 100.0}
+    monkeypatch.setattr(time, 'perf_counter', lambda: clock['now'])
+    monkeypatch.setattr(time, 'sleep', lambda seconds: clock.__setitem__('now', clock['now'] + seconds))
+
+    class _SlowSession:
+        def __init__(self):
+            self.timeouts = []
+
+        def get(self, url, timeout):
+            self.timeouts.append(timeout)
+            clock['now'] += timeout + 0.01
+            response = requests.Response()
+            response.status_code = 200
+            return response
+
+    session = _SlowSession()
+    assert not wait_for_api(session, "http://localhost:5000/", timeout=0.5, poll_interval=0.1)
+    assert len(session.timeouts) == 1
+    assert 0 < session.timeouts[0] <= 0.4 + 1e-9
 
 
 def test_stop_process_kills_process_ignoring_sigterm():
