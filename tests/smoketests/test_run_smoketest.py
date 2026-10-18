@@ -30,7 +30,39 @@ def collect_backends():
                 yield str(folder.name)
 
 
-@pytest.mark.parametrize('backend', collect_backends(), ids=collect_backends())
+def wait_for_api(session, url, timeout, poll_interval=3.0):
+    """Poll url until it answers or the timeout expires, return whether the API responded
+
+    Connection errors and timeouts are expected while the API is still starting up.
+    """
+    deadline = time.perf_counter() + timeout
+    while (remaining := deadline - time.perf_counter()) > 0:
+        time.sleep(min(poll_interval, remaining))
+        remaining = deadline - time.perf_counter()
+        if remaining <= 0:
+            break
+        try:
+            response = session.get(url, timeout=min(1, remaining))
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            continue
+        if time.perf_counter() >= deadline:
+            break
+        assert response.status_code == 200
+        return True
+    return False
+
+
+def stop_process(process, timeout=5.0):
+    """Ask the process to terminate and kill it if it does not exit in time"""
+    process.send_signal(signal.SIGTERM)
+    try:
+        process.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait()
+
+
+@pytest.mark.parametrize('backend', list(collect_backends()))
 def test_api_example(backend):
     """For each of the examples start the API and see if the root endpoint is reachable"""
     api_process = subprocess.Popen(
@@ -39,20 +71,89 @@ def test_api_example(backend):
         stderr=subprocess.STDOUT,
     )
     try:
-        deadline = time.perf_counter() + 15.0
-        while time.perf_counter() < deadline:
-            time.sleep(3)
-            session = requests.Session()
+        with requests.Session() as session:
+            # ignore proxy settings from the environment, the API runs on localhost
             session.trust_env = False
-            os.environ['NO_PROXY'] = 'localhost'
-            os.environ['no_proxy'] = 'localhost'
-            try:
-                response = requests.get("http://localhost:5000/", timeout=1)
-                assert response.status_code == 200
-                return
-            except requests.exceptions.Timeout:
-                pass
-        assert False, "API did not respond"
+            assert wait_for_api(session, "http://localhost:5000/", timeout=15.0), "API did not respond"
     finally:
-        api_process.send_signal(signal.SIGTERM)
-        api_process.wait(timeout=5.0)
+        stop_process(api_process)
+
+
+class _StartingUpSession:
+    """Fake session which refuses connections a number of times before answering"""
+
+    def __init__(self, failures):
+        self.failures = failures
+        self.calls = 0
+
+    def get(self, url, timeout):
+        self.calls += 1
+        if self.calls <= self.failures:
+            raise requests.exceptions.ConnectionError("API not up yet")
+        response = requests.Response()
+        response.status_code = 200
+        return response
+
+
+def test_wait_for_api_retries_while_api_is_starting():
+    session = _StartingUpSession(failures=2)
+    assert wait_for_api(session, "http://localhost:5000/", timeout=5.0, poll_interval=0)
+    assert session.calls == 3
+
+
+def test_wait_for_api_gives_up_at_timeout():
+    session = _StartingUpSession(failures=float('inf'))
+    assert not wait_for_api(session, "http://localhost:5000/", timeout=0.05, poll_interval=0.01)
+    assert session.calls > 1
+
+
+def test_wait_for_api_does_not_request_after_deadline(monkeypatch):
+    clock = {'now': 100.0}
+    monkeypatch.setattr(time, 'perf_counter', lambda: clock['now'])
+    monkeypatch.setattr(time, 'sleep', lambda seconds: clock.__setitem__('now', clock['now'] + seconds))
+
+    session = _StartingUpSession(failures=0)
+    assert not wait_for_api(session, "http://localhost:5000/", timeout=0.5, poll_interval=3.0)
+    assert session.calls == 0
+
+
+def test_wait_for_api_does_not_accept_late_response(monkeypatch):
+    clock = {'now': 100.0}
+    monkeypatch.setattr(time, 'perf_counter', lambda: clock['now'])
+    monkeypatch.setattr(time, 'sleep', lambda seconds: clock.__setitem__('now', clock['now'] + seconds))
+
+    class _SlowSession:
+        def __init__(self):
+            self.timeouts = []
+
+        def get(self, url, timeout):
+            self.timeouts.append(timeout)
+            clock['now'] += timeout + 0.01
+            response = requests.Response()
+            response.status_code = 200
+            return response
+
+    session = _SlowSession()
+    assert not wait_for_api(session, "http://localhost:5000/", timeout=0.5, poll_interval=0.1)
+    assert len(session.timeouts) == 1
+    assert 0 < session.timeouts[0] <= 0.4 + 1e-9
+
+
+def test_stop_process_kills_process_ignoring_sigterm():
+    process = subprocess.Popen(
+        [sys.executable, "-c",
+         "import signal, sys, time\n"
+         "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
+         "sys.stdout.write('ready\\n'); sys.stdout.flush()\n"
+         "time.sleep(60)"],
+        stdout=subprocess.PIPE,
+    )
+    try:
+        process.stdout.readline()  # SIGTERM handler is installed once the child is ready
+        stop_process(process, timeout=0.5)
+        assert process.poll() is not None
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+        process.stdout.close()
