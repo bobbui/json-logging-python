@@ -30,7 +30,7 @@ def collect_backends():
                 yield str(folder.name)
 
 
-@pytest.mark.parametrize('backend', list(collect_backends()), ids=list(collect_backends()))
+@pytest.mark.parametrize('backend', list(collect_backends()))
 def test_api_example(backend):
     """For each of the examples start the API and see if the root endpoint is reachable"""
     api_process = subprocess.Popen(
