@@ -30,7 +30,7 @@ def collect_backends():
                 yield str(folder.name)
 
 
-@pytest.mark.parametrize('backend', collect_backends(), ids=collect_backends())
+@pytest.mark.parametrize('backend', list(collect_backends()), ids=list(collect_backends()))
 def test_api_example(backend):
     """For each of the examples start the API and see if the root endpoint is reachable"""
     api_process = subprocess.Popen(
@@ -40,18 +40,18 @@ def test_api_example(backend):
     )
     try:
         deadline = time.perf_counter() + 15.0
-        while time.perf_counter() < deadline:
-            time.sleep(3)
-            session = requests.Session()
+        with requests.Session() as session:
+            # ignore proxy settings from the environment, the API runs on localhost
             session.trust_env = False
-            os.environ['NO_PROXY'] = 'localhost'
-            os.environ['no_proxy'] = 'localhost'
-            try:
-                response = requests.get("http://localhost:5000/", timeout=1)
-                assert response.status_code == 200
-                return
-            except requests.exceptions.Timeout:
-                pass
+            while time.perf_counter() < deadline:
+                time.sleep(3)
+                try:
+                    response = session.get("http://localhost:5000/", timeout=1)
+                    assert response.status_code == 200
+                    return
+                except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+                    # the API is not accepting connections yet, try again until the deadline
+                    pass
         assert False, "API did not respond"
     finally:
         api_process.send_signal(signal.SIGTERM)
