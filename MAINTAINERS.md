@@ -1,38 +1,37 @@
-# Maintainers
+# Project Maintainers
 
-This project welcomes contributors and maintainers. The people listed here help
-keep `json-logging` reliable, compatible with supported web frameworks, and
-responsive to users.
+The `json-logging` project is maintained by the following individuals, who support its ongoing development, technical quality, and long-term sustainability.
 
-| Person | Responsibility | Focus |
-| --- | --- | --- |
-| **Bob T.** ([@bobbui](https://github.com/bobbui)) | Original author and project steward | Project direction, original implementation, release coordination |
-| **Udit Agrawal** ([@suppagoddo](https://github.com/suppagoddo)) | Repository maintainer / GitHub collaborator | Test infrastructure, CI reliability, issue triage, and technical reviews |
+## Current Maintainers
 
-## How maintenance works
+| Name | Role |
+|---|---|
+| **Udit Agrawal** ([@suppagoddo](https://github.com/suppagoddo)) | **Current Technical Maintainer** |
+| **Bob T.** ([@bobbui](https://github.com/bobbui)) | Maintainer |
 
-- Open an issue for a reproducible defect or an enhancement proposal.
-- Open a focused pull request with tests and a description of behavioral changes.
-- Prefer independent review for nontrivial changes, especially changes affecting
-  JSON output, correlation IDs, supported frameworks, or packaging.
-- For the detailed contribution, review, and release process, read
-  [MAINTENANCE.md](MAINTENANCE.md).
-- Coding agents and contributors should also follow [AGENTS.md](AGENTS.md).
+### Active Maintenance
 
-## Release permissions and attribution
+**Udit Agrawal** is the current point of contact for ongoing technical maintenance, coordinating engineering improvements, technical reviews, issue resolution, testing infrastructure, and release readiness.
 
-Being listed as a repository maintainer does **not** confer PyPI publishing
-permissions. PyPI project roles are managed separately by the existing PyPI
-project owner. GitHub repository access and package publishing credentials must
-not be conflated.
+The project's maintenance activities include:
 
-Bob's original authorship is preserved. Changes to distribution metadata,
-additional author/maintainer credit, and PyPI project roles require an explicit
-decision by the project owner and should reflect actual contributions and
-responsibilities.
+- Technical development and framework compatibility
+- Engineering quality and reliability
+- Pull request reviews and contributor collaboration
+- Issue investigation and resolution
+- CI/CD and automated testing improvements
+- Release preparation and ongoing project sustainability
 
-## Previous work
+### Engineering Contributions
 
-- [PR #121](https://github.com/bobbui/json-logging-python/pull/121):
-  smoke-test startup reliability, polling deadlines, and process cleanup
-  (Udit Agrawal).
+Recent maintenance contributions include:
+
+- [PR #121](https://github.com/bobbui/json-logging-python/pull/121) — Improvements to smoke-test reliability, startup polling, timeout enforcement, subprocess cleanup, and regression coverage.
+
+Ongoing engineering contributions and technical decisions are documented through the project's GitHub issues, pull requests, and reviews.
+
+## Maintenance Process
+
+See [MAINTENANCE.md](MAINTENANCE.md) for development, review, and release procedures.
+
+See [AGENTS.md](AGENTS.md) for repository-specific coding-agent instructions.
