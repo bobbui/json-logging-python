@@ -90,10 +90,10 @@ automation, rather than checking secrets or API tokens into the repository.
 8. Confirm the published release on PyPI, test installation in a clean
    environment, and announce the changes.
 
-The version number and author metadata belong to the distribution and must
-only be changed deliberately. The package's original author attribution is
-distinct from PyPI roles and should be preserved unless the project owner
-explicitly approves a truthful update.
+The package version and attribution metadata must be updated deliberately
+and accurately, with approval from the people responsible for publishing.
+PyPI account roles and distribution author/maintainer metadata are distinct;
+changing a repository maintainer listing does not change either automatically.
 
 ## Maintenance records
 
