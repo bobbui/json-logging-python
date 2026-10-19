@@ -39,6 +39,13 @@ class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
         # Context is propagated by AnyIO, unlike Python call-stack frame locals.
         token = _current_request.set(request) if _current_request is not None else None
         try:
+            # Resolve (and if needed create) the correlation id once per request, before handlers
+            # run, so concurrent worker threads of one request read the same id instead of each
+            # creating their own. Failures are left to the later lazy lookups, as before.
+            try:
+                json_logging._request_util.get_correlation_id(request)
+            except Exception:
+                pass
             log_request = is_not_match_any_pattern(request.url.path, self.exclude_url_patterns)
 
             if not log_request:

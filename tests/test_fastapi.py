@@ -289,6 +289,62 @@ def test_simultaneous_sync_requests_in_one_event_loop_are_isolated(client_and_lo
     assert logged == sorted("id-%d" % index for index in range(count))
 
 
+@pytest.mark.parametrize("path", ["/correlation/two-workers", "/no-request-instrumentation/two-workers"])
+def test_two_worker_threads_of_one_request_share_the_generated_id(client_and_log_handler, path):
+    """Two threadpool workers of the same request, no correlation header.
+
+    Both workers are held until each has found the correlation id missing and reached id
+    generation, so an unsynchronised check-then-create race always produces two ids. With a
+    correct implementation at most one of them can get there, and its wait simply times out.
+    """
+    import json_logging
+    from starlette.concurrency import run_in_threadpool
+
+    api_client, handler = client_and_log_handler
+    logger = logging.getLogger(LOGGER_NAME)
+    start = threading.Barrier(2, timeout=10)
+    in_generator = threading.Barrier(2, timeout=1)
+    worker = threading.local()
+    generate = json_logging.CORRELATION_ID_GENERATOR
+
+    def generator():
+        if getattr(worker, "active", False):
+            try:
+                in_generator.wait()
+            except threading.BrokenBarrierError:
+                pass
+        return generate()
+
+    json_logging.CORRELATION_ID_GENERATOR = generator
+
+    def work():
+        worker.active = True
+        start.wait()
+        correlation_id = json_logging.get_correlation_id()
+        logger.info("worker log")
+        return correlation_id
+
+    @api_client.app.get(path)
+    async def two_workers():
+        return {"ids": list(await asyncio.gather(run_in_threadpool(work), run_in_threadpool(work)))}
+
+    request_logger = logging.getLogger("fastapi-request-logger")
+    request_handler = FormattedMessageCollectorHandler()
+    request_logger.addHandler(request_handler)
+    try:
+        response = api_client.get(path)
+    finally:
+        request_logger.removeHandler(request_handler)
+
+    worker_ids = response.json()["ids"]
+    logged_ids = [json.loads(message)["correlation_id"] for message in handler.messages]
+    request_ids = [json.loads(message)["correlation_id"] for message in request_handler.messages]
+    assert json_logging.EMPTY_VALUE not in worker_ids
+    assert len(set(worker_ids + logged_ids + request_ids)) == 1, (worker_ids, logged_ids, request_ids)
+    assert len(logged_ids) == 2
+    assert len(request_ids) == (0 if path.startswith("/no-request-instrumentation") else 1)
+
+
 def test_call_stack_lookup_still_used_without_request_instrumentation():
     """Without init_request_instrument() the previous frame-based lookup must keep working."""
     import json_logging

@@ -8,15 +8,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - fix: FastAPI application logs and `json_logging.get_correlation_id()` now use the request's correlation id
   instead of `-` in synchronous (`def`) endpoints #80 #123. When request instrumentation is enabled with
-  `init_request_instrument(app)`, the current request is kept in a context variable for the duration of the
-  request, including for URLs excluded from request logging, and is visible to:
-  - `def` and `async def` endpoints, sync and async `BackgroundTasks`, and `StreamingResponse` iterators;
-  - work that inherits the request's context, such as `asyncio.create_task()` (also after the response is
-    sent), `asyncio.to_thread()` and `contextvars.copy_context().run()`.
+  `init_request_instrument(app)` (Python 3.7+):
+  - the current request is kept in a context variable for the duration of the request, including for URLs
+    excluded from request logging. It is visible to `def` and `async def` endpoints, sync and async
+    `BackgroundTasks`, `StreamingResponse` iterators, and work that inherits the request's context, such as
+    `asyncio.create_task()` (also after the response is sent), `asyncio.to_thread()`,
+    `contextvars.copy_context().run()` and AnyIO/Starlette threadpool workers;
+  - if no correlation id header is present, the id is now created once at the start of each request (also for
+    excluded URLs), so all threads and logs of one request share the same id.
 
-  Threads started without copying the context (`threading.Thread`, `loop.run_in_executor()`) and WebSocket
-  endpoints still log `-`. Without `init_request_instrument(app)`, and on Python < 3.7, the previous call-stack
-  lookup is used unchanged. Other framework integrations are not affected.
+  Threads that do not inherit the request's context (`threading.Thread`, `loop.run_in_executor()`), WebSocket
+  endpoints, applications without `init_request_instrument(app)`, and Python < 3.7 keep the previous behaviour.
+  There, the request is found only by inspecting the current thread's call stack, so a thread or handler that
+  does not hold the request object in one of its own frames (for example as a `request` argument) logs `-`.
+  Other framework integrations are not affected.
 
 ## 1.5.1 - 2025-07-06
 
