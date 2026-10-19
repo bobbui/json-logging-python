@@ -87,7 +87,7 @@ possible. Use reasonable deadlines and always reap child processes.
 - Do not automatically push to `master`, merge PRs, close issues, publish
   packages, create releases or tags, alter attribution, or grant access.
   Require explicit approval for public/destructive actions.
-- Keep the existing founder/author attribution; do not change PyPI metadata or
-  maintainer lists solely to accumulate credit.
+- Keep PyPI package attribution and publishing permissions accurate; changes
+  to package metadata or maintainer records require appropriate review and approval.
 
 See [MAINTAINERS.md](MAINTAINERS.md) for people and areas of responsibility.
