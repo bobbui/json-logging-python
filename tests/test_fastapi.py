@@ -290,7 +290,7 @@ def test_simultaneous_sync_requests_in_one_event_loop_are_isolated(client_and_lo
 
 
 @pytest.mark.parametrize("path", ["/correlation/two-workers", "/no-request-instrumentation/two-workers"])
-def test_two_worker_threads_of_one_request_share_the_generated_id(client_and_log_handler, path):
+def test_two_worker_threads_of_one_request_share_the_generated_id(client_and_log_handler, monkeypatch, path):
     """Two threadpool workers of the same request, no correlation header.
 
     Both workers are held until each has found the correlation id missing and reached id
@@ -315,7 +315,7 @@ def test_two_worker_threads_of_one_request_share_the_generated_id(client_and_log
                 pass
         return generate()
 
-    json_logging.CORRELATION_ID_GENERATOR = generator
+    monkeypatch.setattr(json_logging, "CORRELATION_ID_GENERATOR", generator)
 
     def work():
         worker.active = True

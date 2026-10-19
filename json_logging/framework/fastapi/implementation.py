@@ -41,11 +41,13 @@ class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
         try:
             # Resolve (and if needed create) the correlation id once per request, before handlers
             # run, so concurrent worker threads of one request read the same id instead of each
-            # creating their own. Failures are left to the later lazy lookups, as before.
-            try:
-                json_logging._request_util.get_correlation_id(request)
-            except Exception:
-                pass
+            # creating their own. Failures are left to the later lazy lookups, as before. Only
+            # done when the request context is in use; otherwise the previous behaviour is kept.
+            if token is not None:
+                try:
+                    json_logging._request_util.get_correlation_id(request)
+                except Exception:
+                    pass
             log_request = is_not_match_any_pattern(request.url.path, self.exclude_url_patterns)
 
             if not log_request:
