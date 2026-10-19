@@ -1,4 +1,5 @@
 import logging
+from contextvars import ContextVar
 
 import json_logging
 import json_logging.framework
@@ -17,6 +18,7 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 _request_config_class = None
+_current_request = ContextVar('json_logging_fastapi_current_request', default=None)
 
 
 class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
@@ -27,18 +29,24 @@ class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
         logging.getLogger("uvicorn.access").propagate = False
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        log_request = is_not_match_any_pattern(request.url.path, self.exclude_url_patterns)
+        # The current request must also be visible in FastAPI's sync worker threads.
+        # Context is propagated by AnyIO, unlike Python call-stack frame locals.
+        token = _current_request.set(request)
+        try:
+            log_request = is_not_match_any_pattern(request.url.path, self.exclude_url_patterns)
 
-        if not log_request:
-            return await call_next(request)
+            if not log_request:
+                return await call_next(request)
 
-        request_response_data = _request_config_class(request)
-        response = await call_next(request)
-        request_response_data.on_request_complete(response)
-        self.request_logger.info(
-            "", extra={"request_response_data": request_response_data, "type": "request"}
-        )
-        return response
+            request_response_data = _request_config_class(request)
+            response = await call_next(request)
+            request_response_data.on_request_complete(response)
+            self.request_logger.info(
+                "", extra={"request_response_data": request_response_data, "type": "request"}
+            )
+            return response
+        finally:
+            _current_request.reset(token)
 
 
 class FastAPIAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationConfigurator):
@@ -65,11 +73,11 @@ class FastAPIRequestInfoExtractor(BaseRequestInfoExtractor):
 
     @staticmethod
     def support_global_request_object():
-        return False
+        return True
 
     @staticmethod
     def get_current_request():
-        raise NotImplementedError
+        return _current_request.get()
 
     def get_remote_user(self, request: starlette.requests.Request):
         try:
