@@ -133,7 +133,10 @@ class RequestUtil(object):
         if request is None:
             if self.is_support_global_request_object:
                 request = self.request_info_extractor_class.get_current_request()
-            else:
+
+            # Preserve legacy discovery when no framework context is active
+            # (for example, callers without request instrumentation).
+            if request is None:
                 request = self.get_request_from_call_stack()
 
             if request is None:
