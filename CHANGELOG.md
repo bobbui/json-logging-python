@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](http://semver.org/).  
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
+## Unreleased
+
+- fix: FastAPI application logs and `json_logging.get_correlation_id()` now use the request's correlation id
+  instead of `-` in synchronous (`def`) endpoints #80 #123. When request instrumentation is enabled with
+  `init_request_instrument(app)`, the current request is kept in a context variable for the duration of the
+  request, including for URLs excluded from request logging, and is visible to:
+  - `def` and `async def` endpoints, sync and async `BackgroundTasks`, and `StreamingResponse` iterators;
+  - work that inherits the request's context, such as `asyncio.create_task()` (also after the response is
+    sent), `asyncio.to_thread()` and `contextvars.copy_context().run()`.
+
+  Threads started without copying the context (`threading.Thread`, `loop.run_in_executor()`) and WebSocket
+  endpoints still log `-`. Without `init_request_instrument(app)`, and on Python < 3.7, the previous call-stack
+  lookup is used unchanged. Other framework integrations are not affected.
+
 ## 1.5.1 - 2025-07-06
 
 - fix: wrap debug log when logger upated to using JSONLogFormatter #105

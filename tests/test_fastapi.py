@@ -1,12 +1,15 @@
-"""Test suite for the flask backend"""
+"""Test suite for the fastapi backend"""
+import asyncio
 import json
 import logging
-from concurrent.futures import ThreadPoolExecutor
 import pathlib
 import re
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 import fastapi
 import fastapi.testclient
+import httpx
 import pytest
 from helpers import constants
 from helpers.handler import FormattedMessageCollectorHandler
@@ -165,7 +168,6 @@ def test_get_correlation_id(client_and_log_handler):
     assert response.json()["correlation_id"] == "abc-def"
 
 
-
 @pytest.mark.parametrize("path", ["/correlation/sync", "/correlation/async"])
 def test_request_context_propagates_to_endpoint_and_log(client_and_log_handler, path):
     """Both sync worker threads and async handlers see the same header ID."""
@@ -235,6 +237,83 @@ def test_concurrent_sync_requests_have_isolated_correlation_ids(client_and_log_h
     assert sorted(logged) == sorted(ids)
     # Outside the request scope there must be no residual per-request context.
     assert json_logging.get_correlation_id() == json_logging.EMPTY_VALUE
+
+
+def _asgi_client(app):
+    # httpx.ASGITransport runs the app in the calling task, so request context that is
+    # set but not reset would still be visible to the caller afterwards.
+    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://testserver")
+
+
+def test_request_context_is_reset_after_request(client_and_log_handler):
+    """The request must not stay visible to the task that ran it."""
+    import json_logging
+
+    api_client, handler = client_and_log_handler
+
+    async def run():
+        async with _asgi_client(api_client.app) as client:
+            response = await client.get("/correlation/sync", headers={"X-Correlation-ID": "reset-id"})
+        return response.json()["correlation_id"], json_logging.get_correlation_id()
+
+    in_request, after_request = asyncio.run(run())
+    assert in_request == "reset-id"
+    assert after_request == json_logging.EMPTY_VALUE
+
+
+def test_simultaneous_sync_requests_in_one_event_loop_are_isolated(client_and_log_handler):
+    """All requests are inside their worker threads at the same time."""
+    import json_logging
+
+    api_client, handler = client_and_log_handler
+    logger = logging.getLogger(LOGGER_NAME)
+    count = 8
+    barrier = threading.Barrier(count, timeout=10)
+
+    @api_client.app.get("/correlation/sync-barrier")
+    def sync_barrier():
+        barrier.wait()
+        logger.info("barrier log")
+        barrier.wait()
+        return {"correlation_id": json_logging.get_correlation_id()}
+
+    async def run():
+        async with _asgi_client(api_client.app) as client:
+            return await asyncio.gather(*[
+                client.get("/correlation/sync-barrier", headers={"X-Correlation-ID": "id-%d" % index})
+                for index in range(count)])
+
+    responses = asyncio.run(run())
+    assert [r.json()["correlation_id"] for r in responses] == ["id-%d" % index for index in range(count)]
+    logged = sorted(json.loads(message)["correlation_id"] for message in handler.messages)
+    assert logged == sorted("id-%d" % index for index in range(count))
+
+
+def test_call_stack_lookup_still_used_without_request_instrumentation():
+    """Without init_request_instrument() the previous frame-based lookup must keep working."""
+    import json_logging
+
+    app = fastapi.FastAPI()
+    json_logging.init_fastapi(enable_json=True)
+    logger = logging.getLogger(LOGGER_NAME + "-no-instrumentation")
+    logger.setLevel(logging.DEBUG)
+    handler = FormattedMessageCollectorHandler()
+    logger.addHandler(handler)
+
+    @app.get("/with-request")
+    async def with_request(request: fastapi.Request):
+        logger.info("no instrumentation")
+        return {"correlation_id": json_logging.get_correlation_id()}
+
+    try:
+        response = fastapi.testclient.TestClient(app).get(
+            "/with-request", headers={"X-Correlation-ID": "frame-lookup"})
+        assert response.json()["correlation_id"] == "frame-lookup"
+        assert json.loads(handler.messages[0])["correlation_id"] == "frame-lookup"
+    finally:
+        logger.removeHandler(handler)
+        undo_imports_from_package("json_logging")
+
 
 def test_extra_property(client_and_log_handler):
     """Test adding an extra property to a log message"""

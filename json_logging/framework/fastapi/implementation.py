@@ -1,5 +1,5 @@
 import logging
-from contextvars import ContextVar
+import sys
 
 import json_logging
 import json_logging.framework
@@ -18,7 +18,13 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 _request_config_class = None
-_current_request = ContextVar('json_logging_fastapi_current_request', default=None)
+# ContextVar is only propagated to asyncio tasks from Python 3.7 on; before that (where at most the
+# thread-local `contextvars` backport exists) keep the previous call-stack lookup unchanged.
+if sys.version_info >= (3, 7):
+    from contextvars import ContextVar
+    _current_request = ContextVar('json_logging_fastapi_current_request', default=None)
+else:  # pragma: no cover
+    _current_request = None
 
 
 class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
@@ -31,7 +37,7 @@ class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         # The current request must also be visible in FastAPI's sync worker threads.
         # Context is propagated by AnyIO, unlike Python call-stack frame locals.
-        token = _current_request.set(request)
+        token = _current_request.set(request) if _current_request is not None else None
         try:
             log_request = is_not_match_any_pattern(request.url.path, self.exclude_url_patterns)
 
@@ -46,7 +52,8 @@ class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
             )
             return response
         finally:
-            _current_request.reset(token)
+            if token is not None:
+                _current_request.reset(token)
 
 
 class FastAPIAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationConfigurator):
@@ -73,11 +80,16 @@ class FastAPIRequestInfoExtractor(BaseRequestInfoExtractor):
 
     @staticmethod
     def support_global_request_object():
-        return True
+        return _current_request is not None
 
     @staticmethod
     def get_current_request():
-        return _current_request.get()
+        request = _current_request.get()
+        if request is None:
+            # Outside JSONLoggingASGIMiddleware (e.g. init_request_instrument() was not
+            # called) keep the previous call-stack discovery.
+            request = json_logging._request_util.get_request_from_call_stack()
+        return request
 
     def get_remote_user(self, request: starlette.requests.Request):
         try:
