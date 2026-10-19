@@ -1,5 +1,15 @@
-# LOOKING FOR MAINTAINERS
-due to my current work commitments, I am unable to maintain this project. If you are interested in taking over the maintenance of this project, please feel free to open a pull request or contact me directly. I would be happy to transfer the ownership of this project to you.
+## Maintenance
+
+**Current Technical Maintainer:** [Udit Agrawal](https://github.com/suppagoddo)
+
+**Maintainer:** [Bob T.](https://github.com/bobbui)
+
+The maintainers support the ongoing engineering development, quality,
+compatibility, and sustainability of `json-logging`.
+
+See [MAINTAINERS.md](MAINTAINERS.md) for maintainer details,
+[MAINTENANCE.md](MAINTENANCE.md) for project procedures, and
+[AGENTS.md](AGENTS.md) for coding-agent guidance.
 
 # json-logging
 
