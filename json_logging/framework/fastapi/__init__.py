@@ -1,4 +1,3 @@
-
 def is_fastapi_present():
     # noinspection PyPep8,PyBroadException
     try:

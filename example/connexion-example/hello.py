@@ -14,11 +14,11 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 def post_greeting(name):
     logger.info("test log statement")
     logger.info("test log statement with extra props", extra={'props': {"extra_property": 'extra_value'}})
-    return 'Hello {name}'.format(name=name)
+    return f'Hello {name}'
 
 
 def exclude_from_request_instrumentation(name):
-    return 'Hello {name}. this request wont log request instrumentation information'.format(name=name)
+    return f'Hello {name}. this request wont log request instrumentation information'
 
 
 def create():

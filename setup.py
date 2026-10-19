@@ -3,12 +3,8 @@ import sys
 
 from setuptools import setup, find_packages
 
-version_info_major = sys.version_info[0]
-if version_info_major == 3:
-    long_description = open('README.rst', encoding="utf8").read()
-else:
-    io_open = io.open('README.rst', encoding="utf8")
-    long_description = io_open.read()
+with open('README.rst', encoding="utf8") as f:
+    long_description = f.read()
 
 setup(
     name="json-logging",
@@ -18,7 +14,7 @@ setup(
     description="JSON Python Logging",
     long_description=long_description,
     author="Bob T.",
-    keywords=["json", "elastic", "python", "python3", "python2", "logging", "logging-library", "json", "elasticsearch",
+    keywords=["json", "elastic", "python", "python3", "logging", "logging-library", "json", "elasticsearch",
               "elk", "elk-stack", "logstash", "kibana"],
     platforms='any',
     url="https://github.com/thangbn/json-logging",
@@ -28,7 +24,6 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
         'Topic :: System :: Logging',
         'Framework :: Flask',
