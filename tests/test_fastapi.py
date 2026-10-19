@@ -1,6 +1,7 @@
 """Test suite for the flask backend"""
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor
 import pathlib
 import re
 
@@ -75,6 +76,23 @@ def client_and_log_handler():
     async def get_correlation_id():
         return {'correlation_id': json_logging.get_correlation_id()}
 
+    @app.get("/correlation/sync")
+    def log_sync_correlation():
+        # No Request parameter: frame-local inspection cannot find the request
+        # from FastAPI's worker thread.
+        logger.info("sync correlation log")
+        return {"correlation_id": json_logging.get_correlation_id()}
+
+    @app.get("/correlation/async")
+    async def log_async_correlation():
+        logger.info("async correlation log")
+        return {"correlation_id": json_logging.get_correlation_id()}
+
+    @app.get("/no-request-instrumentation/sync")
+    def log_excluded_sync_correlation():
+        logger.info("excluded sync correlation log")
+        return {"correlation_id": json_logging.get_correlation_id()}
+
     @app.get('/no-request-instrumentation')
     async def excluded_from_request_instrumentation():
         return {}
@@ -146,6 +164,77 @@ def test_get_correlation_id(client_and_log_handler):
     assert response.status_code == 200
     assert response.json()["correlation_id"] == "abc-def"
 
+
+
+@pytest.mark.parametrize("path", ["/correlation/sync", "/correlation/async"])
+def test_request_context_propagates_to_endpoint_and_log(client_and_log_handler, path):
+    """Both sync worker threads and async handlers see the same header ID."""
+    api_client, handler = client_and_log_handler
+    response = api_client.get(path, headers={"X-Correlation-ID": "from-header"})
+
+    assert response.status_code == 200
+    assert response.json()["correlation_id"] == "from-header"
+    assert len(handler.messages) == 1
+    assert json.loads(handler.messages[0])["correlation_id"] == "from-header"
+
+
+def test_sync_endpoint_without_header_shares_generated_id(client_and_log_handler):
+    """Lazy-generated IDs are consistent across app and request log formats."""
+    import json_logging
+
+    api_client, handler = client_and_log_handler
+    request_logger = logging.getLogger("fastapi-request-logger")
+    request_handler = FormattedMessageCollectorHandler()
+    request_logger.addHandler(request_handler)
+    try:
+        response = api_client.get("/correlation/sync")
+    finally:
+        request_logger.removeHandler(request_handler)
+
+    assert response.status_code == 200
+    correlation_id = response.json()["correlation_id"]
+    assert correlation_id != json_logging.EMPTY_VALUE
+    assert len(handler.messages) == 1
+    assert json.loads(handler.messages[0])["correlation_id"] == correlation_id
+    assert len(request_handler.messages) == 1
+    assert json.loads(request_handler.messages[0])["correlation_id"] == correlation_id
+
+
+def test_excluded_sync_endpoint_still_has_request_context(client_and_log_handler):
+    """Excluding request instrumentation must not disable application IDs."""
+    api_client, handler = client_and_log_handler
+    response = api_client.get(
+        "/no-request-instrumentation/sync",
+        headers={"X-Correlation-ID": "excluded-id"},
+    )
+    assert response.status_code == 200
+    assert response.json()["correlation_id"] == "excluded-id"
+    assert json.loads(handler.messages[0])["correlation_id"] == "excluded-id"
+
+
+def test_concurrent_sync_requests_have_isolated_correlation_ids(client_and_log_handler):
+    """Worker threads must not share request context across concurrent clients."""
+    import json_logging
+
+    api_client, handler = client_and_log_handler
+    ids = ["parallel-%d" % index for index in range(8)]
+
+    def make_request(correlation_id):
+        result = api_client.get(
+            "/correlation/sync", headers={"X-Correlation-ID": correlation_id}
+        )
+        assert result.status_code == 200
+        return result.json()["correlation_id"]
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        results = list(executor.map(make_request, ids))
+
+    assert results == ids
+    logged = [json.loads(message)["correlation_id"] for message in handler.messages]
+    assert len(logged) == len(ids)
+    assert sorted(logged) == sorted(ids)
+    # Outside the request scope there must be no residual per-request context.
+    assert json_logging.get_correlation_id() == json_logging.EMPTY_VALUE
 
 def test_extra_property(client_and_log_handler):
     """Test adding an extra property to a log message"""
