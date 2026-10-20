@@ -1,11 +1,17 @@
-"""Test suite for the flask backend"""
+"""Test suite for the fastapi backend"""
+import asyncio
+import importlib
 import json
 import logging
 import pathlib
 import re
+import sys
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 import fastapi
 import fastapi.testclient
+import httpx
 import pytest
 from helpers import constants
 from helpers.handler import FormattedMessageCollectorHandler
@@ -74,6 +80,23 @@ def client_and_log_handler():
     @app.get("/get-correlation-id")
     async def get_correlation_id():
         return {'correlation_id': json_logging.get_correlation_id()}
+
+    @app.get("/correlation/sync")
+    def log_sync_correlation():
+        # No Request parameter: frame-local inspection cannot find the request
+        # from FastAPI's worker thread.
+        logger.info("sync correlation log")
+        return {"correlation_id": json_logging.get_correlation_id()}
+
+    @app.get("/correlation/async")
+    async def log_async_correlation():
+        logger.info("async correlation log")
+        return {"correlation_id": json_logging.get_correlation_id()}
+
+    @app.get("/no-request-instrumentation/sync")
+    def log_excluded_sync_correlation():
+        logger.info("excluded sync correlation log")
+        return {"correlation_id": json_logging.get_correlation_id()}
 
     @app.get('/no-request-instrumentation')
     async def excluded_from_request_instrumentation():
@@ -145,6 +168,273 @@ def test_get_correlation_id(client_and_log_handler):
 
     assert response.status_code == 200
     assert response.json()["correlation_id"] == "abc-def"
+
+
+@pytest.mark.parametrize("path", ["/correlation/sync", "/correlation/async"])
+def test_request_context_propagates_to_endpoint_and_log(client_and_log_handler, path):
+    """Both sync worker threads and async handlers see the same header ID."""
+    api_client, handler = client_and_log_handler
+    response = api_client.get(path, headers={"X-Correlation-ID": "from-header"})
+
+    assert response.status_code == 200
+    assert response.json()["correlation_id"] == "from-header"
+    assert len(handler.messages) == 1
+    assert json.loads(handler.messages[0])["correlation_id"] == "from-header"
+
+
+def test_sync_endpoint_without_header_shares_generated_id(client_and_log_handler):
+    """Lazy-generated IDs are consistent across app and request log formats."""
+    import json_logging
+
+    api_client, handler = client_and_log_handler
+    request_logger = logging.getLogger("fastapi-request-logger")
+    request_handler = FormattedMessageCollectorHandler()
+    request_logger.addHandler(request_handler)
+    try:
+        response = api_client.get("/correlation/sync")
+    finally:
+        request_logger.removeHandler(request_handler)
+
+    assert response.status_code == 200
+    correlation_id = response.json()["correlation_id"]
+    assert correlation_id != json_logging.EMPTY_VALUE
+    assert len(handler.messages) == 1
+    assert json.loads(handler.messages[0])["correlation_id"] == correlation_id
+    assert len(request_handler.messages) == 1
+    assert json.loads(request_handler.messages[0])["correlation_id"] == correlation_id
+
+
+def test_excluded_sync_endpoint_still_has_request_context(client_and_log_handler):
+    """Excluding request instrumentation must not disable application IDs."""
+    api_client, handler = client_and_log_handler
+    response = api_client.get(
+        "/no-request-instrumentation/sync",
+        headers={"X-Correlation-ID": "excluded-id"},
+    )
+    assert response.status_code == 200
+    assert response.json()["correlation_id"] == "excluded-id"
+    assert json.loads(handler.messages[0])["correlation_id"] == "excluded-id"
+
+
+def test_concurrent_sync_requests_have_isolated_correlation_ids(client_and_log_handler):
+    """Worker threads must not share request context across concurrent clients."""
+    import json_logging
+
+    api_client, handler = client_and_log_handler
+    ids = ["parallel-%d" % index for index in range(8)]
+
+    def make_request(correlation_id):
+        result = api_client.get(
+            "/correlation/sync", headers={"X-Correlation-ID": correlation_id}
+        )
+        assert result.status_code == 200
+        return result.json()["correlation_id"]
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        results = list(executor.map(make_request, ids))
+
+    assert results == ids
+    logged = [json.loads(message)["correlation_id"] for message in handler.messages]
+    assert len(logged) == len(ids)
+    assert sorted(logged) == sorted(ids)
+    # Outside the request scope there must be no residual per-request context.
+    assert json_logging.get_correlation_id() == json_logging.EMPTY_VALUE
+
+
+def _asgi_client(app):
+    # httpx.ASGITransport runs the app in the calling task, so request context that is
+    # set but not reset would still be visible to the caller afterwards.
+    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://testserver")
+
+
+def test_request_context_is_reset_after_request(client_and_log_handler):
+    """The request must not stay visible to the task that ran it."""
+    import json_logging
+
+    api_client, handler = client_and_log_handler
+
+    async def run():
+        async with _asgi_client(api_client.app) as client:
+            response = await client.get("/correlation/sync", headers={"X-Correlation-ID": "reset-id"})
+        return response.json()["correlation_id"], json_logging.get_correlation_id()
+
+    in_request, after_request = asyncio.run(run())
+    assert in_request == "reset-id"
+    assert after_request == json_logging.EMPTY_VALUE
+
+
+def test_simultaneous_sync_requests_in_one_event_loop_are_isolated(client_and_log_handler):
+    """All requests are inside their worker threads at the same time."""
+    import json_logging
+
+    api_client, handler = client_and_log_handler
+    logger = logging.getLogger(LOGGER_NAME)
+    count = 8
+    barrier = threading.Barrier(count, timeout=10)
+
+    @api_client.app.get("/correlation/sync-barrier")
+    def sync_barrier():
+        barrier.wait()
+        logger.info("barrier log")
+        barrier.wait()
+        return {"correlation_id": json_logging.get_correlation_id()}
+
+    async def run():
+        async with _asgi_client(api_client.app) as client:
+            return await asyncio.gather(*[
+                client.get("/correlation/sync-barrier", headers={"X-Correlation-ID": "id-%d" % index})
+                for index in range(count)])
+
+    responses = asyncio.run(run())
+    assert [r.json()["correlation_id"] for r in responses] == ["id-%d" % index for index in range(count)]
+    logged = sorted(json.loads(message)["correlation_id"] for message in handler.messages)
+    assert logged == sorted("id-%d" % index for index in range(count))
+
+
+@pytest.mark.parametrize("path", ["/correlation/two-workers", "/no-request-instrumentation/two-workers"])
+def test_two_worker_threads_of_one_request_share_the_generated_id(client_and_log_handler, monkeypatch, path):
+    """Two threadpool workers of the same request, no correlation header.
+
+    Both workers are held until each has found the correlation id missing and reached id
+    generation, so an unsynchronised check-then-create race always produces two ids. With a
+    correct implementation at most one of them can get there, and its wait simply times out.
+    """
+    import json_logging
+    from starlette.concurrency import run_in_threadpool
+
+    api_client, handler = client_and_log_handler
+    logger = logging.getLogger(LOGGER_NAME)
+    start = threading.Barrier(2, timeout=10)
+    in_generator = threading.Barrier(2, timeout=1)
+    worker = threading.local()
+    generate = json_logging.CORRELATION_ID_GENERATOR
+
+    def generator():
+        if getattr(worker, "active", False):
+            try:
+                in_generator.wait()
+            except threading.BrokenBarrierError:
+                pass
+        return generate()
+
+    monkeypatch.setattr(json_logging, "CORRELATION_ID_GENERATOR", generator)
+
+    def work():
+        worker.active = True
+        start.wait()
+        correlation_id = json_logging.get_correlation_id()
+        logger.info("worker log")
+        return correlation_id
+
+    @api_client.app.get(path)
+    async def two_workers():
+        return {"ids": list(await asyncio.gather(run_in_threadpool(work), run_in_threadpool(work)))}
+
+    request_logger = logging.getLogger("fastapi-request-logger")
+    request_handler = FormattedMessageCollectorHandler()
+    request_logger.addHandler(request_handler)
+    try:
+        response = api_client.get(path)
+    finally:
+        request_logger.removeHandler(request_handler)
+
+    worker_ids = response.json()["ids"]
+    logged_ids = [json.loads(message)["correlation_id"] for message in handler.messages]
+    request_ids = [json.loads(message)["correlation_id"] for message in request_handler.messages]
+    assert json_logging.EMPTY_VALUE not in worker_ids
+    assert len(set(worker_ids + logged_ids + request_ids)) == 1, (worker_ids, logged_ids, request_ids)
+    assert len(logged_ids) == 2
+    assert len(request_ids) == (0 if path.startswith("/no-request-instrumentation") else 1)
+
+
+def test_call_stack_lookup_still_used_without_request_instrumentation():
+    """Without init_request_instrument() the previous frame-based lookup must keep working."""
+    import json_logging
+
+    app = fastapi.FastAPI()
+    json_logging.init_fastapi(enable_json=True)
+    logger = logging.getLogger(LOGGER_NAME + "-no-instrumentation")
+    logger.setLevel(logging.DEBUG)
+    handler = FormattedMessageCollectorHandler()
+    logger.addHandler(handler)
+
+    @app.get("/with-request")
+    async def with_request(request: fastapi.Request):
+        logger.info("no instrumentation")
+        return {"correlation_id": json_logging.get_correlation_id()}
+
+    try:
+        response = fastapi.testclient.TestClient(app).get(
+            "/with-request", headers={"X-Correlation-ID": "frame-lookup"})
+        assert response.json()["correlation_id"] == "frame-lookup"
+        assert json.loads(handler.messages[0])["correlation_id"] == "frame-lookup"
+    finally:
+        logger.removeHandler(handler)
+        undo_imports_from_package("json_logging")
+
+
+def test_request_context_propagation_disabled_before_python_3_9(monkeypatch):
+    """Below Python 3.9 the ContextVar feature is off and the previous behaviour is kept unchanged:
+    call-stack lookup only, and no correlation id is created unless something asks for one."""
+    importlib.import_module("json_logging")  # load its dependencies with the real interpreter version first
+    undo_imports_from_package("json_logging")
+    with monkeypatch.context() as patch:
+        patch.setattr(sys, "version_info", (3, 8, 18, "final", 0))
+        import json_logging  # the version guard is evaluated at import time
+    from json_logging.framework.fastapi import implementation
+
+    generated = []
+    generate = json_logging.CORRELATION_ID_GENERATOR
+
+    def counting_generator():
+        generated.append(1)
+        return generate()
+
+    logger = logging.getLogger(LOGGER_NAME + "-legacy")
+    logger.setLevel(logging.DEBUG)
+    handler = FormattedMessageCollectorHandler()
+    logger.addHandler(handler)
+    request_handler = FormattedMessageCollectorHandler()
+    try:
+        assert implementation._current_request is None
+        assert not implementation.FastAPIRequestInfoExtractor.support_global_request_object()
+        monkeypatch.setattr(json_logging, "CORRELATION_ID_GENERATOR", counting_generator)
+
+        app = fastapi.FastAPI()
+        json_logging.init_fastapi(enable_json=True)
+        json_logging.init_request_instrument(app, exclude_url_patterns=["^/excluded"])
+        logging.getLogger("fastapi-request-logger").addHandler(request_handler)
+
+        @app.get("/sync")
+        def sync_endpoint():
+            logger.info("sync")
+            return {"correlation_id": json_logging.get_correlation_id()}
+
+        @app.get("/async-with-request")
+        async def async_endpoint(request: fastapi.Request):
+            logger.info("async")
+            return {"correlation_id": json_logging.get_correlation_id()}
+
+        @app.get("/excluded/silent")
+        def excluded_silent():
+            return {}
+
+        client = fastapi.testclient.TestClient(app)
+        assert client.get("/sync", headers={"X-Correlation-ID": "legacy"}).json()["correlation_id"] == "-"
+        assert client.get("/async-with-request", headers={"X-Correlation-ID": "legacy"}).json() == {
+            "correlation_id": "legacy"}
+        assert [json.loads(message)["correlation_id"] for message in handler.messages] == ["-", "legacy"]
+        assert [json.loads(message)["correlation_id"] for message in request_handler.messages] == [
+            "legacy", "legacy"]
+
+        client.get("/excluded/silent")
+        assert generated == []  # no eager id creation
+        client.get("/async-with-request")
+        assert len(generated) == 1  # created lazily, as before
+    finally:
+        logger.removeHandler(handler)
+        logging.getLogger("fastapi-request-logger").removeHandler(request_handler)
+        undo_imports_from_package("json_logging")
 
 
 def test_extra_property(client_and_log_handler):

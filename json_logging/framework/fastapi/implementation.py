@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import json_logging
 import json_logging.framework
@@ -17,6 +18,13 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 _request_config_class = None
+# Only enabled on the Python versions covered by CI (3.9+). On older versions, including 3.6 where at
+# most the thread-local `contextvars` backport exists, the previous call-stack lookup is kept unchanged.
+if sys.version_info >= (3, 9):
+    from contextvars import ContextVar
+    _current_request = ContextVar('json_logging_fastapi_current_request', default=None)
+else:  # pragma: no cover
+    _current_request = None
 
 
 class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
@@ -27,18 +35,39 @@ class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
         logging.getLogger("uvicorn.access").propagate = False
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        log_request = is_not_match_any_pattern(request.url.path, self.exclude_url_patterns)
+        """Run request instrumentation with a context shared by downstream work.
 
-        if not log_request:
-            return await call_next(request)
+        On Python 3.9+, resolve the correlation ID before workers run and
+        restore the previous request context when processing completes.
+        """
+        # The current request must also be visible in FastAPI's sync worker threads.
+        # Context is propagated by AnyIO, unlike Python call-stack frame locals.
+        token = _current_request.set(request) if _current_request is not None else None
+        try:
+            # Resolve (and if needed create) the correlation id once per request, before handlers
+            # run, so concurrent worker threads of one request read the same id instead of each
+            # creating their own. Failures are left to the later lazy lookups, as before. Only
+            # done when the request context is in use; otherwise the previous behaviour is kept.
+            if token is not None:
+                try:
+                    json_logging._request_util.get_correlation_id(request)
+                except Exception:
+                    pass
+            log_request = is_not_match_any_pattern(request.url.path, self.exclude_url_patterns)
 
-        request_response_data = _request_config_class(request)
-        response = await call_next(request)
-        request_response_data.on_request_complete(response)
-        self.request_logger.info(
-            "", extra={"request_response_data": request_response_data, "type": "request"}
-        )
-        return response
+            if not log_request:
+                return await call_next(request)
+
+            request_response_data = _request_config_class(request)
+            response = await call_next(request)
+            request_response_data.on_request_complete(response)
+            self.request_logger.info(
+                "", extra={"request_response_data": request_response_data, "type": "request"}
+            )
+            return response
+        finally:
+            if token is not None:
+                _current_request.reset(token)
 
 
 class FastAPIAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationConfigurator):
@@ -65,11 +94,20 @@ class FastAPIRequestInfoExtractor(BaseRequestInfoExtractor):
 
     @staticmethod
     def support_global_request_object():
-        return False
+        return _current_request is not None
 
     @staticmethod
     def get_current_request():
-        raise NotImplementedError
+        """Return the active request, falling back to call-stack discovery.
+
+        The fallback preserves request lookup when middleware context is absent.
+        """
+        request = _current_request.get()
+        if request is None:
+            # Outside JSONLoggingASGIMiddleware (e.g. init_request_instrument() was not
+            # called) keep the previous call-stack discovery.
+            request = json_logging._request_util.get_request_from_call_stack()
+        return request
 
     def get_remote_user(self, request: starlette.requests.Request):
         try:
