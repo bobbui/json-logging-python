@@ -28,18 +28,27 @@ curl -H "X-Correlation-ID: demo-1" http://127.0.0.1:8000/
   it produces.
 - A request without a header gets one generated ID, shared by its application and request logs. Different requests
   get different IDs.
-- Logs written outside a request, such as worker startup and shutdown, get `-`. This needs the fix for #125; before
-  that fix, each such record got a random ID.
+- Logs written outside a request, such as worker startup and shutdown, get `-`. **This depends on PR #127** (issue
+  #125) and is not in master until #127 merges. Without it, each such record gets a random ID.
 
 ## Gunicorn access log
 
 `accesslog = None` in `gunicorn.conf.py` avoids a second access line per request. If you prefer Gunicorn's access
 log, remove that line, and remember that you then get two records per request.
 
+## Startup and preload
+
+The example assumes Gunicorn's default startup, where each worker imports `app.py` after it forks. With
+`--preload` (or `preload_app = True`) the module is imported once in the master process before forking, so
+json-logging is initialised in the master and the workers inherit it. Do not assume the two configurations behave
+identically; this example is tested only with the default.
+
+`/ready` is a readiness probe. It is excluded from request logging, so probing it adds no records.
+
 ## Local test
 
-`tests/test_gunicorn_flask.py` starts this example on a Unix socket, sends two requests, and checks the JSON output
-above. It is skipped if `gunicorn` is not installed.
+`tests/test_gunicorn_flask.py` starts this example on a Unix socket, waits until `/ready` answers, sends two requests,
+and checks the JSON output above. In CI (`CI=true`) a missing `gunicorn` fails the test; elsewhere it is skipped.
 
 ## Verification status
 
