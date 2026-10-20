@@ -35,6 +35,11 @@ class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
         logging.getLogger("uvicorn.access").propagate = False
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        """Run request instrumentation with a context shared by downstream work.
+
+        On Python 3.9+, resolve the correlation ID before workers run and
+        restore the previous request context when processing completes.
+        """
         # The current request must also be visible in FastAPI's sync worker threads.
         # Context is propagated by AnyIO, unlike Python call-stack frame locals.
         token = _current_request.set(request) if _current_request is not None else None
@@ -93,6 +98,10 @@ class FastAPIRequestInfoExtractor(BaseRequestInfoExtractor):
 
     @staticmethod
     def get_current_request():
+        """Return the active request, falling back to call-stack discovery.
+
+        The fallback preserves request lookup when middleware context is absent.
+        """
         request = _current_request.get()
         if request is None:
             # Outside JSONLoggingASGIMiddleware (e.g. init_request_instrument() was not
