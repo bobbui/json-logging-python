@@ -51,7 +51,8 @@ def test_init_sanic_handles_logging_formats_and_emits_json(config_shape):
 
             output = io.StringIO()
             handler = logging.StreamHandler(output)
-            handler.setFormatter(json_logging.JSONLogFormatter())
+            formatter_class = getattr(json_logging, formatter_config["class"].rsplit(".", 1)[-1])
+            handler.setFormatter(formatter_class())
             logger.addHandler(handler)
             try:
                 logger.info("sanic json logging", extra={"service": name})
