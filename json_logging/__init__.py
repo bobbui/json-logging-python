@@ -6,7 +6,8 @@ import uuid
 
 from json_logging import util
 from json_logging.dto import RequestResponseDTOBase, DefaultRequestResponseDTO
-from json_logging.formatters import JSONRequestLogFormatter, JSONLogFormatter, JSONLogWebFormatter
+from json_logging.formatters import JSONRequestLogFormatter, JSONLogFormatter, JSONLogWebFormatter, \
+    _validated_excluded_fields
 from json_logging.framework_base import BaseRequestInfoExtractor, BaseResponseInfoExtractor, \
     BaseAppRequestInstrumentationConfigurator, \
     BaseFrameworkConfigurator
@@ -103,6 +104,9 @@ def __init(framework_name=None, custom_formatter=None, enable_json=False):
         if not issubclass(custom_formatter, logging.Formatter):
             raise ValueError('custom_formatter is not subclass of logging.Formatter', custom_formatter)
 
+    # Validate before any global state changes, so a corrected setting can be retried in the same process
+    _validated_excluded_fields(EXCLUDED_FIELDS)
+
     if not enable_json and not ENABLE_JSON_LOGGING:
         _logger.warning(
             "JSON format is not enabled, normal log will be in plain text but request logging still in JSON format! "
@@ -163,7 +167,10 @@ def init_request_instrument(app=None, custom_formatter=None, exclude_url_pattern
         raise ValueError('request_response_dto_class is not subclass of json_logging.RequestInfoBase',
                          custom_formatter)
 
-    configurator = _current_framework['app_request_instrumentation_configurator']()
+    # Validate before hooks and handlers are installed, so a failed call leaves nothing behind
+    _validated_excluded_fields(EXCLUDED_FIELDS)
+
+    configurator =_current_framework['app_request_instrumentation_configurator']()
     configurator.config(app, request_response_dto_class, exclude_url_patterns=exclude_url_patterns)
 
     formatter = custom_formatter if custom_formatter else JSONRequestLogFormatter

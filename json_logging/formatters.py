@@ -44,11 +44,12 @@ def _validated_excluded_fields(fields):
     :raises TypeError: if it is not a list/tuple/set/frozenset of strings (a bare string is rejected
     because iterating it would exclude single characters)
     """
-    if isinstance(fields, (str, bytes)) or not isinstance(fields, (list, tuple, set, frozenset)):
+    if isinstance(fields, (basestring, bytes)) or not isinstance(fields, (list, tuple, set, frozenset)):
         raise TypeError("json_logging.EXCLUDED_FIELDS must be a list, tuple, set or frozenset of field names, "
                         "got %r" % (fields,))
     for field in fields:
-        if not isinstance(field, str):
+        # basestring also accepts unicode names on Python 2; on Python 3 it is str, so bytes are rejected
+        if not isinstance(field, basestring):
             raise TypeError("json_logging.EXCLUDED_FIELDS entries must be strings, got %r" % (field,))
     return frozenset(fields)
 

@@ -302,7 +302,9 @@ json_logging.init_flask(enable_json=True)
 
 - The default is `()`, so output is unchanged.
 - Set it **before** calling `init_*()`: formatters read it when they are constructed, the same way as `COMPONENT_*`.
-- A bare string, or a collection containing non-strings, raises `TypeError` when a formatter is built.
+- A bare string, or a collection containing non-strings, raises `TypeError` from `init_*()`,
+  `init_request_instrument()` or a formatter constructor. The `init_*()` and `init_request_instrument()` calls
+  validate the setting before changing any state, so you can correct it and call them again.
 - Fields are removed after they are collected, so `extra` and `props` entries are removed too.
 - Downstream log consumers may depend on fields such as `written_ts`, `correlation_id` or `level`. Exclude a field only when you know nothing downstream reads it.
 

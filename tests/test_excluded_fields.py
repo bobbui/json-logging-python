@@ -2,10 +2,17 @@
 import io
 import json
 import logging
+import os
+import subprocess
+import sys
+import textwrap
+from pathlib import Path
 
 import pytest
 from helpers.handler import FormattedMessageCollectorHandler
 from helpers.imports import undo_imports_from_package
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture
@@ -17,13 +24,21 @@ def fresh_json_logging():
 
 @pytest.fixture
 def restored_request_logger():
-    """init_request_instrument() adds a handler to a process-wide logger and detaches it from its parent.
-    Restore the logger's full state afterwards, so tests cannot depend on each other."""
-    logger = logging.getLogger("flask-request-logger")
-    saved = (list(logger.handlers), logger.level, logger.parent, logger.propagate, logger.disabled)
-    yield logger
-    logger.handlers, level, logger.parent, logger.propagate, logger.disabled = saved
-    logger.setLevel(level)
+    """init_flask()/init_request_instrument() change process-wide loggers: the request logger gets a handler and is
+    detached from its parent, and the werkzeug logger is disabled and given a JSON formatter. Restore the full state
+    of both afterwards, so tests cannot depend on each other."""
+    loggers = [logging.getLogger(name) for name in ("flask-request-logger", "werkzeug")]
+    saved = [(logger, list(logger.handlers), [h.formatter for h in logger.handlers], logger.level, logger.parent,
+              logger.propagate, logger.disabled) for logger in loggers]
+    yield loggers[0]
+    for logger, handlers, formatters, level, parent, propagate, disabled in saved:
+        logger.handlers = handlers
+        for handler, formatter in zip(handlers, formatters):
+            handler.setFormatter(formatter)
+        logger.setLevel(level)
+        logger.parent = parent
+        logger.propagate = propagate
+        logger.disabled = disabled
 
 
 def _capture(logger_name, formatter):
@@ -179,12 +194,94 @@ def test_formatter_created_before_the_setting_keeps_its_original_configuration(f
     assert "written_ts" not in json.loads(late.format(record))
 
 
-@pytest.mark.parametrize("bad", ["written_ts", None, 42, ["written_ts", 7], [b"written_ts"]])
+@pytest.mark.parametrize("bad", ["written_ts", u"written_ts", b"written_ts", None, 42, {"written_ts": 1},
+                                 ["written_ts", 7], [b"written_ts"], [None]])
 def test_invalid_configuration_is_rejected_when_a_formatter_is_built(fresh_json_logging, bad):
     import json_logging
     json_logging.EXCLUDED_FIELDS = bad
     with pytest.raises(TypeError):
         json_logging.JSONLogFormatter()
+
+
+@pytest.mark.parametrize("good", [["written_ts"], [u"written_ts"], ("written_ts",), {"written_ts"},
+                                  frozenset([u"written_ts"])])
+def test_valid_configuration_types_are_accepted(fresh_json_logging, good):
+    """u"" literals are native str on Python 3; on Python 2 the validator uses basestring so unicode names pass."""
+    import json_logging
+    json_logging.EXCLUDED_FIELDS = good
+    record = logging.LogRecord("n", logging.INFO, __file__, 3, "m", None, None)
+    assert "written_ts" not in json.loads(json_logging.JSONLogFormatter().format(record))
+
+
+def _run_isolated(code):
+    """Run code in a fresh interpreter: init_*() changes process-wide state that cannot be fully undone in-process."""
+    env = dict(os.environ, PYTHONWARNINGS="ignore")
+    env.pop("ENABLE_JSON_LOGGING", None)
+    env["PYTHONPATH"] = os.pathsep.join([str(ROOT), env.get("PYTHONPATH", "")])
+    return subprocess.run([sys.executable, "-c", textwrap.dedent(code)], cwd=str(ROOT), env=env,
+                          capture_output=True, text=True, timeout=60)
+
+
+@pytest.mark.parametrize("init_call", ["init_flask(enable_json=True)", "init_flask(enable_json=False)",
+                                       "init_non_web(enable_json=True)"])
+def test_invalid_configuration_does_not_poison_a_later_init(init_call):
+    result = _run_isolated("""
+        import json_logging
+        json_logging.EXCLUDED_FIELDS = "written_ts"            # invalid: a bare string
+        try:
+            json_logging.%(call)s
+        except TypeError:
+            pass
+        else:
+            raise AssertionError("invalid EXCLUDED_FIELDS was accepted")
+        assert json_logging._current_framework is None and json_logging._request_util is None
+
+        json_logging.EXCLUDED_FIELDS = ["written_ts"]
+        json_logging.%(call)s                                   # must not raise "Can not call init more than once"
+        if json_logging._current_framework is not None:
+            try:
+                json_logging.%(call)s
+            except RuntimeError as exc:
+                assert "Can not call init more than once" in str(exc)
+            else:
+                raise AssertionError("duplicate initialisation was not rejected")
+        print("OK")
+    """ % {"call": init_call})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "OK" in result.stdout
+
+
+def test_invalid_configuration_does_not_leave_request_instrumentation_half_installed():
+    result = _run_isolated("""
+        import io, json, logging, sys
+        import flask
+        import json_logging
+        json_logging.init_flask(enable_json=True)
+        app = flask.Flask("isolated")
+        request_logger = logging.getLogger("flask-request-logger")
+
+        json_logging.EXCLUDED_FIELDS = "written_ts"            # invalid, set after a valid init_flask()
+        try:
+            json_logging.init_request_instrument(app)
+        except TypeError:
+            pass
+        else:
+            raise AssertionError("invalid EXCLUDED_FIELDS was accepted")
+        assert request_logger.handlers == [] and not app.before_request_funcs and not app.after_request_funcs
+        assert logging.getLogger("werkzeug").disabled is False
+
+        json_logging.EXCLUDED_FIELDS = ["written_ts"]
+        sys.stdout = buf = io.StringIO()                       # the request logger writes to sys.stdout
+        json_logging.init_request_instrument(app)
+        app.test_client().get("/missing", headers={"X-Correlation-ID": "retry-1"})
+        sys.stdout = sys.__stdout__
+        assert len(request_logger.handlers) == 1
+        records = [json.loads(line) for line in buf.getvalue().splitlines()]
+        assert len(records) == 1 and records[0]["correlation_id"] == "retry-1" and "written_ts" not in records[0]
+        print("OK")
+    """)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "OK" in result.stdout
 
 
 def test_exclusion_does_not_mutate_the_log_record(fresh_json_logging):
