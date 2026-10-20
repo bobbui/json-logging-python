@@ -39,8 +39,13 @@ def get_correlation_id(request=None):
     Get current request correlation-id. If one is not present, a new one might be generated
     depends on CREATE_CORRELATION_ID_IF_NOT_EXISTS setting value.
 
+    After init_non_web(), or before any init, there is no HTTP request to read from, so this returns
+    EMPTY_VALUE.
+
     :return: correlation-id string
     """
+    if _request_util is None:
+        return EMPTY_VALUE
     return _request_util.get_correlation_id(request=request)
 
 

@@ -6,6 +6,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ## Unreleased
 
+- fix: `json_logging.get_correlation_id()` returns `-` after `init_non_web()` instead of raising
+  `AttributeError`. Fixes #126
+
 - fix: Flask, Quart and Connexion no longer generate a new correlation ID for each log record emitted outside an
   active HTTP request; those records now get `-`, as documented. Connexion 3 error handlers and ASGI middleware,
   which run outside the Flask request context, still use the request's correlation header; without one they get
