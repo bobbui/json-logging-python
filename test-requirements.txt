@@ -1,6 +1,6 @@
 wheel
 flask
-connexion[swagger-ui]
+connexion[flask,swagger-ui]
 quart
 sanic
 fastapi

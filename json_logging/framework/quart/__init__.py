@@ -75,7 +75,9 @@ class QuartRequestInfoExtractor(BaseRequestInfoExtractor):
 
     @staticmethod
     def get_current_request():
-        return _current_request
+        # The request proxy exists even outside a request; only expose it while a request is active,
+        # so callers fall back to json_logging.EMPTY_VALUE instead of generating fabricated IDs.
+        return _current_request if _quart.has_request_context() else None
 
     def get_remote_user(self, request):
         if request.authorization is not None:
