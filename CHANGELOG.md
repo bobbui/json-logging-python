@@ -20,6 +20,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - feat: `json_logging.EXCLUDED_FIELDS` omits the named fields from every JSON log record. Empty by default, so
   output is unchanged. Fixes #98
 
+- docs: FastAPI startup with Uvicorn, the double-initialisation error, and a tested example (`example/fastapi_startup`).
+  Fixes #106
+
 - fix: FastAPI application logs and `json_logging.get_correlation_id()` now use the request's correlation id
   instead of `-` in synchronous (`def`) endpoints (fixes #124, PR #123). When request instrumentation is enabled with
   `init_request_instrument(app)` (Python 3.9+):
