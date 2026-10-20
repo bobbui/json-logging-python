@@ -53,8 +53,9 @@ Key locations:
 ## Local checks
 
 Create and activate a virtual environment before installing test requirements.
-The existing CI covers Python 3.9–3.13; this is not a claim that every framework
-dependency supports every version. Verify actual installation and runtime.
+The CI runs unit tests on Python 3.9–3.14 and framework smoke tests on Python 3.9 and 3.14;
+this is not a claim that every framework dependency supports every version. Verify actual
+installation and runtime.
 
 ```bash
 python -m pip install -r test-requirements.txt
