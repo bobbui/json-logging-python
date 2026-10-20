@@ -72,6 +72,8 @@ def test_second_initialisation_in_one_process_still_raises():
         except RuntimeError as exc:
             assert "Can not call init more than once" in str(exc)
             print("RAISED")
+        else:
+            raise AssertionError("Expected duplicate initialization to raise RuntimeError")
     """, cwd=EXAMPLE)
     assert result.returncode == 0, result.stderr
     assert "RAISED" in result.stdout
