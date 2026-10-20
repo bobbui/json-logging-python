@@ -18,9 +18,9 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 _request_config_class = None
-# ContextVar is only propagated to asyncio tasks from Python 3.7 on; before that (where at most the
-# thread-local `contextvars` backport exists) keep the previous call-stack lookup unchanged.
-if sys.version_info >= (3, 7):
+# Only enabled on the Python versions covered by CI (3.9+). On older versions, including 3.6 where at
+# most the thread-local `contextvars` backport exists, the previous call-stack lookup is kept unchanged.
+if sys.version_info >= (3, 9):
     from contextvars import ContextVar
     _current_request = ContextVar('json_logging_fastapi_current_request', default=None)
 else:  # pragma: no cover

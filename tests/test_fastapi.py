@@ -1,9 +1,11 @@
 """Test suite for the fastapi backend"""
 import asyncio
+import importlib
 import json
 import logging
 import pathlib
 import re
+import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
@@ -368,6 +370,70 @@ def test_call_stack_lookup_still_used_without_request_instrumentation():
         assert json.loads(handler.messages[0])["correlation_id"] == "frame-lookup"
     finally:
         logger.removeHandler(handler)
+        undo_imports_from_package("json_logging")
+
+
+def test_request_context_propagation_disabled_before_python_3_9(monkeypatch):
+    """Below Python 3.9 the ContextVar feature is off and the previous behaviour is kept unchanged:
+    call-stack lookup only, and no correlation id is created unless something asks for one."""
+    importlib.import_module("json_logging")  # load its dependencies with the real interpreter version first
+    undo_imports_from_package("json_logging")
+    with monkeypatch.context() as patch:
+        patch.setattr(sys, "version_info", (3, 8, 18, "final", 0))
+        import json_logging  # the version guard is evaluated at import time
+    from json_logging.framework.fastapi import implementation
+
+    generated = []
+    generate = json_logging.CORRELATION_ID_GENERATOR
+
+    def counting_generator():
+        generated.append(1)
+        return generate()
+
+    logger = logging.getLogger(LOGGER_NAME + "-legacy")
+    logger.setLevel(logging.DEBUG)
+    handler = FormattedMessageCollectorHandler()
+    logger.addHandler(handler)
+    request_handler = FormattedMessageCollectorHandler()
+    try:
+        assert implementation._current_request is None
+        assert not implementation.FastAPIRequestInfoExtractor.support_global_request_object()
+        monkeypatch.setattr(json_logging, "CORRELATION_ID_GENERATOR", counting_generator)
+
+        app = fastapi.FastAPI()
+        json_logging.init_fastapi(enable_json=True)
+        json_logging.init_request_instrument(app, exclude_url_patterns=["^/excluded"])
+        logging.getLogger("fastapi-request-logger").addHandler(request_handler)
+
+        @app.get("/sync")
+        def sync_endpoint():
+            logger.info("sync")
+            return {"correlation_id": json_logging.get_correlation_id()}
+
+        @app.get("/async-with-request")
+        async def async_endpoint(request: fastapi.Request):
+            logger.info("async")
+            return {"correlation_id": json_logging.get_correlation_id()}
+
+        @app.get("/excluded/silent")
+        def excluded_silent():
+            return {}
+
+        client = fastapi.testclient.TestClient(app)
+        assert client.get("/sync", headers={"X-Correlation-ID": "legacy"}).json()["correlation_id"] == "-"
+        assert client.get("/async-with-request", headers={"X-Correlation-ID": "legacy"}).json() == {
+            "correlation_id": "legacy"}
+        assert [json.loads(message)["correlation_id"] for message in handler.messages] == ["-", "legacy"]
+        assert [json.loads(message)["correlation_id"] for message in request_handler.messages] == [
+            "legacy", "legacy"]
+
+        client.get("/excluded/silent")
+        assert generated == []  # no eager id creation
+        client.get("/async-with-request")
+        assert len(generated) == 1  # created lazily, as before
+    finally:
+        logger.removeHandler(handler)
+        logging.getLogger("fastapi-request-logger").removeHandler(request_handler)
         undo_imports_from_package("json_logging")
 
 
