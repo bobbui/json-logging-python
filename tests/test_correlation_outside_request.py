@@ -64,7 +64,9 @@ def _json_records(handler):
 
 @pytest.fixture
 def capture():
-    """Attach a web-formatted capture handler to a fresh logger, and clean up afterwards."""
+    """Start from a fresh json_logging import, attach a web-formatted capture handler to a test logger, and clean up
+    both afterwards. Requested after the autouse logger-state fixture, so it is torn down first."""
+    undo_imports_from_package("json_logging")
     logger = logging.getLogger(LOGGER_NAME)
     logger.setLevel(logging.DEBUG)
     logger.propagate = False
@@ -195,3 +197,44 @@ def test_concurrent_flask_requests_do_not_exchange_ids(capture):
 
     assert results == ids
     assert json_logging.get_correlation_id() == json_logging.EMPTY_VALUE
+
+
+def test_concurrent_flask_requests_keep_their_own_generated_ids(capture):
+    """Requests without a correlation header each generate an ID. All requests are held in flight together by a
+    barrier between two log calls, so an ID stored outside the request context would be picked up by another
+    request's second log record."""
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+    import flask
+    import json_logging
+    logger, handler = capture
+    app = _build_app("flask")
+    handler.setFormatter(json_logging.JSONLogWebFormatter())
+    count = 6
+    barrier = threading.Barrier(count, timeout=10)
+
+    @app.route("/work/<int:request_number>")
+    def work(request_number):
+        logger.info("before barrier", extra={"props": {"request_number": request_number}})
+        barrier.wait()      # every request has generated its ID before any request logs again
+        logger.info("after barrier", extra={"props": {"request_number": request_number}})
+        return json_logging.get_correlation_id()
+
+    def call(request_number):
+        with app.test_client() as client:   # one client per thread: no shared client state
+            return client.get("/work/%d" % request_number).get_data(as_text=True)
+
+    with ThreadPoolExecutor(max_workers=count) as pool:
+        returned = dict(zip(range(count), pool.map(call, range(count))))
+    logger.info("after all requests")
+
+    assert all(cid not in ("", json_logging.EMPTY_VALUE) for cid in returned.values()), returned
+    assert len(set(returned.values())) == count, returned
+    records = _json_records(handler)
+    in_request = [r for r in records if "request_number" in r]
+    assert len(in_request) == 2 * count
+    for record in in_request:
+        assert record["correlation_id"] == returned[record["request_number"]], record
+    assert records[-1]["msg"] == "after all requests"
+    assert records[-1]["correlation_id"] == json_logging.EMPTY_VALUE
+    assert flask.has_request_context() is False
