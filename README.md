@@ -242,6 +242,9 @@ correlation_id_without_request_obj = json_logging.get_correlation_id()
 In request context, if one is not present, a new one might be generated depends on CREATE_CORRELATION_ID_IF_NOT_EXISTS
 setting value.
 
+Before initialization or after `init_non_web()`, `json_logging.get_correlation_id()` returns
+`json_logging.EMPTY_VALUE` (`"-"`) instead of raising an error or generating an HTTP correlation ID.
+
 
 ## 2.4 Log extra properties
 
