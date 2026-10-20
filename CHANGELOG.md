@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - fix: Flask, Quart and Connexion no longer generate a new correlation ID for each log record emitted outside an
   active HTTP request; those records now get `-`, as documented. Fixes #125
 
+- fix: `init_sanic()` no longer raises `KeyError: 'format'` when Sanic 24.x and later omit
+  formatter `format` keys; older Sanic logging configuration remains supported (PR #133).
+
 - fix: FastAPI application logs and `json_logging.get_correlation_id()` now use the request's correlation id
   instead of `-` in synchronous (`def`) endpoints (fixes #124, PR #123). When request instrumentation is enabled with
   `init_request_instrument(app)` (Python 3.9+):

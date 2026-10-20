@@ -1,4 +1,7 @@
-sanic==20.3.0
+# Preserve coverage of the legacy Sanic integration on Python 3.9.
+sanic==20.3.0; python_version < "3.10"
+# Sanic 25.12+ supports Python 3.14; 20.3.0 pulls in httpx importing removed cgi.
+sanic>=25.12,<26; python_version >= "3.10"
 requests
 pytest
 -e .
