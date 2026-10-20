@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ## Unreleased
 
 - fix: FastAPI application logs and `json_logging.get_correlation_id()` now use the request's correlation id
-  instead of `-` in synchronous (`def`) endpoints #80 #123. When request instrumentation is enabled with
+  instead of `-` in synchronous (`def`) endpoints (fixes #124, PR #123). When request instrumentation is enabled with
   `init_request_instrument(app)` (Python 3.9+):
   - the current request is kept in a context variable for the duration of the request, including for URLs
     excluded from request logging. It is visible to `def` and `async def` endpoints, sync and async
