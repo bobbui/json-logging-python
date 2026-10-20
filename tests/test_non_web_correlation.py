@@ -14,14 +14,16 @@ from helpers.imports import undo_imports_from_package
 
 @pytest.fixture(autouse=True)
 def restore_framework_logger_state():
-    """init_request_instrument() and the Flask/Connexion/Quart integrations change process-wide loggers (handlers,
-    parent, disabled). Restore them after each test so no test depends on another test having run."""
-    names = ("flask-request-logger", "connexion-request-logger", "quart-request-logger", "werkzeug")
+    """Restore process-global logging defaults and per-logger state changed by initialization."""
+    default_formatter = logging._defaultFormatter
+    names = ("flask-request-logger", "connexion-request-logger", "quart-request-logger",
+             "werkzeug", "non-web-test")
     saved = {}
     for name in names:
         logger = logging.getLogger(name)
         saved[name] = (list(logger.handlers), logger.level, logger.parent, logger.propagate, logger.disabled)
     yield
+    logging._defaultFormatter = default_formatter
     for name, (handlers, level, parent, propagate, disabled) in saved.items():
         logger = logging.getLogger(name)
         logger.handlers = handlers
