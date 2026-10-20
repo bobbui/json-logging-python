@@ -34,15 +34,49 @@ def test_example_app_is_importable_and_initialises_once():
     assert "OK" in result.stdout
 
 
-def test_app_object_pattern_initialises_once_without_serving():
-    result = _run("""
-        from app.main import app
-        import json_logging
-        assert app is not None and json_logging.get_correlation_id() == json_logging.EMPTY_VALUE
-        print("OK")
-    """, cwd=EXAMPLE)
-    assert result.returncode == 0, result.stderr
+LAUNCHER_CHECK = """
+    import runpy, sys
+    import json_logging, uvicorn
+
+    init_calls = []
+    real_init_fastapi = json_logging.init_fastapi
+    def counting_init_fastapi(*args, **kwargs):
+        init_calls.append(1)
+        return real_init_fastapi(*args, **kwargs)
+    json_logging.init_fastapi = counting_init_fastapi
+
+    run_calls = []
+    uvicorn.run = lambda app, *args, **kwargs: run_calls.append(app)    # record instead of serving
+
+    runpy.run_path(%(launcher)r, run_name="__main__")
+
+    assert len(run_calls) == 1, run_calls
+    assert not isinstance(run_calls[0], str), "uvicorn.run() got an import string: %%r" %% (run_calls[0],)
+    assert run_calls[0] is sys.modules["app.main"].app, "uvicorn.run() did not get the app object from app.main"
+    assert len(init_calls) == 1, "init_fastapi() ran %%d times" %% len(init_calls)
+    print("OK")
+"""
+
+
+def test_app_object_launcher_passes_the_app_to_uvicorn_and_initialises_once():
+    """Runs example/fastapi_startup/run.py as `python run.py` would, with uvicorn.run() replaced by a recorder."""
+    result = _run(LAUNCHER_CHECK % {"launcher": "run.py"}, cwd=EXAMPLE)
+    assert result.returncode == 0, result.stdout + result.stderr
     assert "OK" in result.stdout
+
+
+@pytest.mark.parametrize("launch", [
+    'import importlib, app.main\nimportlib.reload(app.main)\nuvicorn.run(app.main.app)',   # initialises again
+    'uvicorn.run("app.main:app")',                                                         # import string
+])
+def test_launcher_check_detects_a_launcher_that_reimports_the_app(tmp_path, launch):
+    """Negative control: the check above must fail for launchers that do not follow the documented pattern."""
+    launcher = tmp_path / "bad_run.py"
+    launcher.write_text("import uvicorn\nfrom app.main import app\nif __name__ == '__main__':\n"
+                        + textwrap.indent(launch, "    ") + "\n")
+    result = _run(LAUNCHER_CHECK % {"launcher": str(launcher)}, cwd=EXAMPLE)
+    assert result.returncode != 0
+    assert "OK" not in result.stdout
 
 
 def test_reported_pattern_still_raises_the_double_initialisation_error(tmp_path):

@@ -15,11 +15,11 @@ Run these from the `example/fastapi_startup` directory.
 
    uvicorn imports `app.main` once, so the module body runs once.
 
-2. **Pass the app object:**
+2. **Pass the app object** from a separate launcher, [`run.py`](run.py), that does not contain the app:
 
    ```python
-   # run.py, a separate launcher that does not contain the app
    import uvicorn
+
    from app.main import app
 
    if __name__ == "__main__":
@@ -29,6 +29,8 @@ Run these from the `example/fastapi_startup` directory.
    ```bash
    python run.py
    ```
+
+   uvicorn receives the app object, not an import string, so it does not import `app.main` again.
 
 ## Pattern that fails
 
