@@ -4,7 +4,6 @@ init_non_web() does not create a request utility, so json_logging.get_correlatio
 AttributeError. Non-web logs have no HTTP request, so the accessor should return the documented empty
 value and must not generate an ID.
 """
-import io
 import json
 import logging
 
