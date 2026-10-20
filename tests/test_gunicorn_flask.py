@@ -1,7 +1,7 @@
 """Flask under a real Gunicorn worker (issue #25).
 
 Starts example/gunicorn_flask on a Unix socket, waits until the worker answers HTTP, sends requests, stops the server,
-and checks the JSON records written to stdout.
+and checks the records written to stdout and stderr.
 
 Gunicorn is required in CI (the CI environment variable is set by GitHub Actions): a missing install fails the test
 instead of skipping it. Elsewhere the test is skipped when gunicorn or httpx is not installed.
@@ -9,6 +9,7 @@ instead of skipping it. Elsewhere the test is skipped when gunicorn or httpx is 
 import importlib
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -25,16 +26,28 @@ else:
     pytest.importorskip("gunicorn")
     httpx = pytest.importorskip("httpx")
 
+from gunicorn.config import Config as GunicornConfig  # noqa: E402  (after the import guard above)
+
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE = ROOT / "example" / "gunicorn_flask"
 STARTUP_TIMEOUT = 30.0      # seconds, monotonic clock
 REQUEST_TIMEOUT = 2.0       # seconds per HTTP attempt
 STOP_TIMEOUT = 20.0         # seconds for gunicorn to exit after SIGTERM
 
+# The request line and status of Gunicorn's access log format ('"GET / HTTP/1.1" 200'). Matches the plain-text line
+# and the same text inside a JSON record, where the quotes are escaped. json-logging's own request records keep the
+# method, path and status in separate fields, so they do not match.
+ACCESS_LOG_LINE = re.compile(r'\\?"(?:GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS) /\S* HTTP/\d(?:\.\d)?\\?" \d{3}\b')
+
 
 def _json_records(text):
     """Every line that starts with '{' must be a valid JSON record. Gunicorn's own plain-text lines are skipped."""
     return [json.loads(line) for line in text.splitlines() if line.startswith("{")]
+
+
+def _access_log_lines(text):
+    """Gunicorn access-log lines in the raw output, in plain text or JSON form."""
+    return [line for line in text.splitlines() if ACCESS_LOG_LINE.search(line)]
 
 
 def _wait_until_ready(process, socket_path, log_path):
@@ -67,31 +80,52 @@ def _stop(process):
         process.wait()
 
 
-def test_gunicorn_worker_logs_application_and_request_with_the_same_correlation_id():
-    # A short directory: macOS limits Unix socket paths to about 104 bytes, which pytest's tmp_path can exceed.
+def _assert_workers_exited(output):
+    for pid in re.findall(r"Booting worker with pid: (\d+)", output):
+        try:
+            os.kill(int(pid), 0)
+        except ProcessLookupError:
+            continue
+        raise AssertionError("gunicorn worker %s is still running after shutdown" % pid)
+
+
+def _run_example(extra_args=()):
+    """Serve the example, send one request with and one without a correlation header, and stop the server.
+
+    Returns (supplied response, generated response, raw output). A short directory is used because macOS limits
+    Unix socket paths to about 104 bytes, which pytest's tmp_path can exceed.
+    """
     with tempfile.TemporaryDirectory(prefix="gu", dir="/tmp") as tmp:
-        _run_gunicorn_check(Path(tmp))
+        tmp_path = Path(tmp)
+        socket_path = tmp_path / "gunicorn.sock"
+        log_path = tmp_path / "gunicorn.log"
+        args = ["--workers", "1"]
+        if "control_socket" in GunicornConfig().settings:   # Gunicorn 25+: keep its control socket out of $HOME
+            args += ["--control-socket", str(tmp_path / "gunicorn.ctl")]
+        env = dict(os.environ, PYTHONWARNINGS="ignore", GUNICORN_BIND="unix:" + str(socket_path))
+        env["PYTHONPATH"] = os.pathsep.join([str(ROOT), str(EXAMPLE), os.environ.get("PYTHONPATH", "")])
+        with open(log_path, "w") as log_file:   # a file rather than a pipe: no deadlock when output is large
+            process = subprocess.Popen(
+                [sys.executable, "-m", "gunicorn", "-c", str(EXAMPLE / "gunicorn.conf.py")] + args
+                + list(extra_args) + ["app:app"],
+                cwd=str(EXAMPLE), env=env, stdout=log_file, stderr=subprocess.STDOUT)
+        try:
+            _wait_until_ready(process, socket_path, log_path)
+            with httpx.Client(transport=httpx.HTTPTransport(uds=str(socket_path)), base_url="http://localhost",
+                              timeout=REQUEST_TIMEOUT) as client:
+                supplied = client.get("/", headers={"X-Correlation-ID": "gunicorn-1"})
+                generated = client.get("/")
+        finally:
+            _stop(process)
+        output = log_path.read_text()
+    assert process.returncode is not None
+    _assert_workers_exited(output)
+    return supplied, generated, output
 
 
-def _run_gunicorn_check(tmp_path):
-    socket_path = tmp_path / "gunicorn.sock"
-    log_path = tmp_path / "gunicorn.log"
-    env = dict(os.environ, PYTHONWARNINGS="ignore", GUNICORN_BIND="unix:" + str(socket_path))
-    env["PYTHONPATH"] = os.pathsep.join([str(ROOT), str(EXAMPLE), os.environ.get("PYTHONPATH", "")])
-    with open(log_path, "w") as log_file:   # a file rather than a pipe: no deadlock when output is large
-        process = subprocess.Popen(
-            [sys.executable, "-m", "gunicorn", "-c", str(EXAMPLE / "gunicorn.conf.py"), "--workers", "1", "app:app"],
-            cwd=str(EXAMPLE), env=env, stdout=log_file, stderr=subprocess.STDOUT)
-    try:
-        _wait_until_ready(process, socket_path, log_path)
-        with httpx.Client(transport=httpx.HTTPTransport(uds=str(socket_path)), base_url="http://localhost",
-                          timeout=REQUEST_TIMEOUT) as client:
-            supplied = client.get("/", headers={"X-Correlation-ID": "gunicorn-1"})
-            generated = client.get("/")
-    finally:
-        _stop(process)
+def test_gunicorn_worker_logs_application_and_request_with_the_same_correlation_id():
+    supplied, generated, output = _run_example()
 
-    output = log_path.read_text()
     assert supplied.status_code == 200 and generated.status_code == 200
     assert supplied.json() == {"correlation_id": "gunicorn-1"}
     generated_id = generated.json()["correlation_id"]
@@ -99,8 +133,27 @@ def _run_gunicorn_check(tmp_path):
 
     records = _json_records(output)
     app_ids = [r["correlation_id"] for r in records if r.get("logger") == "app"]
-    request_ids = [r["correlation_id"] for r in records if r.get("type") == "request"]
+    request_records = [r for r in records if r.get("type") == "request"]
     assert app_ids == ["gunicorn-1", generated_id], output
-    assert request_ids == ["gunicorn-1", generated_id], output
-    # The /ready probe is excluded from request logging, and accesslog is disabled in gunicorn.conf.py.
-    assert not [r for r in records if r.get("logger") == "gunicorn.access"]
+    # Only the two "/" requests are logged: the /ready probes are excluded from request instrumentation.
+    assert [(r["request"], r["correlation_id"]) for r in request_records] == \
+        [("/", "gunicorn-1"), ("/", generated_id)], output
+    # accesslog = None in gunicorn.conf.py: no Gunicorn access line, in plain text or JSON, for any request.
+    assert _access_log_lines(output) == [], output
+    assert not [r for r in records if r.get("logger") == "gunicorn.access"], output
+    # Worker-side Gunicorn error-log records are JSON once json-logging is initialised in the worker. Their
+    # correlation_id is '-' only with the fix for #125 (PR #127), so it is not checked here.
+    assert [r for r in records if r.get("logger") == "gunicorn.error" and r["msg"].startswith("Worker exiting")], \
+        output
+
+
+def test_access_log_detector_finds_lines_when_gunicorn_access_logging_is_enabled():
+    """Negative control: with Gunicorn's access log turned on, the detector above must report the extra lines."""
+    supplied, generated, output = _run_example(["--access-logfile", "-"])
+
+    assert supplied.status_code == 200 and generated.status_code == 200
+    access_lines = _access_log_lines(output)
+    assert len([line for line in access_lines if "GET / HTTP/1.1" in line]) == 2, output
+    assert [line for line in access_lines if "GET /ready HTTP/1.1" in line], output    # Gunicorn logs probes too
+    # json-logging still writes its own request records, so each "/" request now has two access records.
+    assert len([r for r in _json_records(output) if r.get("type") == "request"]) == 2, output
