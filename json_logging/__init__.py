@@ -170,7 +170,7 @@ def init_request_instrument(app=None, custom_formatter=None, exclude_url_pattern
     # Validate before hooks and handlers are installed, so a failed call leaves nothing behind
     _validated_excluded_fields(EXCLUDED_FIELDS)
 
-    configurator =_current_framework['app_request_instrumentation_configurator']()
+    configurator = _current_framework['app_request_instrumentation_configurator']()
     configurator.config(app, request_response_dto_class, exclude_url_patterns=exclude_url_patterns)
 
     formatter = custom_formatter if custom_formatter else JSONRequestLogFormatter

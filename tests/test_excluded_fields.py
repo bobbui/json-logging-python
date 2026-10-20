@@ -22,23 +22,51 @@ def fresh_json_logging():
     undo_imports_from_package("json_logging")
 
 
-@pytest.fixture
-def restored_request_logger():
-    """init_flask()/init_request_instrument() change process-wide loggers: the request logger gets a handler and is
-    detached from its parent, and the werkzeug logger is disabled and given a JSON formatter. Restore the full state
-    of both afterwards, so tests cannot depend on each other."""
-    loggers = [logging.getLogger(name) for name in ("flask-request-logger", "werkzeug")]
-    saved = [(logger, list(logger.handlers), [h.formatter for h in logger.handlers], logger.level, logger.parent,
-              logger.propagate, logger.disabled) for logger in loggers]
-    yield loggers[0]
-    for logger, handlers, formatters, level, parent, propagate, disabled in saved:
-        logger.handlers = handlers
-        for handler, formatter in zip(handlers, formatters):
-            handler.setFormatter(formatter)
-        logger.setLevel(level)
-        logger.parent = parent
-        logger.propagate = propagate
-        logger.disabled = disabled
+def _logger_state(logger):
+    return (list(logger.handlers), [h.formatter for h in logger.handlers], logger.level, logger.parent,
+            logger.propagate, logger.disabled)
+
+
+@pytest.fixture(autouse=True)
+def restore_logging_state():
+    """init_*() change process-wide logging state: logging._defaultFormatter, the formatter of every handler on
+    every existing logger, and the framework loggers (handlers, parent, disabled). _capture() changes logger levels
+    and propagation. Restore all of it after each test, also when the test fails, so tests cannot affect each
+    other or other test modules. The root logger is left alone: init_*() do not change it, and pytest replaces
+    its own capture handlers on it between test phases."""
+    manager = logging.Logger.manager
+    default_formatter = logging._defaultFormatter
+    saved = {name: _logger_state(logger) for name, logger in manager.loggerDict.items()
+             if isinstance(logger, logging.Logger)}
+    yield
+    logging._defaultFormatter = default_formatter
+    for name, logger in list(manager.loggerDict.items()):
+        if not isinstance(logger, logging.Logger):
+            continue
+        if name not in saved:              # created by the test: return it to a new logger's state
+            for handler in list(logger.handlers):
+                logger.removeHandler(handler)
+                handler.close()
+            logger.setLevel(logging.NOTSET)
+            logger.propagate, logger.disabled = True, False
+            if logger.parent is None:      # init_request_instrument() detaches the request logger
+                logger.parent = logging.root
+            continue
+        _restore_logger(logger, saved[name])
+
+
+def _restore_logger(logger, state):
+    handlers, formatters, level, parent, propagate, disabled = state
+    for handler in logger.handlers:
+        if handler not in handlers:
+            handler.close()
+    logger.handlers = handlers
+    for handler, formatter in zip(handlers, formatters):
+        handler.setFormatter(formatter)
+    logger.setLevel(level)
+    logger.parent = parent
+    logger.propagate = propagate
+    logger.disabled = disabled
 
 
 def _capture(logger_name, formatter):
@@ -109,7 +137,7 @@ def test_empty_exclusion_list_is_the_same_as_the_default(fresh_json_logging):
     assert "written_ts" in json.loads(handler.messages[0])
 
 
-def test_web_formatter_honours_exclusion_and_keeps_correlation_id(fresh_json_logging, restored_request_logger):
+def test_web_formatter_honours_exclusion_and_keeps_correlation_id(fresh_json_logging):
     import flask
     import json_logging
     json_logging.EXCLUDED_FIELDS = ["written_ts"]
@@ -127,7 +155,7 @@ def test_web_formatter_honours_exclusion_and_keeps_correlation_id(fresh_json_log
     assert record["correlation_id"] == "kept-1"
 
 
-def test_request_log_formatter_honours_exclusion(fresh_json_logging, restored_request_logger):
+def test_request_log_formatter_honours_exclusion(fresh_json_logging):
     import flask
     import json_logging
     json_logging.EXCLUDED_FIELDS = ("written_ts", "response_time_ms")
@@ -181,17 +209,6 @@ def test_custom_formatter_subclass_inherits_exclusion(fresh_json_logging):
         _release(logger, handler)
     record = json.loads(handler.messages[0])
     assert "written_ts" not in record and record["custom"] == "yes"
-
-
-def test_formatter_created_before_the_setting_keeps_its_original_configuration(fresh_json_logging):
-    """Settings are read when a formatter is constructed, like the existing COMPONENT_* settings."""
-    import json_logging
-    early = json_logging.JSONLogFormatter()
-    json_logging.EXCLUDED_FIELDS = ["written_ts"]
-    late = json_logging.JSONLogFormatter()
-    record = logging.LogRecord("x", logging.INFO, __file__, 1, "m", None, None)
-    assert "written_ts" in json.loads(early.format(record))
-    assert "written_ts" not in json.loads(late.format(record))
 
 
 @pytest.mark.parametrize("bad", ["written_ts", u"written_ts", b"written_ts", None, 42, {"written_ts": 1},
@@ -326,3 +343,47 @@ def test_formatters_built_at_different_times_keep_their_own_snapshots(fresh_json
     assert "written_ts" in json.loads(first.format(record)) and "thread" in json.loads(first.format(record))
     assert "written_ts" not in json.loads(second.format(record)) and "thread" in json.loads(second.format(record))
     assert "written_ts" not in json.loads(third.format(record)) and "thread" not in json.loads(third.format(record))
+
+
+@pytest.mark.parametrize("excluded, absent", [
+    (["written_ts"], {"written_ts"}),                       # the request in issue #98
+    ((), set()),                                            # default: nothing removed
+    (["correlation_id", "no_such_field"], {"correlation_id"}),  # unknown names are ignored
+])
+def test_issue_98_handler_added_before_init_flask_gets_the_configured_json_output(fresh_json_logging, excluded,
+                                                                                  absent):
+    """The setup from issue #98: an application logger already has a StreamHandler when init_flask() runs. The
+    library must install its JSON formatter on that handler, with the configured exclusions, without adding one."""
+    import flask
+    import json_logging
+    stream = io.StringIO()
+    logger = logging.getLogger("issue-98-app")
+    logger.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler(stream)
+    logger.addHandler(handler)
+    assert handler.formatter is None
+
+    json_logging.EXCLUDED_FIELDS = excluded
+    app = flask.Flask(__name__)
+    json_logging.init_flask(enable_json=True)
+    json_logging.init_request_instrument(app, exclude_url_patterns=[r'/health', r'/metrics'])
+
+    @app.route("/work")
+    def work():
+        logger.info("handled request")
+        return json_logging.get_correlation_id()
+
+    response = app.test_client().get("/work", headers={"X-Correlation-ID": "issue-98"})
+
+    assert response.get_data(as_text=True) == "issue-98"     # exclusion changes output only, not the ID lookup
+    assert logger.handlers == [handler]
+    assert type(handler.formatter) is json_logging.JSONLogWebFormatter
+    records = [json.loads(line) for line in stream.getvalue().splitlines()]
+    assert len(records) == 1
+    record = records[0]
+    assert not absent & set(record), record
+    expected = {"written_at", "written_ts", "msg", "type", "level", "logger", "correlation_id"} - absent
+    assert expected <= set(record), record
+    assert record["msg"] == "handled request" and record["level"] == "INFO" and record["type"] == "log"
+    if "correlation_id" not in absent:
+        assert record["correlation_id"] == "issue-98"

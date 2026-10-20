@@ -306,7 +306,12 @@ json_logging.init_flask(enable_json=True)
   `init_request_instrument()` or a formatter constructor. The `init_*()` and `init_request_instrument()` calls
   validate the setting before changing any state, so you can correct it and call them again.
 - Fields are removed after they are collected, so `extra` and `props` entries are removed too.
-- Downstream log consumers may depend on fields such as `written_ts`, `correlation_id` or `level`. Exclude a field only when you know nothing downstream reads it.
+- Exclusions apply to formatters that use `BaseJSONFormatter.format()`: the built-in JSON formatters and subclasses
+  that inherit or call it. A custom `logging.Formatter` that does not use it must filter fields itself.
+- Excluding a field changes the JSON schema. Downstream log consumers may depend on fields such as `written_ts`,
+  `correlation_id` or `level`; exclude a field only when you know nothing downstream reads it.
+- This is an output-formatting option, **not** a security redaction or data-loss-prevention control. A sensitive
+  value can still appear in the message, in another field, or through another handler or formatter.
 
 # 3. Configuration
 
