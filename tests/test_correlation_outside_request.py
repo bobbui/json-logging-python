@@ -16,6 +16,25 @@ from helpers.imports import undo_imports_from_package
 LOGGER_NAME = "correlation-outside-request-test"
 
 
+@pytest.fixture(autouse=True)
+def restore_framework_logger_state():
+    """init_request_instrument() and the Flask/Connexion/Quart integrations change process-wide loggers (handlers,
+    parent, disabled). Restore them after each test so no test depends on another test having run."""
+    names = ("flask-request-logger", "connexion-request-logger", "quart-request-logger", "werkzeug")
+    saved = {}
+    for name in names:
+        logger = logging.getLogger(name)
+        saved[name] = (list(logger.handlers), logger.level, logger.parent, logger.propagate, logger.disabled)
+    yield
+    for name, (handlers, level, parent, propagate, disabled) in saved.items():
+        logger = logging.getLogger(name)
+        logger.handlers = handlers
+        logger.setLevel(level)
+        logger.parent = parent
+        logger.propagate = propagate
+        logger.disabled = disabled
+
+
 def _build_app(framework):
     """Return (app, request_context) for a freshly initialised json_logging instance."""
     import json_logging
@@ -90,16 +109,15 @@ def test_flask_background_logs_after_a_request_are_still_empty(capture):
 
 @pytest.mark.skipif(importlib.metadata.version("connexion").split(".")[0] != "3",
                     reason="uses the Connexion 3 resolver API; Connexion 2 is covered by the outside-request tests")
-def test_supplied_header_is_preserved_inside_connexion_operation(capture):
+def test_supplied_header_is_preserved_inside_connexion_operation(capture, tmp_path):
     """Connexion's request object is only bound while a real operation runs, so use a spec."""
     import json
     import os
-    import tempfile
     import connexion
     from connexion.resolver import Resolver
     import json_logging
     logger, handler = capture
-    spec_dir = tempfile.mkdtemp()
+    spec_dir = str(tmp_path)
     with open(os.path.join(spec_dir, "api.yaml"), "w") as fh:
         fh.write("openapi: 3.0.0\ninfo: {title: t, version: '1'}\npaths:\n  /hi:\n    get:\n"
                  "      operationId: hi\n      responses: {'200': {description: ok}}\n")
