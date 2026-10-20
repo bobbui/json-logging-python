@@ -38,14 +38,32 @@ def _sanitize_log_msg(record):
     return record.getMessage().replace('\n', '_').replace('\r', '_').replace('\t', '_')
 
 
+def _validated_excluded_fields(fields):
+    """
+    Check json_logging.EXCLUDED_FIELDS and return it as a frozenset of field names.
+    :raises TypeError: if it is not a list/tuple/set/frozenset of strings (a bare string is rejected
+    because iterating it would exclude single characters)
+    """
+    if isinstance(fields, (basestring, bytes)) or not isinstance(fields, (list, tuple, set, frozenset)):
+        raise TypeError("json_logging.EXCLUDED_FIELDS must be a list, tuple, set or frozenset of field names, "
+                        "got %r" % (fields,))
+    for field in fields:
+        # basestring also accepts unicode names on Python 2; on Python 3 it is str, so bytes are rejected
+        if not isinstance(field, basestring):
+            raise TypeError("json_logging.EXCLUDED_FIELDS entries must be strings, got %r" % (field,))
+    return frozenset(fields)
+
+
 class BaseJSONFormatter(logging.Formatter):
     """
        Base class for JSON formatters
     """
     base_object_common = {}
+    excluded_fields = frozenset()
 
     def __init__(self, *args, **kw):
         super(BaseJSONFormatter, self).__init__(*args, **kw)
+        self.excluded_fields = _validated_excluded_fields(json_logging.EXCLUDED_FIELDS)
         if json_logging.COMPONENT_ID and json_logging.COMPONENT_ID != json_logging.EMPTY_VALUE:
             self.base_object_common["component_id"] = json_logging.COMPONENT_ID
         if json_logging.COMPONENT_NAME and json_logging.COMPONENT_NAME != json_logging.EMPTY_VALUE:
@@ -58,6 +76,8 @@ class BaseJSONFormatter(logging.Formatter):
             Format the specified record as text. Overriding default python logging implementation
         """
         log_object = self._format_log_object(record, request_util=json_logging._request_util)
+        for field in self.excluded_fields:
+            log_object.pop(field, None)
         return json_logging.JSON_SERIALIZER(log_object)
 
     def _format_log_object(self, record, request_util):

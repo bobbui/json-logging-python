@@ -17,6 +17,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - fix: `init_sanic()` no longer raises `KeyError: 'format'` when Sanic 24.x and later omit
   formatter `format` keys; older Sanic logging configuration remains supported (PR #133).
 
+- feat: `json_logging.EXCLUDED_FIELDS` omits the named fields from every JSON log record. Empty by default, so
+  output is unchanged. Fixes #98
+
 - fix: FastAPI application logs and `json_logging.get_correlation_id()` now use the request's correlation id
   instead of `-` in synchronous (`def`) endpoints (fixes #124, PR #123). When request instrumentation is enabled with
   `init_request_instrument(app)` (Python 3.9+):
