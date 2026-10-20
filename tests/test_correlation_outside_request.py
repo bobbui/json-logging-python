@@ -140,6 +140,149 @@ def test_supplied_header_is_preserved_inside_connexion_operation(capture, tmp_pa
     assert _json_records(handler)[-1]["correlation_id"] == "given-1"
 
 
+IS_CONNEXION_3 = importlib.metadata.version("connexion").split(".")[0] == "3"
+
+
+def _connexion3_app(tmp_path, logger, view, after_middleware_hook=None):
+    """A Connexion 3 FlaskApp with code paths that run outside the Flask request context: an error handler
+    (Connexion's ExceptionMiddleware) and an ASGI middleware that logs after the app has returned."""
+    import connexion
+    from connexion.resolver import Resolver
+    import json_logging
+    (tmp_path / "api.yaml").write_text(
+        "openapi: 3.0.0\ninfo: {title: t, version: '1'}\npaths:\n  /op:\n    get:\n      operationId: op\n"
+        "      parameters: [{name: n, in: query, schema: {type: integer}}]\n"
+        "      responses: {'200': {description: ok}}\n")
+
+    class AfterAppMiddleware:
+        def __init__(self, app):
+            self.app = app
+
+        async def __call__(self, scope, receive, send):
+            await self.app(scope, receive, send)
+            if scope["type"] == "http":
+                if after_middleware_hook is not None:
+                    await after_middleware_hook()
+                logger.info("middleware after app", extra={"props": {"query": scope["query_string"].decode()}})
+
+    def on_error(request, exc):
+        logger.info("error handler", extra={"props": {"query": request.url.query}})
+        logger.info("error handler again", extra={"props": {"query": request.url.query}})
+        return connexion.lifecycle.ConnexionResponse(status_code=500, body=b"handled")
+
+    app = connexion.FlaskApp(__name__, specification_dir=str(tmp_path))
+    json_logging.init_connexion(enable_json=True)
+    # Request logging is excluded: Connexion 3 request records fail independently of this test (issue #101).
+    json_logging.init_request_instrument(app, exclude_url_patterns=[r"^/op$"])
+    app.add_error_handler(ValueError, on_error)
+    app.add_middleware(AfterAppMiddleware)
+    app.add_api("api.yaml", resolver=Resolver(lambda operation_id: view))
+    return app
+
+
+@pytest.mark.skipif(not IS_CONNEXION_3, reason="Connexion 3 runs error handlers and middleware outside Flask")
+def test_connexion3_header_is_preserved_outside_the_flask_request_context(capture, tmp_path):
+    """Connexion 3 error handlers and ASGI middleware have a Connexion request but no Flask request context."""
+    import flask
+    import json_logging
+    logger, handler = capture
+    flask_context_in_handler = []
+
+    def view(n=None):
+        logger.info("view")
+        if n == 1:
+            flask_context_in_handler.append(flask.has_request_context())
+            raise ValueError("handled by the Connexion error handler")
+        return {"correlation_id": json_logging.get_correlation_id()}
+
+    app = _connexion3_app(tmp_path, logger, view)
+    handler.setFormatter(json_logging.JSONLogWebFormatter())
+    client = app.test_client()
+
+    assert client.get("/op", headers={"X-Correlation-ID": "test-123"}).status_code == 200
+    assert client.get("/op?n=1", headers={"X-Request-ID": "test-456"}).status_code == 500
+
+    records = [(r["msg"], r["correlation_id"]) for r in _json_records(handler)]
+    assert records == [
+        ("view", "test-123"), ("middleware after app", "test-123"),
+        # the view raised, so the exception propagated through the middleware before its post-app log
+        ("view", "test-456"), ("error handler", "test-456"), ("error handler again", "test-456"),
+    ]
+    assert flask_context_in_handler == [True]    # the view runs in Flask; the handler and middleware do not
+    logger.info("after requests")
+    assert _json_records(handler)[-1]["correlation_id"] == json_logging.EMPTY_VALUE
+    assert json_logging.get_correlation_id() == json_logging.EMPTY_VALUE
+
+
+@pytest.mark.skipif(not IS_CONNEXION_3, reason="Connexion 3 runs error handlers and middleware outside Flask")
+def test_connexion3_without_header_does_not_fabricate_ids_outside_the_flask_request_context(capture, tmp_path):
+    """A generated ID lives in flask.g, which is gone once Connexion's middleware runs. Logs there must get '-'
+    rather than a fresh UUID per record; logs inside the view keep one generated ID."""
+    import json_logging
+    logger, handler = capture
+
+    def view(n=None):
+        logger.info("view 1", extra={"props": {"n": n}})
+        logger.info("view 2", extra={"props": {"n": n}})
+        if n == 1:
+            raise ValueError("handled by the Connexion error handler")
+        return {"correlation_id": json_logging.get_correlation_id()}
+
+    app = _connexion3_app(tmp_path, logger, view)
+    handler.setFormatter(json_logging.JSONLogWebFormatter())
+    client = app.test_client()
+    returned = client.get("/op?n=0").json()["correlation_id"]
+    assert client.get("/op?n=1").status_code == 500
+
+    ids = [(r["msg"], r.get("n"), r["correlation_id"]) for r in _json_records(handler)]
+    (_, _, first), (_, _, second), middleware, (_, _, third), (_, _, fourth), handler_1, handler_2 = ids
+    assert first == second == returned and returned != json_logging.EMPTY_VALUE   # one ID within a request
+    assert third == fourth and third not in (returned, json_logging.EMPTY_VALUE)  # a new ID for the next request
+    assert middleware == ("middleware after app", None, json_logging.EMPTY_VALUE)
+    assert handler_1 == ("error handler", None, json_logging.EMPTY_VALUE)
+    assert handler_2 == ("error handler again", None, json_logging.EMPTY_VALUE)
+
+
+@pytest.mark.skipif(not IS_CONNEXION_3, reason="Connexion 3 runs error handlers and middleware outside Flask")
+def test_connexion3_concurrent_requests_do_not_exchange_ids(capture, tmp_path):
+    """Requests run as concurrent ASGI tasks. The middleware waits until every request has finished its view
+    before logging, so the Connexion contexts of all requests are live at the same time."""
+    import httpx
+    import json_logging
+    logger, handler = capture
+    count = 5
+    finished_views = []
+    state = {}      # the Event is created inside the running loop (required on Python 3.9)
+
+    async def wait_for_all_views():
+        finished_views.append(1)
+        if len(finished_views) == count:
+            state["all_views_done"].set()
+        await asyncio.wait_for(state["all_views_done"].wait(), timeout=10)
+
+    def view(n=None):
+        logger.info("view", extra={"props": {"query": "n=%d" % n}})
+        return {"correlation_id": json_logging.get_correlation_id()}
+
+    app = _connexion3_app(tmp_path, logger, view, after_middleware_hook=wait_for_all_views)
+    handler.setFormatter(json_logging.JSONLogWebFormatter())
+
+    async def run():
+        state["all_views_done"] = asyncio.Event()
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            return await asyncio.gather(*[client.get("/op?n=%d" % n, headers={"X-Correlation-ID": "cx-%d" % n})
+                                          for n in range(count)])
+
+    responses = asyncio.run(run())
+    assert [r.json()["correlation_id"] for r in responses] == ["cx-%d" % n for n in range(count)]
+    records = _json_records(handler)
+    assert len(records) == 2 * count
+    for record in records:
+        assert record["correlation_id"] == "cx-" + record["query"].split("=")[1], record
+    assert json_logging.get_correlation_id() == json_logging.EMPTY_VALUE
+
+
 @pytest.mark.parametrize("framework", ["flask", "quart"])
 def test_supplied_header_is_preserved_inside_request(capture, framework):
     import json_logging
