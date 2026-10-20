@@ -15,6 +15,17 @@ def fresh_json_logging():
     undo_imports_from_package("json_logging")
 
 
+@pytest.fixture
+def restored_request_logger():
+    """init_request_instrument() adds a handler to a process-wide logger and detaches it from its parent.
+    Restore the logger's full state afterwards, so tests cannot depend on each other."""
+    logger = logging.getLogger("flask-request-logger")
+    saved = (list(logger.handlers), logger.level, logger.parent, logger.propagate, logger.disabled)
+    yield logger
+    logger.handlers, level, logger.parent, logger.propagate, logger.disabled = saved
+    logger.setLevel(level)
+
+
 def _capture(logger_name, formatter):
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.INFO)
@@ -83,7 +94,7 @@ def test_empty_exclusion_list_is_the_same_as_the_default(fresh_json_logging):
     assert "written_ts" in json.loads(handler.messages[0])
 
 
-def test_web_formatter_honours_exclusion_and_keeps_correlation_id(fresh_json_logging):
+def test_web_formatter_honours_exclusion_and_keeps_correlation_id(fresh_json_logging, restored_request_logger):
     import flask
     import json_logging
     json_logging.EXCLUDED_FIELDS = ["written_ts"]
@@ -101,7 +112,7 @@ def test_web_formatter_honours_exclusion_and_keeps_correlation_id(fresh_json_log
     assert record["correlation_id"] == "kept-1"
 
 
-def test_request_log_formatter_honours_exclusion(fresh_json_logging):
+def test_request_log_formatter_honours_exclusion(fresh_json_logging, restored_request_logger):
     import flask
     import json_logging
     json_logging.EXCLUDED_FIELDS = ("written_ts", "response_time_ms")
@@ -110,10 +121,14 @@ def test_request_log_formatter_honours_exclusion(fresh_json_logging):
     json_logging.init_request_instrument(app)
     buf = io.StringIO()
     request_logger = json_logging.get_request_logger()
+    original_handlers = request_logger.handlers[:]
     handler = logging.StreamHandler(buf)
     handler.setFormatter(json_logging.JSONRequestLogFormatter())
-    request_logger.handlers = [handler]
-    app.test_client().get("/nothing-here")
+    try:
+        request_logger.handlers = [handler]
+        app.test_client().get("/nothing-here")
+    finally:
+        request_logger.handlers = original_handlers
     record = json.loads(buf.getvalue().splitlines()[0])
     assert "written_ts" not in record and "response_time_ms" not in record
     assert record["type"] == "request" and "response_status" in record
@@ -170,3 +185,47 @@ def test_invalid_configuration_is_rejected_when_a_formatter_is_built(fresh_json_
     json_logging.EXCLUDED_FIELDS = bad
     with pytest.raises(TypeError):
         json_logging.JSONLogFormatter()
+
+
+def test_exclusion_does_not_mutate_the_log_record(fresh_json_logging):
+    import json_logging
+    json_logging.EXCLUDED_FIELDS = ["written_ts", "msg"]
+    formatter = json_logging.JSONLogFormatter()
+    record = logging.LogRecord("n", logging.INFO, __file__, 3, "hello %s", ("x",), None)
+    record.props = {"tenant": "acme"}
+    before = dict(record.__dict__)
+    output = json.loads(formatter.format(record))
+    assert "msg" not in output and "written_ts" not in output
+    assert record.__dict__ == before
+    assert record.getMessage() == "hello x"
+
+
+def test_exception_formatting_is_removed_only_when_excluded(fresh_json_logging):
+    import json_logging
+    try:
+        raise ValueError("boom")
+    except ValueError:
+        import sys
+        exc_info = sys.exc_info()
+    record = logging.LogRecord("n", logging.ERROR, __file__, 3, "failed", None, exc_info)
+
+    default = json.loads(json_logging.JSONLogFormatter().format(record))
+    assert "ValueError: boom" in default["exc_info"]
+
+    json_logging.EXCLUDED_FIELDS = ["exc_info"]
+    excluded = json.loads(json_logging.JSONLogFormatter().format(record))
+    assert "exc_info" not in excluded and excluded["msg"] == "failed"
+
+
+def test_formatters_built_at_different_times_keep_their_own_snapshots(fresh_json_logging):
+    import json_logging
+    record = logging.LogRecord("n", logging.INFO, __file__, 3, "m", None, None)
+    first = json_logging.JSONLogFormatter()
+    json_logging.EXCLUDED_FIELDS = ["written_ts"]
+    second = json_logging.JSONLogFormatter()
+    json_logging.EXCLUDED_FIELDS = ["written_ts", "thread"]
+    third = json_logging.JSONLogFormatter()
+
+    assert "written_ts" in json.loads(first.format(record)) and "thread" in json.loads(first.format(record))
+    assert "written_ts" not in json.loads(second.format(record)) and "thread" in json.loads(second.format(record))
+    assert "written_ts" not in json.loads(third.format(record)) and "thread" not in json.loads(third.format(record))
