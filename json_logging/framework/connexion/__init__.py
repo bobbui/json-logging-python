@@ -30,6 +30,13 @@ if is_connexion_present():
     _flask = flask
     _connexion.g = g
 
+    try:
+        # Connexion 3+: the ASGI request scope, a werkzeug LocalProxy that is falsy outside a Connexion request
+        from connexion.context import scope as _connexion_scope
+    except ImportError:
+        # Connexion 2: connexion.request is flask.request, so the Flask request context is the only one
+        _connexion_scope = None
+
 
 class ConnexionAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationConfigurator):
     def config(self, app, request_response_dto_class, exclude_url_patterns=[]):
@@ -79,7 +86,17 @@ class ConnexionRequestInfoExtractor(BaseRequestInfoExtractor):
 
     @staticmethod
     def get_current_request():
-        return _current_request
+        # The request proxy exists even outside a request; only expose it while a request is active,
+        # so callers fall back to json_logging.EMPTY_VALUE instead of generating fabricated IDs.
+        if _flask.has_request_context():
+            return _current_request
+        # Connexion 3 runs error handlers and ASGI middleware outside the Flask request context. The request's
+        # correlation header can still be read there, but a generated ID could not be stored (connexion.g is
+        # flask.g), so expose the request only when it carries a correlation header.
+        if _connexion_scope is not None and _connexion_scope and any(
+                header in _current_request.headers for header in json_logging.CORRELATION_ID_HEADERS):
+            return _current_request
+        return None
 
     def get_remote_user(self, request):
         if request.authorization is not None:

@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ## Unreleased
 
+- fix: Flask, Quart and Connexion no longer generate a new correlation ID for each log record emitted outside an
+  active HTTP request; those records now get `-`, as documented. Connexion 3 error handlers and ASGI middleware,
+  which run outside the Flask request context, still use the request's correlation header; without one they get
+  `-`, because a generated ID is only stored inside the Flask request context. Fixes #125
+
 - fix: `init_sanic()` no longer raises `KeyError: 'format'` when Sanic 24.x and later omit
   formatter `format` keys; older Sanic logging configuration remains supported (PR #133).
 
