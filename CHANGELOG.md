@@ -23,6 +23,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - docs: FastAPI startup with Uvicorn, the double-initialisation error, and a tested example (`example/fastapi_startup`).
   Fixes #106
 
+- docs: tested Gunicorn and Flask example (`example/gunicorn_flask`) covering worker initialisation, request
+  instrumentation, JSON output, and the Gunicorn access log. Fixes #25
+
 - fix: FastAPI application logs and `json_logging.get_correlation_id()` now use the request's correlation id
   instead of `-` in synchronous (`def`) endpoints (fixes #124, PR #123). When request instrumentation is enabled with
   `init_request_instrument(app)` (Python 3.9+):

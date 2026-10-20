@@ -6,6 +6,7 @@ sanic
 fastapi
 uvicorn
 requests
+gunicorn
 httpx
 flake8
 pytest
