@@ -13,6 +13,25 @@ from helpers.handler import FormattedMessageCollectorHandler
 from helpers.imports import undo_imports_from_package
 
 
+@pytest.fixture(autouse=True)
+def restore_framework_logger_state():
+    """init_request_instrument() and the Flask/Connexion/Quart integrations change process-wide loggers (handlers,
+    parent, disabled). Restore them after each test so no test depends on another test having run."""
+    names = ("flask-request-logger", "connexion-request-logger", "quart-request-logger", "werkzeug")
+    saved = {}
+    for name in names:
+        logger = logging.getLogger(name)
+        saved[name] = (list(logger.handlers), logger.level, logger.parent, logger.propagate, logger.disabled)
+    yield
+    for name, (handlers, level, parent, propagate, disabled) in saved.items():
+        logger = logging.getLogger(name)
+        logger.handlers = handlers
+        logger.setLevel(level)
+        logger.parent = parent
+        logger.propagate = propagate
+        logger.disabled = disabled
+
+
 @pytest.fixture
 def fresh_json_logging():
     undo_imports_from_package("json_logging")
