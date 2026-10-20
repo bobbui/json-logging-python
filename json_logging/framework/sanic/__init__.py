@@ -39,12 +39,12 @@ class SanicAppConfigurator(BaseFrameworkConfigurator):
         LOGGING_CONFIG_DEFAULTS["formatters"]["generic"][
             "class"
         ] = "json_logging.JSONLogFormatter"
-        del LOGGING_CONFIG_DEFAULTS["formatters"]["generic"]["format"]
+        LOGGING_CONFIG_DEFAULTS["formatters"]["generic"].pop("format", None)
 
         LOGGING_CONFIG_DEFAULTS["formatters"]["access"][
             "class"
         ] = "json_logging.JSONLogFormatter"
-        del LOGGING_CONFIG_DEFAULTS["formatters"]["access"]["format"]
+        LOGGING_CONFIG_DEFAULTS["formatters"]["access"].pop("format", None)
 
         # logging.config.dictConfig(LOGGING_CONFIG_DEFAULTS)
 

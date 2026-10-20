@@ -1,4 +1,4 @@
-import asyncio, logging, sys, json_logging, quart
+import logging, sys, json_logging, quart
 
 app = quart.Quart(__name__)
 json_logging.init_quart(enable_json=True)
@@ -17,5 +17,5 @@ async def home():
     return "Hello world"
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    app.run(host='0.0.0.0', port=int(5000), use_reloader=False, loop=loop)
+    # Quart manages its own event loop; get_event_loop() raises without a loop on Python 3.14.
+    app.run(host='0.0.0.0', port=int(5000), use_reloader=False)

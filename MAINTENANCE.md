@@ -47,7 +47,7 @@ flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 ```
 
 The GitHub Actions workflow `.github/workflows/code_quality.yml` runs
-unit tests on Python 3.9–3.13, lint, and separate smoke tests for FastAPI,
+unit tests on Python 3.9–3.14, lint, and separate smoke tests on Python 3.9 and 3.14 for FastAPI,
 Flask, Quart, and Sanic. The shared smoke-test runner starts an example
 service on localhost:5000; that port must be available for local runs.
 
