@@ -63,7 +63,7 @@ def test_init_sanic_handles_logging_formats_and_emits_json(config_shape):
             assert record["msg"] == "sanic json logging"
             assert record["service"] == name
         print("PASS")
-    """ %% {"config_shape": config_shape})
+    """ % {"config_shape": config_shape})
     env = dict(os.environ, PYTHONWARNINGS="ignore")
     result = subprocess.run(
         [sys.executable, "-c", code], cwd=str(ROOT), env=env,
