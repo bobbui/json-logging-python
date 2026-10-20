@@ -34,6 +34,7 @@ author.
    2.5 [Root logger](#25-root-logger)  
    2.6 [Custom log formatter](#26-custom-log-formatter)  
    2.7 [Exclude certain URL from request instrumentation](#27-exclude-certain-url-from-request-instrumentation)
+   2.8 [Exclude fields from the JSON output](#28-exclude-fields-from-the-json-output)
 3. [Configuration](#3-configuration)
 4. [Python References](#4-python-references)
 5. [Framework support plugin development](#5-framework-support-plugin-development)
@@ -287,6 +288,23 @@ method like below:
 ```python
 json_logging.init_request_instrument(app, exclude_url_patterns=[r'/exclude_from_request_instrumentation'])
 ```
+
+## 2.8 Exclude fields from the JSON output
+
+Set `json_logging.EXCLUDED_FIELDS` to omit fields from every JSON record, including request logs:
+
+```python
+import json_logging
+
+json_logging.EXCLUDED_FIELDS = ["written_ts"]          # or a tuple/set/frozenset of field names
+json_logging.init_flask(enable_json=True)
+```
+
+- The default is `()`, so output is unchanged.
+- Set it **before** calling `init_*()`: formatters read it when they are constructed, the same way as `COMPONENT_*`.
+- A bare string, or a collection containing non-strings, raises `TypeError` when a formatter is built.
+- Fields are removed after they are collected, so `extra` and `props` entries are removed too.
+- Downstream log consumers may depend on fields such as `written_ts`, `correlation_id` or `level`. Exclude a field only when you know nothing downstream reads it.
 
 # 3. Configuration
 

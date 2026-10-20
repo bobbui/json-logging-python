@@ -23,6 +23,9 @@ EMPTY_VALUE = '-'
 CREATE_CORRELATION_ID_IF_NOT_EXISTS = True
 JSON_SERIALIZER = lambda log: json.dumps(log, ensure_ascii=False, default=str)
 CORRELATION_ID_HEADERS = ['X-Correlation-ID', 'X-Request-ID']
+# Field names to omit from every JSON log record (e.g. 'written_ts'). Empty by default, so output is unchanged.
+# Read when a formatter is constructed, so set it before calling init_*().
+EXCLUDED_FIELDS = ()
 COMPONENT_ID = EMPTY_VALUE
 COMPONENT_NAME = EMPTY_VALUE
 COMPONENT_INSTANCE_INDEX = 0
