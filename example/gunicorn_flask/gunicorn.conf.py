@@ -1,7 +1,8 @@
 """Gunicorn settings for the json-logging example.
 
 Request instrumentation already writes one JSON request record per request, so Gunicorn's own access log is turned
-off to avoid duplicate access lines. Gunicorn's error log is kept on stdout; its records are JSON only in the workers.
+off to avoid duplicate access lines (accesslog = "-" would write it to stdout). errorlog = "-" writes Gunicorn's
+error log to stderr; its records are JSON only in the workers, after json-logging is initialised.
 """
 import os
 

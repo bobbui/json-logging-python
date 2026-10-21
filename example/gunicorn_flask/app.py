@@ -1,5 +1,6 @@
 """Flask application for Gunicorn. json-logging is initialised at import time, once per worker process."""
 import logging
+import os
 
 import flask
 import json_logging
@@ -12,6 +13,8 @@ json_logging.init_request_instrument(app, exclude_url_patterns=[r"^/ready$"])
 logger = logging.getLogger("app")
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
+# Logged outside any request, so its correlation_id is json_logging.EMPTY_VALUE ("-"). One per worker process.
+logger.info("worker ready", extra={"props": {"pid": os.getpid()}})
 
 
 @app.route("/")
