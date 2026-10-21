@@ -6,42 +6,60 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ## Unreleased
 
-- fix: `json_logging.get_correlation_id()` returns `-` after `init_non_web()` instead of raising
-  `AttributeError`. Fixes #126
+## 1.6.0
 
-- fix: Flask, Quart and Connexion no longer generate a new correlation ID for each log record emitted outside an
-  active HTTP request; those records now get `-`, as documented. Connexion 3 error handlers and ASGI middleware,
-  which run outside the Flask request context, still use the request's correlation header; without one they get
-  `-`, because a generated ID is only stored inside the Flask request context. Fixes #125
+### Added
 
-- fix: `init_sanic()` no longer raises `KeyError: 'format'` when Sanic 24.x and later omit
-  formatter `format` keys; older Sanic logging configuration remains supported (PR #133).
+- `json_logging.EXCLUDED_FIELDS`: an optional list, tuple, set or frozenset of field names to omit from every JSON
+  record (application, web and request logs, including `extra` and `props` entries). The default is `()`, so
+  existing applications need no change and their output fields stay the same. Set it before `init_*()`; formatters
+  read it when they are created. An invalid value (a bare string, or a non-string entry) raises `TypeError` from
+  `init_*()` or `init_request_instrument()` before any state changes, so it can be corrected and retried. This is
+  an output-formatting option, not a security redaction control. (#129, fixes #98)
 
-- feat: `json_logging.EXCLUDED_FIELDS` omits the named fields from every JSON log record. Empty by default, so
-  output is unchanged. Fixes #98
+### Fixed
 
-- docs: FastAPI startup with Uvicorn, the double-initialisation error, and a tested example (`example/fastapi_startup`).
-  Fixes #106
+- FastAPI: application logs and `json_logging.get_correlation_id()` use the request's correlation ID instead of `-`
+  in synchronous (`def`) endpoints. When request instrumentation is enabled with `init_request_instrument(app)`, the
+  current request is kept in a context variable for the duration of the request, including for URLs excluded from
+  request logging. It is visible to `def` and `async def` endpoints, sync and async `BackgroundTasks`,
+  `StreamingResponse` iterators, and work that inherits the request's context, such as `asyncio.create_task()`
+  (also after the response is sent), `asyncio.to_thread()`, `contextvars.copy_context().run()` and AnyIO/Starlette
+  threadpool workers. Without a correlation header, one ID is created at the start of each request, so all logs of
+  that request share it. (#123, fixes #124)
+- Flask, Quart and Connexion: log records emitted outside an active HTTP request get `-`, as documented, instead of a
+  new random correlation ID per record. Connexion 3 error handlers and ASGI middleware, which run outside the Flask
+  request context, still use the request's correlation header; without one they get `-`, because a generated ID is
+  only stored inside the Flask request context. (#127, fixes #125)
+- `json_logging.get_correlation_id()` returns `-` after `init_non_web()`, or before any `init_*()`, instead of
+  raising `AttributeError`. (#128, fixes #126)
+- Sanic: `init_sanic()` no longer raises `KeyError: 'format'` with Sanic 24.x and later, whose default logging
+  configuration omits formatter `format` keys. Older Sanic configurations are still supported. (#133)
 
-- docs: tested Gunicorn and Flask example (`example/gunicorn_flask`) covering worker initialisation, request
-  instrumentation, JSON output, and the Gunicorn access log. Fixes #25
+### Documentation
 
-- fix: FastAPI application logs and `json_logging.get_correlation_id()` now use the request's correlation id
-  instead of `-` in synchronous (`def`) endpoints (fixes #124, PR #123). When request instrumentation is enabled with
-  `init_request_instrument(app)` (Python 3.9+):
-  - the current request is kept in a context variable for the duration of the request, including for URLs
-    excluded from request logging. It is visible to `def` and `async def` endpoints, sync and async
-    `BackgroundTasks`, `StreamingResponse` iterators, and work that inherits the request's context, such as
-    `asyncio.create_task()` (also after the response is sent), `asyncio.to_thread()`,
-    `contextvars.copy_context().run()` and AnyIO/Starlette threadpool workers;
-  - if no correlation id header is present, the id is now created once at the start of each request (also for
-    excluded URLs), so all threads and logs of one request share the same id.
+- FastAPI and Uvicorn startup: why `RuntimeError: Can not call init more than once` occurs when a module started as a
+  script also passes an import string to uvicorn, two working startup patterns, reload and multiple workers, and a
+  tested example in `example/fastapi_startup`. The duplicate-initialisation guard is unchanged. (#130, fixes #106)
+- Gunicorn and Flask: a tested example in `example/gunicorn_flask` covering initialisation once per worker, request
+  instrumentation, correlation IDs, which output is JSON and on which stream, and Gunicorn's access and error logs;
+  with integration tests that run real Gunicorn workers. (#131, fixes #25)
 
-  Threads that do not inherit the request's context (`threading.Thread`, `loop.run_in_executor()`), WebSocket
-  endpoints, applications without `init_request_instrument(app)`, and Python < 3.9 keep the previous behaviour.
-  There, the request is found only by inspecting the current thread's call stack, so a thread or handler that
-  does not hold the request object in one of its own frames (for example as a `request` argument) logs `-`.
-  Other framework integrations are not affected.
+### Compatibility
+
+- No change is required from existing applications. With `EXCLUDED_FIELDS` left at its default, the JSON fields of
+  every record are the same as in 1.5.1; fields are only removed when an application lists them.
+- Behaviour changes in several framework integrations, as listed under Fixed: outside-request records now get `-`
+  instead of a random ID (Flask, Quart, Connexion), non-web `get_correlation_id()` no longer raises, FastAPI
+  synchronous endpoints now get the request's ID, and Sanic 24+ initialises.
+- The FastAPI request-context propagation is used on Python 3.9 and later. Python 3.8 and earlier keep the previous
+  behaviour: call-stack lookup only, and no correlation ID created at the start of the request.
+- In FastAPI, threads that do not inherit the request's context (`threading.Thread`, `loop.run_in_executor()`),
+  WebSocket endpoints, and applications without `init_request_instrument(app)` keep the previous behaviour. There, a
+  thread or handler finds the request only if the request object is in one of its own frames, for example as a
+  `request` argument; otherwise it logs `-`.
+- CI runs the unit tests on Python 3.9 to 3.14 and the Flask, Quart, FastAPI and Sanic smoke tests on Python 3.9 and
+  3.14. Python 3.8 and earlier, including Python 2, are not tested.
 
 ## 1.5.1 - 2025-07-06
 

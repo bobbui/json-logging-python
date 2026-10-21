@@ -12,12 +12,13 @@ else:
 
 setup(
     name="json-logging",
-    version='1.5.1',
+    version='1.6.0',
     packages=find_packages(exclude=['contrib', 'docs', 'tests*', 'example', 'dist', 'build']),
     license='Apache License 2.0',
     description="JSON Python Logging",
     long_description=long_description,
-    author="Bob T.",
+    author="Bob T., Udit Agrawal",
+    maintainer="Udit Agrawal",
     keywords=["json", "elastic", "python", "python3", "python2", "logging", "logging-library", "json", "elasticsearch",
               "elk", "elk-stack", "logstash", "kibana"],
     platforms='any',
