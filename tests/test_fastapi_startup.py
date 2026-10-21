@@ -22,15 +22,36 @@ def _run(code, cwd, extra_path=()):
                           capture_output=True, text=True, timeout=60)
 
 
-def test_example_app_is_importable_and_initialises_once():
+def test_import_string_pattern_loads_the_app_through_uvicorn_config_and_initialises_once():
+    """`python -m uvicorn app.main:app` builds a uvicorn.Config from the import string and calls load(), which
+    imports app.main. Run that real Config.load() path, without starting a server, and check that the loaded
+    application is app.main.app and that init_fastapi() ran once."""
     result = _run("""
-        import importlib
-        main = importlib.import_module("app.main")
-        from uvicorn.importer import import_from_string
-        assert import_from_string("app.main:app") is main.app      # what `uvicorn app.main:app` does
+        import socket, sys
+        import json_logging, uvicorn
+
+        init_calls = []
+        real_init_fastapi = json_logging.init_fastapi
+        def counting_init_fastapi(*args, **kwargs):
+            init_calls.append(1)
+            return real_init_fastapi(*args, **kwargs)
+        json_logging.init_fastapi = counting_init_fastapi
+
+        def no_bind(self, address):
+            raise AssertionError("Config.load() must not bind a socket: %r" % (address,))
+        socket.socket.bind = no_bind
+
+        config = uvicorn.Config("app.main:app")
+        config.load()
+
+        app = config.loaded_app
+        while app is not sys.modules["app.main"].app and hasattr(app, "app"):
+            app = app.app       # uvicorn wraps the application in its own ASGI middleware
+        assert app is sys.modules["app.main"].app, "uvicorn did not load app.main:app"
+        assert len(init_calls) == 1, "init_fastapi() ran %d times" % len(init_calls)
         print("OK")
     """, cwd=EXAMPLE)
-    assert result.returncode == 0, result.stderr
+    assert result.returncode == 0, result.stdout + result.stderr
     assert "OK" in result.stdout
 
 

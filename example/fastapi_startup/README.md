@@ -13,7 +13,8 @@ Run these from the `example/fastapi_startup` directory.
    python -m uvicorn app.main:app --port 8000
    ```
 
-   uvicorn imports `app.main` once, so the module body runs once.
+   uvicorn imports `app.main` once, so the module body runs once. Recommended because it also works with
+   `--reload` and `--workers` (see below).
 
 2. **Pass the app object** from a separate launcher, [`run.py`](run.py), that does not contain the app:
 
@@ -32,6 +33,16 @@ Run these from the `example/fastapi_startup` directory.
 
    uvicorn receives the app object, not an import string, so it does not import `app.main` again.
 
+## Reload and multiple workers
+
+- Use the import-string pattern (1) for `--reload` or `--workers N`. uvicorn needs an import string for both; with
+  an app object it logs "You must pass the application as an import string to enable 'reload' or 'workers'" and
+  exits.
+- Passing the app object (2) suits a simple single-process start.
+- With reload or several workers, each worker is its own process and imports `app.main` once, so
+  `init_fastapi()` runs once per worker process. That is expected. The error only occurs when the same process
+  initialises twice.
+
 ## Pattern that fails
 
 ```python
@@ -47,6 +58,10 @@ creates the app.
 
 ## Verify
 
+From this directory:
+
 ```bash
-python -m pytest tests/test_fastapi_startup.py -q
+python -m pytest ../../tests/test_fastapi_startup.py -q
 ```
+
+or, from the repository root, `python -m pytest tests/test_fastapi_startup.py -q`.
