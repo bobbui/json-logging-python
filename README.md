@@ -367,6 +367,13 @@ for reference implementations.
     - If you using flask, by default option **use_reloader** is set to **True** which will start 2 instances of web
       application. change it to False to disable this behaviour [\[3\]](#3-more-on-flask-use-reloader)
 
+3. `RuntimeError: Can not call init more than once` with FastAPI.
+
+    - The module that calls `init_fastapi()` ran twice, for example when it is started as a script and uvicorn
+      also imports it by an import string such as `"app.main:app"`. Start uvicorn with
+      `python -m uvicorn app.main:app`, or pass the app object to `uvicorn.run(app)`. See
+      [example/fastapi_startup](example/fastapi_startup/README.md).
+
 # 7. References
 
 ## [0] Full logging format references
