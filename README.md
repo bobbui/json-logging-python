@@ -1,6 +1,6 @@
 ## Maintenance
 
-**Current Technical Maintainer:** [Udit Agrawal](https://github.com/suppagoddo)
+**Current Technical Maintainers:** [Udit Agrawal](https://github.com/suppagoddo), [Srinivas Chippagiri](https://github.com/cvas22)
 
 **Maintainer:** [Bob T.](https://github.com/bobbui)
 
