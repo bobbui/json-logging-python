@@ -437,6 +437,37 @@ def test_request_context_propagation_disabled_before_python_3_9(monkeypatch):
         undo_imports_from_package("json_logging")
 
 
+def test_get_request_from_call_stack_handles_frame_locals_mutation(
+    client_and_log_handler,
+):
+    """Test stack inspection while a tracer changes the frame locals."""
+    import json_logging
+    from json_logging.util import RequestUtil
+
+    mutation_happened = False
+
+    def tracer(frame, event, arg):
+        nonlocal mutation_happened
+        if (
+            frame.f_code is RequestUtil.get_request_from_call_stack.__code__
+            and event == "line"
+            and "value" in frame.f_locals
+            and not mutation_happened
+        ):
+            frame.f_locals["added_by_tracer"] = object()
+            mutation_happened = True
+        return tracer
+
+    previous_trace = sys.gettrace()
+    sys.settrace(tracer)
+    try:
+        assert json_logging._request_util.get_request_from_call_stack() is None
+    finally:
+        sys.settrace(previous_trace)
+
+    assert mutation_happened
+
+
 def test_extra_property(client_and_log_handler):
     """Test adding an extra property to a log message"""
     api_client, handler = client_and_log_handler
