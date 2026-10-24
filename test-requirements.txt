@@ -11,4 +11,5 @@ gunicorn
 httpx
 flake8
 pytest
+pytest-cov
 -e .
