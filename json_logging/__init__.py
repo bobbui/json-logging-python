@@ -187,7 +187,8 @@ def get_request_logger():
             "request_logger is only available if json_logging is inited with a web app, "
             "call init_<framework_name>() to do that")
 
-    instance = _current_framework['app_request_instrumentation_configurator']._instance
+    # _instance only exists once the configurator has been instantiated by init_request_instrument()
+    instance = getattr(_current_framework['app_request_instrumentation_configurator'], '_instance', None)
     if instance is None:
         raise RuntimeError("please init request instrument first, call init_request_instrument(app) to do that")
 

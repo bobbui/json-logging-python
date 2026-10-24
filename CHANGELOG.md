@@ -6,6 +6,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ## Unreleased
 
+### Fixed
+
+- `get_request_logger()` now raises the documented `RuntimeError` instead of `AttributeError` when called before `init_request_instrument()`.
+
 ## 1.6.0 - 2026-10-21
 
 ### Added
