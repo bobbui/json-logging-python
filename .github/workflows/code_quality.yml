@@ -52,7 +52,7 @@ jobs:
           pip install -r test-requirements.txt
       - name: Run tests
         run:  |
-          pytest --ignore tests/smoketests
+          pytest --ignore tests/smoketests --cov --cov-report=term-missing
 
   backendSmoketests:
     name: Individual Backend Smoketests
