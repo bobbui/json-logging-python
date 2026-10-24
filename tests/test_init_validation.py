@@ -73,3 +73,14 @@ def test_config_root_logger_without_handlers_logs_error_and_returns(fresh_json_l
 
     assert len(errors) == 1
     assert "No logging handlers found" in errors[0]
+
+
+def test_config_root_logger_switches_root_handlers_to_json(fresh_json_logging, monkeypatch):
+    handler = logging.StreamHandler()
+    monkeypatch.setattr(logging.root, "handlers", [handler])
+    fresh_json_logging.init_non_web(enable_json=True)
+    handler.setFormatter(logging.Formatter())  # undo what init_non_web already did to the handler
+
+    fresh_json_logging.config_root_logger()
+
+    assert isinstance(handler.formatter, fresh_json_logging.JSONLogFormatter)
