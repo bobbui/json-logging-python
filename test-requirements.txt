@@ -3,6 +3,7 @@ flask
 connexion[flask,swagger-ui]
 quart
 sanic
+sanic-testing
 fastapi
 uvicorn
 requests
