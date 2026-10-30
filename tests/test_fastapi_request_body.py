@@ -135,3 +135,47 @@ def test_read_request_body_is_rejected_for_frameworks_that_do_not_support_it():
             json_logging.init_request_instrument(flask.Flask(__name__), read_request_body=True)
     finally:
         undo_imports_from_package("json_logging")
+
+
+def test_read_request_body_is_rejected_on_starlette_that_would_hang(monkeypatch):
+    import starlette
+    import json_logging
+
+    try:
+        json_logging.init_fastapi(enable_json=True)
+        monkeypatch.setattr(starlette, "__version__", "0.27.0")
+        with pytest.raises(RuntimeError, match="starlette >= 0.28"):
+            json_logging.init_request_instrument(fastapi.FastAPI(), read_request_body=True)
+    finally:
+        undo_imports_from_package("json_logging")
+
+
+def test_response_time_includes_reading_the_body(monkeypatch):
+    """The request timer starts before the body is read, not after."""
+    import json_logging
+
+    client, handler, request_logger = _build_client(read_request_body=True)
+    try:
+        events = []
+        dto_class = json_logging.framework.fastapi.implementation._request_config_class
+        original_init = dto_class.__init__
+
+        def recording_init(self, request, **kwargs):
+            events.append("timer started")
+            original_init(self, request, **kwargs)
+
+        monkeypatch.setattr(dto_class, "__init__", recording_init)
+        original_body = fastapi.Request.body
+
+        async def recording_body(self):
+            events.append("body read")
+            return await original_body(self)
+
+        monkeypatch.setattr(fastapi.Request, "body", recording_body)
+
+        client.post("/echo", content=b"x")
+
+        assert events.index("timer started") < events.index("body read")
+    finally:
+        request_logger.removeHandler(handler)
+        undo_imports_from_package("json_logging")

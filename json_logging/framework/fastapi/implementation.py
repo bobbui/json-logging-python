@@ -1,4 +1,5 @@
 import logging
+import re
 import sys
 
 import json_logging
@@ -9,6 +10,7 @@ from json_logging.framework_base import BaseAppRequestInstrumentationConfigurato
 from json_logging.util import is_not_match_any_pattern
 
 import fastapi
+import starlette
 import starlette.requests
 import starlette.responses
 
@@ -18,6 +20,8 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 
 _request_config_class = None
+# Before this Starlette version, reading the body in a BaseHTTPMiddleware leaves the endpoint waiting forever
+_MIN_STARLETTE_FOR_REQUEST_BODY = (0, 28)
 # Only enabled on the Python versions covered by CI (3.9+). On older versions, including 3.6 where at
 # most the thread-local `contextvars` backport exists, the previous call-stack lookup is kept unchanged.
 if sys.version_info >= (3, 9):
@@ -59,11 +63,13 @@ class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
             if not log_request:
                 return await call_next(request)
 
+            # Created first so that the response time also covers reading the body
+            request_response_data = _request_config_class(request)
+
             if self.read_request_body:
                 # Starlette caches the body, so the endpoint can still read it afterwards
                 request.state.json_logging_request_body = await request.body()
 
-            request_response_data = _request_config_class(request)
             response = await call_next(request)
             request_response_data.on_request_complete(response)
             self.request_logger.info(
@@ -79,6 +85,12 @@ class FastAPIAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentation
     def config(self, app, request_response_dto_class, exclude_url_patterns=[], read_request_body=False):
         if not isinstance(app, fastapi.FastAPI):
             raise RuntimeError("app is not a valid fastapi.FastAPI instance")
+
+        if read_request_body:
+            starlette_version = tuple(int(part) for part in re.findall(r'\d+', starlette.__version__)[:2])
+            if starlette_version < _MIN_STARLETTE_FOR_REQUEST_BODY:
+                raise RuntimeError("read_request_body needs starlette >= %s, found %s" % (
+                    '.'.join(map(str, _MIN_STARLETTE_FOR_REQUEST_BODY)), starlette.__version__))
 
         global _request_config_class
         _request_config_class = request_response_dto_class
