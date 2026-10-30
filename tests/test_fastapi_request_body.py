@@ -1,12 +1,23 @@
 """Tests for reading the request body from a custom request formatter (FastAPI)"""
 import json
 import logging
+import re
 
 import fastapi
 import fastapi.testclient
 import pytest
+import starlette
 from helpers.handler import FormattedMessageCollectorHandler
 from helpers.imports import undo_imports_from_package
+
+
+def _starlette_can_capture_body():
+    return tuple(int(part) for part in re.findall(r"\d+", starlette.__version__)[:2]) >= (0, 28)
+
+
+needs_body_capture = pytest.mark.skipif(
+    not _starlette_can_capture_body(), reason="read_request_body needs starlette >= 0.28"
+)
 
 
 def _build_client(read_request_body, exclude_url_patterns=("^/excluded",)):
@@ -52,6 +63,8 @@ def _build_client(read_request_body, exclude_url_patterns=("^/excluded",)):
 
 @pytest.fixture
 def body_client():
+    if not _starlette_can_capture_body():
+        pytest.skip("read_request_body needs starlette >= 0.28")
     client, handler, request_logger = _build_client(read_request_body=True)
     yield client, handler
     request_logger.removeHandler(handler)
@@ -150,6 +163,7 @@ def test_read_request_body_is_rejected_on_starlette_that_would_hang(monkeypatch)
         undo_imports_from_package("json_logging")
 
 
+@needs_body_capture
 def test_response_time_includes_reading_the_body(monkeypatch):
     """The request timer starts before the body is read, not after."""
     import json_logging
