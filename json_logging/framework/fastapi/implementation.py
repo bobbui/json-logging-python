@@ -28,8 +28,9 @@ else:  # pragma: no cover
 
 
 class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app: ASGIApp, exclude_url_patterns=tuple()) -> None:
+    def __init__(self, app: ASGIApp, exclude_url_patterns=tuple(), read_request_body=False) -> None:
         super().__init__(app)
+        self.read_request_body = read_request_body
         self.request_logger = logging.getLogger('fastapi-request-logger')
         self.exclude_url_patterns = exclude_url_patterns
         logging.getLogger("uvicorn.access").propagate = False
@@ -58,6 +59,10 @@ class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
             if not log_request:
                 return await call_next(request)
 
+            if self.read_request_body:
+                # Starlette caches the body, so the endpoint can still read it afterwards
+                request.state.json_logging_request_body = await request.body()
+
             request_response_data = _request_config_class(request)
             response = await call_next(request)
             request_response_data.on_request_complete(response)
@@ -71,7 +76,7 @@ class JSONLoggingASGIMiddleware(BaseHTTPMiddleware):
 
 
 class FastAPIAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationConfigurator):
-    def config(self, app, request_response_dto_class, exclude_url_patterns=[]):
+    def config(self, app, request_response_dto_class, exclude_url_patterns=[], read_request_body=False):
         if not isinstance(app, fastapi.FastAPI):
             raise RuntimeError("app is not a valid fastapi.FastAPI instance")
 
@@ -84,7 +89,8 @@ class FastAPIAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentation
         # noinspection PyAttributeOutsideInit
         self.request_logger = logging.getLogger('fastapi-request-logger')
 
-        app.add_middleware(JSONLoggingASGIMiddleware, exclude_url_patterns=exclude_url_patterns)
+        app.add_middleware(JSONLoggingASGIMiddleware, exclude_url_patterns=exclude_url_patterns,
+                           read_request_body=read_request_body)
 
 
 class FastAPIRequestInfoExtractor(BaseRequestInfoExtractor):
