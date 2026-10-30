@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - `init_request_instrument(..., read_request_body=True)` (FastAPI only) reads the body of each logged request before the
   handler runs and exposes it as `request.state.json_logging_request_body` (bytes), so a custom request formatter can use
   it without `await` (#84). It is off by default and the body is never added to the log automatically. The whole body is
-  held in memory. The handler can still read the body. Other frameworks raise `ValueError` if it is requested.
+  held in memory. The handler can still read the body. It needs Starlette 0.28 or newer and raises `RuntimeError` otherwise. Other frameworks raise `ValueError` if it is requested.
 
 ### Fixed
 

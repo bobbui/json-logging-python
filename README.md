@@ -380,7 +380,7 @@ for reference implementations.
 
 The formatter methods are not `async`, so they cannot `await request.body()`. Pass `read_request_body=True` and the
 body is read for you before the handler runs, and is available as bytes on `request.state.json_logging_request_body`.
-It is not logged unless your formatter adds it. Do this only for payloads you are sure may be logged, and note that the
+It needs Starlette 0.28 or newer (older versions hang), otherwise `init_request_instrument` raises `RuntimeError`. It is not logged unless your formatter adds it. Do this only for payloads you are sure may be logged, and note that the
 whole body is held in memory.
 
 ```python
