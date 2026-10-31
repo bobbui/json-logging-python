@@ -376,6 +376,25 @@ for reference implementations.
 
 # 7. References
 
+## 2.9 Read the request body in a custom request formatter (FastAPI)
+
+The formatter methods are not `async`, so they cannot `await request.body()`. Pass `read_request_body=True` and the
+body is read for you before the handler runs, and is available as bytes on `request.state.json_logging_request_body`.
+It needs Starlette 0.28 or newer (older versions hang), otherwise `init_request_instrument` raises `RuntimeError`. It is not logged unless your formatter adds it. Do this only for payloads you are sure may be logged, and note that the
+whole body is held in memory.
+
+```python
+class RequestFormatter(json_logging.JSONRequestLogFormatter):
+    def _format_log_object(self, record, request_util):
+        log_object = super()._format_log_object(record, request_util)
+        request = record.request_response_data._request
+        body = getattr(request.state, "json_logging_request_body", b"")
+        log_object["request_body"] = body.decode(errors="replace")
+        return log_object
+
+json_logging.init_request_instrument(app, custom_formatter=RequestFormatter, read_request_body=True)
+```
+
 ## [0] Full logging format references
 
 2 types of logging statement will be emitted by this library:
