@@ -57,8 +57,8 @@ class ConnexionAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentati
         if json_logging.ENABLE_JSON_LOGGING:
             from flask.logging import default_handler
             formatter = json_logging._default_formatter or JSONLogWebFormatter
-            if not isinstance(default_handler.formatter, formatter):
-                default_handler.setFormatter(formatter())
+            # Always construct a new formatter: an existing instance may have captured an older EXCLUDED_FIELDS.
+            default_handler.setFormatter(formatter())
             json_logging.util.update_formatter_for_loggers([logging.getLogger(app.app.name)], formatter)
 
         # noinspection PyAttributeOutsideInit
