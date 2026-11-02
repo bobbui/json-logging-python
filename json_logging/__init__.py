@@ -140,8 +140,7 @@ def __init(framework_name=None, custom_formatter=None, enable_json=False):
 
         ENABLE_JSON_LOGGING and _logger.debug("Update all existing logger to using JSONLogFormatter")
 
-        existing_loggers = list(map(logging.getLogger, logging.Logger.manager.loggerDict))
-        util.update_formatter_for_loggers(existing_loggers, _default_formatter)
+        util.update_formatter_for_all_loggers(_default_formatter)
 
 
 def init_request_instrument(app=None, custom_formatter=None, exclude_url_patterns=[],

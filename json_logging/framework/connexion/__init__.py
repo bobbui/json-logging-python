@@ -51,6 +51,13 @@ class ConnexionAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentati
 
         json_logging.util.update_formatter_for_loggers([logging.getLogger('werkzeug')], JSONLogWebFormatter)
 
+        # Connexion wraps a Flask app: unhandled exceptions are reported through its app logger. Flask may attach
+        # flask.logging.default_handler to it on first use, so convert that handler and any handler the application
+        # already added, without reading app.app.logger (which would attach Flask's handler and duplicate the output).
+        from flask.logging import default_handler
+        default_handler.setFormatter(JSONLogWebFormatter())
+        json_logging.util.update_formatter_for_loggers([logging.getLogger(app.app.name)], JSONLogWebFormatter)
+
         # noinspection PyAttributeOutsideInit
         self.request_logger = logging.getLogger('connexion-request-logger')
 

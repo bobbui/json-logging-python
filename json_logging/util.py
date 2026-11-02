@@ -48,6 +48,21 @@ def update_formatter_for_loggers(loggers_iter, formatter):
                 handler.formatter = formatter()
 
 
+def update_formatter_for_all_loggers(formatter):
+    """Apply *formatter* to the root logger and to every logger that exists right now.
+
+    The root logger is not part of ``logging.Logger.manager.loggerDict``, so it has to be added
+    explicitly. A handler installed by ``logging.basicConfig()`` carries an explicit
+    ``logging.Formatter`` and is therefore not affected by ``logging._defaultFormatter``; without
+    this, records propagated to root (for example Flask's unhandled exception log) stay plain text.
+
+    :param formatter: formatter class to apply
+    """
+    # Materialise the names first: logging.getLogger() replaces placeholders in loggerDict while we iterate.
+    logger_names = list(logging.Logger.manager.loggerDict)
+    update_formatter_for_loggers([logging.root] + [logging.getLogger(name) for name in logger_names], formatter)
+
+
 # noinspection PyPep8
 def parse_int(input_int, default):
     # noinspection PyBroadException
