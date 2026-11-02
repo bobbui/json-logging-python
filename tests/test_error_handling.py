@@ -167,6 +167,24 @@ def test_flask_handler_attached_on_first_use_is_json(fresh_json_logging, capfd):
     assert_single_exception_record(error_records(capfd.readouterr().err), "Exception on /boom [GET]")
 
 
+def test_flask_app_logger_is_left_plain_when_json_logging_is_disabled(fresh_json_logging):
+    import flask
+    from flask.logging import default_handler
+
+    remove_root_handlers()
+    plain_formatter = logging.Formatter("%(levelname)s in app: %(message)s")
+    default_handler.setFormatter(plain_formatter)
+    fresh_json_logging.init_flask()  # enable_json defaults to False
+    app = flask.Flask(LOGGER_NAME)
+    app.logger  # Flask attaches its own handler, with a plain text formatter
+    assert app.logger.handlers
+
+    fresh_json_logging.init_request_instrument(app)
+
+    assert default_handler.formatter is plain_formatter, "JSON is disabled, the formatter must not change"
+    assert app.logger.handlers[0].formatter is plain_formatter
+
+
 def test_connexion_app_logger_exception_is_one_json_record(fresh_json_logging):
     connexion = pytest.importorskip("connexion")
 

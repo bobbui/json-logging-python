@@ -47,10 +47,12 @@ class FlaskAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationCo
         # many lines. Convert the handler Flask may attach, plus any handler the application already added to the app
         # logger. Reading app.logger here is not an option: the property attaches Flask's handler and duplicates the
         # output of applications that add their own handler after initialisation.
-        from flask.logging import default_handler
-        default_handler.setFormatter(json_logging.formatters.JSONLogWebFormatter())
-        json_logging.util.update_formatter_for_loggers([logging.getLogger(app.name)],
-                                                       json_logging.formatters.JSONLogWebFormatter)
+        if json_logging.ENABLE_JSON_LOGGING:
+            from flask.logging import default_handler
+            formatter = json_logging._default_formatter or json_logging.formatters.JSONLogWebFormatter
+            if not isinstance(default_handler.formatter, formatter):
+                default_handler.setFormatter(formatter())
+            json_logging.util.update_formatter_for_loggers([logging.getLogger(app.name)], formatter)
 
         # noinspection PyAttributeOutsideInit
         self.request_logger = logging.getLogger('flask-request-logger')
