@@ -155,6 +155,11 @@ class JSONLogFormatter(BaseJSONFormatter):
         if record.exc_info or record.exc_text:
             json_log_object.update(self.get_exc_fields(record))
 
+        # stack_info=True on the logging call; Python 2 records have no such attribute
+        stack_info = getattr(record, 'stack_info', None)
+        if stack_info:
+            json_log_object["stack_info"] = self.formatStack(stack_info)
+
         return json_log_object
 
 

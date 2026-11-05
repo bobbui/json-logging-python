@@ -70,3 +70,24 @@ def test_props_that_is_not_a_dict_is_not_merged():
     output = _format(props="not-a-dict")
 
     assert "not-a-dict" not in output.values()
+
+
+def test_stack_info_is_added_when_requested():
+    logger = logging.getLogger("formatter-stack-info-test")
+    records = []
+    handler = logging.Handler()
+    handler.emit = records.append
+    logger.addHandler(handler)
+    try:
+        logger.warning("hello", stack_info=True)
+    finally:
+        logger.removeHandler(handler)
+
+    output = json.loads(JSONLogFormatter().format(records[0]))
+
+    assert output["stack_info"].startswith("Stack (most recent call last):")
+    assert "test_stack_info_is_added_when_requested" in output["stack_info"]
+
+
+def test_stack_info_is_omitted_by_default():
+    assert "stack_info" not in _format()
