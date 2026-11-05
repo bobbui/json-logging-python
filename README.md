@@ -259,6 +259,15 @@ if __name__ == "__main__":
     app.run()
 ```
 
+With Connexion 3, `connexion.AsyncApp` is supported the same way. Requests are instrumented by an ASGI middleware
+instead of Flask hooks, so call `init_request_instrument(app)` before the app starts serving:
+
+```python
+app = connexion.AsyncApp(__name__)
+json_logging.init_connexion(enable_json=True)
+json_logging.init_request_instrument(app)
+```
+
 </details>
 
 ### Custom handler for request instrumentation

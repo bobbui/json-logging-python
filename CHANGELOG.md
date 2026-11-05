@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ## Unreleased
 
+### Added
+
+- Connexion 3 `AsyncApp` support: `init_connexion()` plus `init_request_instrument(app)` now accept an `AsyncApp`,
+  which runs without Flask. Requests are logged by an ASGI middleware, including error responses produced by
+  exception handlers, and log records from sync and async handlers share the request's correlation ID.
+
 ### Fixed
 
 - Log records created with `stack_info=True` now carry the stack in a `stack_info` field; it was dropped before (#150).
