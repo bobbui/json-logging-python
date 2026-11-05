@@ -24,13 +24,19 @@ _AsyncApp = None
 if is_connexion_present():
     from connexion import request as request_obj
     import connexion as connexion
-    import flask as flask
-    from flask import g
 
     _current_request = request_obj
     _connexion = connexion
-    _flask = flask
-    _connexion.g = g
+
+    try:
+        import flask as flask
+        from flask import g
+
+        _flask = flask
+        _connexion.g = g
+    except ImportError:
+        # Connexion 3 without its flask extra: only AsyncApp is available
+        _flask = None
 
     try:
         # Connexion 3+: the ASGI request scope, a werkzeug LocalProxy that is falsy outside a Connexion request
@@ -127,6 +133,8 @@ class ConnexionAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentati
                                exclude_url_patterns=exclude_url_patterns)
             return
 
+        if _flask is None:
+            raise RuntimeError("app is not a valid connexion.AsyncApp instance, and flask is not installed")
         from flask.app import Flask
         if not isinstance(app.app, Flask):
             raise RuntimeError("app is not a valid connexion.app.Connexion app instance")
@@ -187,7 +195,7 @@ class ConnexionRequestInfoExtractor(BaseRequestInfoExtractor):
                 return async_request
         # The request proxy exists even outside a request; only expose it while a request is active,
         # so callers fall back to json_logging.EMPTY_VALUE instead of generating fabricated IDs.
-        if _flask.has_request_context():
+        if _flask is not None and _flask.has_request_context():
             return _current_request
         # Connexion 3 runs error handlers and ASGI middleware outside the Flask request context. The request's
         # correlation header can still be read there, but a generated ID could not be stored (connexion.g is

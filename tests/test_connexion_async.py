@@ -1,6 +1,7 @@
 """Request instrumentation for Connexion 3 AsyncApp, which runs without Flask (issue #96)."""
 import json
 import logging
+import sys
 
 import pytest
 from helpers import constants
@@ -16,8 +17,11 @@ from connexion.resolver import Resolver  # noqa: E402
 LOGGER_NAME = "connexion-async-test"
 
 
-@pytest.fixture
-def client_and_log_handlers():
+@pytest.fixture(params=["with flask", "without flask"])
+def client_and_log_handlers(request, monkeypatch):
+    if request.param == "without flask":
+        # Connexion 3 installed without its flask extra: AsyncApp must work without importing flask
+        monkeypatch.setitem(sys.modules, "flask", None)
     import json_logging
 
     app = connexion.AsyncApp(__name__)
