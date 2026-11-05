@@ -147,6 +147,28 @@ def test_get_correlation_id(client_and_log_handler):
     assert response.json["correlation_id"] == "abc-def"
 
 
+def test_empty_correlation_id_header_is_ignored(client_and_log_handler):
+    """An empty header carries no ID, so a new one is generated instead of logging EMPTY_VALUE"""
+    import json_logging
+
+    api_client, handler = client_and_log_handler
+
+    response = api_client.get("/get-correlation-id", headers={"X-Correlation-Id": ""})
+
+    assert response.status_code == 200
+    assert response.json["correlation_id"] not in ("", json_logging.EMPTY_VALUE)
+
+
+def test_empty_correlation_id_header_falls_back_to_next_header(client_and_log_handler):
+    """An empty X-Correlation-ID does not hide the ID in X-Request-ID"""
+    api_client, handler = client_and_log_handler
+
+    response = api_client.get("/get-correlation-id", headers={"X-Correlation-Id": "", "X-Request-ID": "abc-def"})
+
+    assert response.status_code == 200
+    assert response.json["correlation_id"] == "abc-def"
+
+
 def test_extra_property(client_and_log_handler):
     """Test adding an extra property to a log message"""
     api_client, handler = client_and_log_handler
