@@ -1,14 +1,14 @@
 """Error-path formatting: an exception must reach the log as one JSON record.
 
-Regression coverage for the 2026-11-02 API incident: unhandled exceptions reported by the
-Flask/connexion app logger were emitted as plain multi-line text, so they never carried a
-``level`` or a single ``exc_info`` field and could not be alerted on.
+The setup under test is an application that configures logging before calling ``json_logging.init_*()``.
+``logging.basicConfig()`` installs a root handler whose formatter is an explicit ``logging.Formatter``
+(default format ``%(levelname)s:%(name)s:%(message)s``), so ``logging._defaultFormatter`` does not apply
+to it. Before the fix, ``init_*()`` swept only named loggers, which left such a handler, and every record
+propagating to root, including an unhandled exception reported by Flask, as plain multi-line text instead
+of a single JSON record carrying ``level`` and ``exc_info``.
 
-The toolchain was running ``logging.basicConfig()`` before ``json_logging.init_*()``. That call
-installs a root handler whose formatter is an explicit ``logging.Formatter`` (default format
-``%(levelname)s:%(name)s:%(message)s``); the handler is therefore not covered by
-``logging._defaultFormatter`` and, before the fix, the root logger was not part of the formatter
-sweep either. Every record propagating to root, including Flask's exception log, stayed plain.
+Flask and Connexion also attach ``flask.logging.default_handler`` to the app logger on first use, so the
+tests cover both that lazy attachment and a handler the application added before instrumentation.
 """
 import io
 import json
@@ -19,7 +19,7 @@ import pytest
 from helpers.imports import undo_imports_from_package
 
 EXCEPTION_MESSAGE = "'NoneType' object is not iterable"
-LOGGER_NAME = "user_db_api.app"
+LOGGER_NAME = "example.app"
 REQUEST_LOGGER_NAMES = ["flask-request-logger", "connexion-request-logger"]
 
 
@@ -51,6 +51,10 @@ def restore_process_logging():
     """Undo the process-global logging changes these tests deliberately make."""
     import flask.logging as flask_logging
 
+    # Flask and Connexion instrumentation disable the shared werkzeug logger; snapshot its flag as well.
+    werkzeug_logger = logging.getLogger("werkzeug")
+    saved_werkzeug_disabled = werkzeug_logger.disabled
+
     # init_*() rewrites the formatter of every handler it finds, and init_request_instrument() adds an output
     # handler to a shared request logger, so snapshot each handler list and each handler's formatter.
     saved_loggers = [
@@ -70,10 +74,11 @@ def restore_process_logging():
     logging._defaultFormatter = saved_default_formatter
     flask_logging.default_handler.setFormatter(saved_flask_default_formatter)
     flask_logging.default_handler.stream = saved_flask_default_stream
+    werkzeug_logger.disabled = saved_werkzeug_disabled
 
 
 def raise_type_error():
-    """Raise the exception type that the production incident logged."""
+    """Raise the exception type used throughout these error-path tests."""
     raise TypeError(EXCEPTION_MESSAGE)
 
 
@@ -134,9 +139,9 @@ def test_exception_through_root_handler_configured_before_init_is_one_json_recor
     try:
         raise_type_error()
     except TypeError:
-        logging.getLogger(LOGGER_NAME).error("Exception on /v1/user_resource_access_info [GET]", exc_info=True)
+        logging.getLogger(LOGGER_NAME).error("Exception on /boom [GET]", exc_info=True)
 
-    assert_single_exception_record(error_records(buffer.getvalue()), "Exception on /v1/user_resource_access_info [GET]")
+    assert_single_exception_record(error_records(buffer.getvalue()), "Exception on /boom [GET]")
 
 
 def test_flask_unhandled_exception_with_root_handler_is_one_json_record(fresh_json_logging):
@@ -262,12 +267,12 @@ def test_connexion_app_logger_exception_is_one_json_record(fresh_json_logging):
     try:
         raise_type_error()
     except TypeError:
-        logger.error("Exception on /v1/user_resource_access_info [GET]", exc_info=True)
+        logger.error("Exception on /boom [GET]", exc_info=True)
 
     assert_single_exception_record(
-        error_records(buffer.getvalue()), "Exception on /v1/user_resource_access_info [GET]", logger.name)
+        error_records(buffer.getvalue()), "Exception on /boom [GET]", logger.name)
 
 
 def boom():
-    """Operation used by the Connexion specification above; it fails the way production did."""
+    """Operation used by the Connexion specification above; it raises an unhandled exception."""
     raise_type_error()

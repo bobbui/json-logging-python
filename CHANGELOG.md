@@ -9,6 +9,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 - `get_request_logger()` now raises the documented `RuntimeError` instead of `AttributeError` when called before `init_request_instrument()`.
+- `init_*()` now converts handlers already attached to the root logger, and `init_flask()`/`init_connexion()` convert
+  `flask.logging.default_handler`, so an unhandled exception is emitted as one JSON record with `level` and `exc_info`
+  instead of a plain multi-line traceback. This is a behaviour change for applications that configure a root handler
+  with their own formatter before `init_*()`: when JSON logging is enabled, that handler now emits JSON as well. (#147)
 
 ## 1.6.0 - 2026-10-21
 
