@@ -1,4 +1,5 @@
 # coding=utf-8
+import inspect
 import json
 import logging
 import sys
@@ -145,7 +146,7 @@ def __init(framework_name=None, custom_formatter=None, enable_json=False):
 
 
 def init_request_instrument(app=None, custom_formatter=None, exclude_url_patterns=[],
-                            request_response_dto_class=DefaultRequestResponseDTO):
+                            request_response_dto_class=DefaultRequestResponseDTO, read_request_body=False):
     """
     Configure the request instrumentation logging configuration for given web app. Must be called after init method
 
@@ -154,6 +155,9 @@ def init_request_instrument(app=None, custom_formatter=None, exclude_url_pattern
     :param app: current web application instance
     :param custom_formatter: formatter to override default JSONRequestLogFormatter.
     :param request_response_dto_class: request_response_dto_class to override default json_logging.RequestResponseDataExtractor.
+    :param read_request_body: FastAPI only. Read each logged request's body before the handler runs and expose it as
+        ``request.state.json_logging_request_body`` (bytes), so a custom formatter can use it without ``await``.
+        Off by default and never added to the log automatically. The whole body is held in memory.
     """
 
     if _current_framework is None or _current_framework == '-':
@@ -171,7 +175,13 @@ def init_request_instrument(app=None, custom_formatter=None, exclude_url_pattern
     _validated_excluded_fields(EXCLUDED_FIELDS)
 
     configurator = _current_framework['app_request_instrumentation_configurator']()
-    configurator.config(app, request_response_dto_class, exclude_url_patterns=exclude_url_patterns)
+    config_options = {}
+    if read_request_body:
+        if 'read_request_body' not in inspect.signature(configurator.config).parameters:
+            raise ValueError('read_request_body is only supported for FastAPI')
+        config_options['read_request_body'] = True
+    configurator.config(app, request_response_dto_class, exclude_url_patterns=exclude_url_patterns,
+                        **config_options)
 
     formatter = custom_formatter if custom_formatter else JSONRequestLogFormatter
     request_logger = configurator.request_logger
