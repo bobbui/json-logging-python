@@ -426,24 +426,24 @@ Take a look at [`json_logging/framework_base.py`](json_logging/framework_base.py
       `python -m uvicorn app.main:app`, or pass the app object to `uvicorn.run(app)`. See
       [example/fastapi_startup](example/fastapi_startup/README.md).
 
-# 6. s
-
-| Name | GitHub | Affiliation | Role |
-|---|---|---|---|
-| Udit Agrawal | [@suppagoddo](https://github.com/suppagoddo) | Apple Inc | Technical Maintainer |
-| Srinivas Chippagiri | [@cvas22](https://github.com/cvas22) | Salesforce Inc | Technical Maintainer |
+# 6. Maintainers
 
 The maintainers support the ongoing engineering development, quality, compatibility, and sustainability of
-`json-logging`.
+`json-logging`. See [MAINTAINERS.md](MAINTAINERS.md) for maintainer details, [MAINTENANCE.md](MAINTENANCE.md) for
+project procedures, and [AGENTS.md](AGENTS.md) for coding-agent guidance.
 
-## Emeritus Maintainers
+### Technical Maintainers
+
+| Name | GitHub | Affiliation |
+|---|---|---|
+| Udit Agrawal | [@suppagoddo](https://github.com/suppagoddo) | Apple Inc |
+| Srinivas Chippagiri | [@cvas22](https://github.com/cvas22) | Salesforce Inc |
+
+### Emeritus Maintainers
 
 | Name | GitHub |
 |---|---|
 | Bob T. | [@bobbui](https://github.com/bobbui) |
-
-See [MAINTAINERS.md](MAINTAINERS.md) for maintainer details, [MAINTENANCE.md](MAINTENANCE.md) for project procedures,
-and [AGENTS.md](AGENTS.md) for coding-agent guidance.
 
 # 7. References
 

@@ -9,12 +9,6 @@ The `json-logging` project is maintained by the following individuals, who suppo
 | **Udit Agrawal** ([@suppagoddo](https://github.com/suppagoddo)) | Apple Inc | **Technical Maintainer** |
 | **Srinivas Chippagiri** ([@cvas22](https://github.com/cvas22)) | Salesforce Inc | **Technical Maintainer** |
 
-## Emeritus Maintainers
-
-| Name | Role |
-|---|---|
-| **Bob T.** ([@bobbui](https://github.com/bobbui)) | Original author, Emeritus Maintainer |
-
 ### Active Maintenance
 
 **Udit Agrawal** and **Srinivas Chippagiri** are the points of contact for ongoing technical maintenance, coordinating engineering improvements, technical reviews, issue resolution, testing infrastructure, and release readiness.
@@ -35,6 +29,12 @@ Recent maintenance contributions include:
 - [PR #121](https://github.com/bobbui/json-logging-python/pull/121) — Improvements to smoke-test reliability, startup polling, timeout enforcement, subprocess cleanup, and regression coverage.
 
 Ongoing engineering contributions and technical decisions are documented through the project's GitHub issues, pull requests, and reviews.
+
+## Emeritus Maintainers
+
+| Name | Role |
+|---|---|
+| **Bob T.** ([@bobbui](https://github.com/bobbui)) | Emeritus Maintainer |
 
 ## Maintenance Process
 
