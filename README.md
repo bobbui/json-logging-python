@@ -443,7 +443,7 @@ project procedures, and [AGENTS.md](AGENTS.md) for coding-agent guidance.
 
 | Name | GitHub |
 |---|---|
-| Bob T. (original author) | [@bobbui](https://github.com/bobbui) |
+| Bob T. | [@bobbui](https://github.com/bobbui) |
 
 # 7. References
 

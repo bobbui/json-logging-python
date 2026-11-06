@@ -34,7 +34,7 @@ Ongoing engineering contributions and technical decisions are documented through
 
 | Name | Role |
 |---|---|
-| **Bob T.** ([@bobbui](https://github.com/bobbui)) | Original author, Emeritus Maintainer |
+| **Bob T.** ([@bobbui](https://github.com/bobbui)) | Emeritus Maintainer |
 
 ## Maintenance Process
 
