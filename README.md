@@ -392,7 +392,7 @@ json_logging.init_fastapi(enable_json=True)
 
 To add support for a new web framework, extend the following classes in
 [`json_logging/framework_base.py`](json_logging/framework_base.py) and register support using the
-[`json_logging.register_framework_support()`](json_logging/__init__.py) method:
+[`json_logging.frameworks.register_framework_support()`](json_logging/frameworks.py) method:
 
 | Class | Description | Mandatory |
 |---|---|---|
