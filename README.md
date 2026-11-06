@@ -426,7 +426,7 @@ Take a look at [`json_logging/framework_base.py`](json_logging/framework_base.py
       `python -m uvicorn app.main:app`, or pass the app object to `uvicorn.run(app)`. See
       [example/fastapi_startup](example/fastapi_startup/README.md).
 
-# 6. Maintainers
+# 6. s
 
 | Name | GitHub | Affiliation | Role |
 |---|---|---|---|
@@ -440,7 +440,7 @@ The maintainers support the ongoing engineering development, quality, compatibil
 
 | Name | GitHub |
 |---|---|
-| Bob T. (original author) | [@bobbui](https://github.com/bobbui) |
+| Bob T. | [@bobbui](https://github.com/bobbui) |
 
 See [MAINTAINERS.md](MAINTAINERS.md) for maintainer details, [MAINTENANCE.md](MAINTENANCE.md) for project procedures,
 and [AGENTS.md](AGENTS.md) for coding-agent guidance.
