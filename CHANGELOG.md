@@ -10,7 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - Log records created with `stack_info=True` now carry the stack in a `stack_info` field; it was dropped before (#150).
 - An empty correlation ID header (e.g. `X-Correlation-ID: `) is now treated as missing: the next header in
-  `CORRELATION_ID_HEADERS` is tried and an ID is generated if none is found, instead of logging `-` (#149).
+  `CORRELATION_ID_HEADERS` is tried, and if none is found an ID is generated when
+  `CREATE_CORRELATION_ID_IF_NOT_EXISTS` is enabled (#149).
 - `get_request_logger()` now raises the documented `RuntimeError` instead of `AttributeError` when called before `init_request_instrument()`.
 
 ## 1.6.0 - 2026-10-21
