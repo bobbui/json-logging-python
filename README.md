@@ -432,10 +432,15 @@ Take a look at [`json_logging/framework_base.py`](json_logging/framework_base.py
 |---|---|---|---|
 | Udit Agrawal | [@suppagoddo](https://github.com/suppagoddo) | Apple | Technical Maintainer |
 | Srinivas Chippagiri | [@cvas22](https://github.com/cvas22) | - | Technical Maintainer |
-| Bob T. | [@bobbui](https://github.com/bobbui) | - | Maintainer |
 
 The maintainers support the ongoing engineering development, quality, compatibility, and sustainability of
 `json-logging`.
+
+## Emeritus Maintainers
+
+| Name | GitHub |
+|---|---|
+| Bob T. (original author) | [@bobbui](https://github.com/bobbui) |
 
 See [MAINTAINERS.md](MAINTAINERS.md) for maintainer details, [MAINTENANCE.md](MAINTENANCE.md) for project procedures,
 and [AGENTS.md](AGENTS.md) for coding-agent guidance.

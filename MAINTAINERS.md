@@ -8,7 +8,12 @@ The `json-logging` project is maintained by the following individuals, who suppo
 |---|---|---|
 | **Udit Agrawal** ([@suppagoddo](https://github.com/suppagoddo)) | Apple | **Technical Maintainer** |
 | **Srinivas Chippagiri** ([@cvas22](https://github.com/cvas22)) | - | **Technical Maintainer** |
-| **Bob T.** ([@bobbui](https://github.com/bobbui)) | - | Maintainer |
+
+## Emeritus Maintainers
+
+| Name | Role |
+|---|---|
+| **Bob T.** ([@bobbui](https://github.com/bobbui)) | Original author, Emeritus Maintainer |
 
 ### Active Maintenance
 
