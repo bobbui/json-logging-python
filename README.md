@@ -457,6 +457,7 @@ thread | Identifies the execution thread in which this log message has been writ
 logger | The logger name that emits the log message. |string | requests-logger
 filename | The file name where an exception originated | string | /path/to/foo.py
 exc_info | Traceback information about an exception | string | "Traceback (most recent call last): \n  File "<stdin>", line 1, in <module>\n ValueError: There is something wrong with your input"
+stack_info | Call stack of the logging statement, only present when it was called with `stack_info=True` | string | "Stack (most recent call last):\n  File "app.py", line 10, in <module>\n    logger.info("hello", stack_info=True)"
 
 - request logs:
 

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Fixed
 
+- Log records created with `stack_info=True` now carry the stack in a `stack_info` field; it was dropped before (#150).
 - `get_request_logger()` now raises the documented `RuntimeError` instead of `AttributeError` when called before `init_request_instrument()`.
 
 ## 1.6.0 - 2026-10-21
