@@ -1,4 +1,8 @@
 # Code owners are requested for review on every pull request.
 # See MAINTAINERS.md for the maintainers and their roles.
+#
+# Technical Maintainers:
+#   Udit Agrawal (@suppagoddo)
+#   Srinivas Chippagiri (@cvas22)
 
 * @suppagoddo @cvas22
