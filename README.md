@@ -430,7 +430,7 @@ Take a look at [`json_logging/framework_base.py`](json_logging/framework_base.py
 
 | Name | GitHub | Affiliation | Role |
 |---|---|---|---|
-| Udit Agrawal | [@suppagoddo](https://github.com/suppagoddo) | Apple | Technical Maintainer |
+| Udit Agrawal | [@suppagoddo](https://github.com/suppagoddo) | Apple Inc | Technical Maintainer |
 | Srinivas Chippagiri | [@cvas22](https://github.com/cvas22) | Salesforce Inc | Technical Maintainer |
 
 The maintainers support the ongoing engineering development, quality, compatibility, and sustainability of

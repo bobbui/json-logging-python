@@ -6,7 +6,7 @@ The `json-logging` project is maintained by the following individuals, who suppo
 
 | Name | Affiliation | Role |
 |---|---|---|
-| **Udit Agrawal** ([@suppagoddo](https://github.com/suppagoddo)) | Apple | **Technical Maintainer** |
+| **Udit Agrawal** ([@suppagoddo](https://github.com/suppagoddo)) | Apple Inc | **Technical Maintainer** |
 | **Srinivas Chippagiri** ([@cvas22](https://github.com/cvas22)) | Salesforce Inc | **Technical Maintainer** |
 
 ## Emeritus Maintainers
