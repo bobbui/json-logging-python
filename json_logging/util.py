@@ -200,7 +200,8 @@ class RequestUtil(object):
     def _get_correlation_id_in_request_header(request_adapter, request):
         for header in json_logging.CORRELATION_ID_HEADERS:
             value = request_adapter.get_http_header(request, header)
-            if value is not None:
+            # An empty header carries no ID, try the next header or generate one
+            if value:
                 return value
 
         return None
