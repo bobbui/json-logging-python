@@ -42,6 +42,18 @@ class FlaskAppRequestInstrumentationConfigurator(BaseAppRequestInstrumentationCo
         json_logging.util.update_formatter_for_loggers([logging.getLogger('werkzeug')],
                                                        json_logging.formatters.JSONLogWebFormatter)
 
+        # Flask reports unhandled exceptions through app.logger. When no handler covers its level, Flask attaches
+        # flask.logging.default_handler on first use, and that handler's plain text formatter splits a traceback over
+        # many lines. Convert the handler Flask may attach, plus any handler the application already added to the app
+        # logger. Reading app.logger here is not an option: the property attaches Flask's handler and duplicates the
+        # output of applications that add their own handler after initialisation.
+        if json_logging.ENABLE_JSON_LOGGING:
+            from flask.logging import default_handler
+            formatter = json_logging._default_formatter or json_logging.formatters.JSONLogWebFormatter
+            # Always construct a new formatter: an existing instance may have captured an older EXCLUDED_FIELDS.
+            default_handler.setFormatter(formatter())
+            json_logging.util.update_formatter_for_loggers([logging.getLogger(app.name)], formatter)
+
         # noinspection PyAttributeOutsideInit
         self.request_logger = logging.getLogger('flask-request-logger')
 

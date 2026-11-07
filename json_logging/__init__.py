@@ -55,10 +55,12 @@ def get_correlation_id(request=None):
 
 def config_root_logger():
     """
-        You must call this if you are using root logger.
-        Make all root logger' handlers produce JSON format
-        & remove duplicate handlers for request instrumentation logging.
-        Please made sure that you call this after you called "logging.basicConfig() or logging.getLogger()
+        Make all root logger handlers produce JSON format.
+
+        init_*() already converts the root logger handlers that exist at initialisation time. Call this
+        when a handler with a plain text formatter is attached to the root logger afterwards, for example
+        by a logging.basicConfig() call made after initialisation. The handler must exist before this is
+        called.
     """
 
     if not logging.root.handlers:
@@ -140,8 +142,7 @@ def __init(framework_name=None, custom_formatter=None, enable_json=False):
 
         ENABLE_JSON_LOGGING and _logger.debug("Update all existing logger to using JSONLogFormatter")
 
-        existing_loggers = list(map(logging.getLogger, logging.Logger.manager.loggerDict))
-        util.update_formatter_for_loggers(existing_loggers, _default_formatter)
+        util.update_formatter_for_all_loggers(_default_formatter)
 
 
 def init_request_instrument(app=None, custom_formatter=None, exclude_url_patterns=[],

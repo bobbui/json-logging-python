@@ -13,6 +13,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
   `CORRELATION_ID_HEADERS` is tried, and if none is found an ID is generated when
   `CREATE_CORRELATION_ID_IF_NOT_EXISTS` is enabled (#149).
 - `get_request_logger()` now raises the documented `RuntimeError` instead of `AttributeError` when called before `init_request_instrument()`.
+- `init_*()` now converts handlers already attached to the root logger, and `init_request_instrument(app)` for Flask
+  and Connexion converts `flask.logging.default_handler`, so an unhandled exception is emitted as one JSON record with
+  `level` and `exc_info` instead of a plain multi-line traceback. This is a behaviour change for applications that configure a root handler
+  with their own formatter before `init_*()`: when JSON logging is enabled, that handler now emits JSON as well. (#147)
 
 ## 1.6.0 - 2026-10-21
 
