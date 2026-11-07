@@ -260,7 +260,9 @@ if __name__ == "__main__":
 ```
 
 With Connexion 3, `connexion.AsyncApp` is supported the same way. Requests are instrumented by an ASGI middleware
-instead of Flask hooks, so call `init_request_instrument(app)` before the app starts serving:
+instead of Flask hooks, so call `init_request_instrument(app)` before the first ASGI call, including lifespan startup.
+Connexion refuses to add middleware once the app has started. In AsyncApp request logs, `remote_user` is
+`json_logging.EMPTY_VALUE` (`"-"`), because the authenticated user is only known to Connexion's security handlers:
 
 ```python
 app = connexion.AsyncApp(__name__)
