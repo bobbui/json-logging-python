@@ -226,6 +226,65 @@ def test_request_instrumentation(client_and_log_handler):
     assert len(handler.messages) == 1
 
 
+def test_request_log_has_no_nested_request_response_data(client_and_log_handler):
+    """The request/response fields are written once, at the top level of the request log (#151)"""
+    from json_logging.formatters import JSONRequestLogFormatter
+
+    api_client, _ = client_and_log_handler
+    request_logger = logging.getLogger("flask-request-logger")
+    handler = FormattedMessageCollectorHandler()
+    handler.setFormatter(JSONRequestLogFormatter())
+    request_logger.addHandler(handler)
+    try:
+        response = api_client.get("/log/levels/debug")
+    finally:
+        request_logger.removeHandler(handler)
+
+    assert response.status_code == 200
+    assert len(handler.messages) == 1
+    msg = json.loads(handler.messages[0])
+    assert "request_response_data" not in msg
+    assert msg["type"] == "request"
+    for key in ("request_received_at", "response_time_ms", "response_sent_at"):
+        assert key in msg
+
+
+def test_custom_request_response_dto_fields_are_not_duplicated():
+    """Fields added by a custom request_response_dto_class are written once, at the top level (#151)"""
+    import json_logging
+    import json_logging.dto
+    from json_logging.formatters import JSONRequestLogFormatter
+
+    class CustomDTO(json_logging.dto.DefaultRequestResponseDTO):
+        def on_request_complete(self, response):
+            super(CustomDTO, self).on_request_complete(response)
+            self["custom_status"] = response.status_code
+
+    app = flask.Flask(__name__)
+
+    @app.route("/custom-dto")
+    def custom_dto():
+        return {}
+
+    json_logging.init_flask(enable_json=True)
+    json_logging.init_request_instrument(app, request_response_dto_class=CustomDTO)
+    request_logger = logging.getLogger("flask-request-logger")
+    handler = FormattedMessageCollectorHandler()
+    handler.setFormatter(JSONRequestLogFormatter())
+    request_logger.addHandler(handler)
+    try:
+        response = app.test_client().get("/custom-dto")
+    finally:
+        request_logger.removeHandler(handler)
+        undo_imports_from_package("json_logging")
+
+    assert response.status_code == 200
+    assert len(handler.messages) == 1
+    msg = json.loads(handler.messages[0])
+    assert "request_response_data" not in msg
+    assert msg["custom_status"] == 200
+
+
 def test_excluded_from_request_instrumentation(client_and_log_handler):
     """Test if endpoints can be excluded from the request log"""
     api_client, _ = client_and_log_handler
