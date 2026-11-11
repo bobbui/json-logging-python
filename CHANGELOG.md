@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - Connexion 3 `AsyncApp` support: `init_connexion()` plus `init_request_instrument(app)` now accept an `AsyncApp`,
   which runs without Flask. Requests are logged by an ASGI middleware, including error responses produced by
   exception handlers, and log records from sync and async handlers share the request's correlation ID.
+- `init_request_instrument(..., read_request_body=True)` (FastAPI only) reads the body of each logged request before the
+  handler runs and exposes it as `request.state.json_logging_request_body` (bytes), so a custom request formatter can use
+  it without `await` (#84). It is off by default and the body is never added to the log automatically. The whole body is
+  held in memory. The handler can still read the body. It needs Starlette 0.28 or newer and raises `RuntimeError` otherwise. Other frameworks raise `ValueError` if it is requested.
 
 ### Fixed
 
