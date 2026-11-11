@@ -6,27 +6,66 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ## Unreleased
 
+## 1.7.0rc0 - 2026-11-10
+
 ### Added
 
 - Connexion 3 `AsyncApp` support: `init_connexion()` plus `init_request_instrument(app)` now accept an `AsyncApp`,
   which runs without Flask. Requests are logged by an ASGI middleware, including error responses produced by
-  exception handlers, and log records from sync and async handlers share the request's correlation ID.
-- `init_request_instrument(..., read_request_body=True)` (FastAPI only) reads the body of each logged request before the
-  handler runs and exposes it as `request.state.json_logging_request_body` (bytes), so a custom request formatter can use
-  it without `await` (#84). It is off by default and the body is never added to the log automatically. The whole body is
-  held in memory. The handler can still read the body. It needs Starlette 0.28 or newer and raises `RuntimeError` otherwise. Other frameworks raise `ValueError` if it is requested.
+  exception handlers, and log records from sync and async handlers share the request's correlation ID. In AsyncApp
+  request logs `remote_user` is `-`, because the authenticated user is only known to Connexion's security handlers.
+  Call `init_request_instrument(app)` before the app starts. (#148, fixes #96)
+- FastAPI: `init_request_instrument(..., read_request_body=True)` reads the body of each logged request before the
+  handler runs and exposes it as `request.state.json_logging_request_body` (bytes), so a custom request formatter can
+  use it without `await`. It is off by default and the body is never added to the log automatically. The whole body
+  is held in memory, and the handler can still read the body. It needs Starlette 0.28 or newer and raises
+  `RuntimeError` otherwise; other frameworks raise `ValueError` if it is requested. (#146, fixes #84)
+
+### Changed
+
+- Unhandled exceptions from Flask and Connexion apps are emitted as one JSON record with `level` and `exc_info`
+  instead of a plain multi-line traceback. `init_*()` now converts handlers already attached to the root logger, and
+  `init_request_instrument(app)` for Flask and Connexion converts `flask.logging.default_handler`. Applications that
+  attach a root handler with their own formatter before `init_*()` will see that handler emit JSON as well when JSON
+  logging is enabled. `config_root_logger()` is still needed for handlers added after initialisation. (#147)
 
 ### Fixed
 
-- Log records created with `stack_info=True` now carry the stack in a `stack_info` field; it was dropped before (#150).
+- Log records created with `stack_info=True` now carry the stack in a `stack_info` field; it was dropped before.
+  (#153, fixes #150)
 - An empty correlation ID header (e.g. `X-Correlation-ID: `) is now treated as missing: the next header in
   `CORRELATION_ID_HEADERS` is tried, and if none is found an ID is generated when
-  `CREATE_CORRELATION_ID_IF_NOT_EXISTS` is enabled (#149).
-- `get_request_logger()` now raises the documented `RuntimeError` instead of `AttributeError` when called before `init_request_instrument()`.
-- `init_*()` now converts handlers already attached to the root logger, and `init_request_instrument(app)` for Flask
-  and Connexion converts `flask.logging.default_handler`, so an unhandled exception is emitted as one JSON record with
-  `level` and `exc_info` instead of a plain multi-line traceback. This is a behaviour change for applications that configure a root handler
-  with their own formatter before `init_*()`: when JSON logging is enabled, that handler now emits JSON as well. (#147)
+  `CREATE_CORRELATION_ID_IF_NOT_EXISTS` is enabled. (#152, fixes #149)
+- `get_request_logger()` now raises the documented `RuntimeError` instead of `AttributeError` when called before
+  `init_request_instrument()`. (#139)
+
+### Documentation
+
+- README refresh: badges and a quickstart at the top, a contents list, consistent formatting, and the maintainers
+  listed as Technical and Emeritus maintainers with affiliations. (#154, #156)
+- New README section on reading the request body from a custom request formatter in FastAPI. (#146)
+- Connexion: how to instrument an `AsyncApp`, and what `remote_user` holds there. (#148)
+
+### Internal
+
+- Unit tests for init validation, util error paths and formatter fields, the Sanic and Quart integrations, the Flask
+  and Connexion request/response extractors, request discovery, exception text, and the FastAPI and Quart
+  extractors. (#138, #140, #141, #145, refs #137)
+- CI reports test coverage in the unit test job. (#143, fixes #142)
+- CI runners are pinned to `ubuntu-24.04`, since `ubuntu-latest` no longer provides Python 3.9. (#160)
+- `.github/CODEOWNERS` requests a review from the technical maintainers on every pull request. (#155)
+
+### Compatibility
+
+- Default output is unchanged except where listed above: a `stack_info` field appears only for records logged with
+  `stack_info=True`, an empty correlation header now yields the next header or a generated ID instead of `-`, and
+  pre-existing root logger handlers emit JSON after `init_*()` (#147).
+- The Connexion AsyncApp middleware lives in its own module and is only imported when Connexion 3 is installed, so
+  `import json_logging` is unaffected for everyone else. (#159)
+- `read_request_body` needs Starlette 0.28 or newer. Connexion 2's `AioHttpApp` is not supported; Connexion 3's
+  Flask-based app works as before.
+- CI runs the unit tests on Python 3.9 to 3.14 and the Flask, Quart, FastAPI and Sanic smoke tests on Python 3.9 and
+  3.14. Python 3.8 and earlier, including Python 2, are not tested.
 
 ## 1.6.0 - 2026-10-21
 
