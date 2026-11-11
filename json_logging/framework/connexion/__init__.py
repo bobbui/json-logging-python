@@ -20,6 +20,7 @@ def is_connexion_present():
 
 
 _AsyncApp = None
+_ASGIResponse = None
 
 if is_connexion_present():
     from connexion import request as request_obj
@@ -49,67 +50,12 @@ if is_connexion_present():
         # Connexion 3+: AsyncApp runs without Flask, requests are instrumented by an ASGI middleware instead
         from connexion import AsyncApp as _AsyncApp
         from connexion.middleware import MiddlewarePosition as _MiddlewarePosition
-        from contextvars import ContextVar
-        from starlette.datastructures import Headers as _Headers
         from starlette.requests import Request as _StarletteRequest
-
-        # The request handled by JSONLoggingConnexionASGIMiddleware, only set while an AsyncApp request is active
-        _current_async_request = ContextVar('json_logging_connexion_current_request', default=None)
+        # The middleware uses async syntax, so it lives in a module that is only imported here
+        from json_logging.framework.connexion.asgi import JSONLoggingConnexionASGIMiddleware,             ASGIResponse as _ASGIResponse, current_async_request as _current_async_request
     except ImportError:
         _AsyncApp = None
-
-
-class _ASGIResponse(object):
-    """Status and headers of an ASGI response, as sent in its ``http.response.start`` message."""
-
-    def __init__(self, message):
-        self.status_code = message['status']
-        self.headers = _Headers(raw=message.get('headers', []))
-
-
-class JSONLoggingConnexionASGIMiddleware(object):
-    """Logs one request record per HTTP request handled by a Connexion AsyncApp."""
-
-    def __init__(self, app, request_response_dto_class, exclude_url_patterns=tuple()):
-        self.app = app
-        self.request_response_dto_class = request_response_dto_class
-        self.exclude_url_patterns = exclude_url_patterns
-        self.request_logger = logging.getLogger('connexion-request-logger')
-
-    async def __call__(self, scope, receive, send):
-        if scope['type'] != 'http':
-            await self.app(scope, receive, send)
-            return
-
-        request = _StarletteRequest(scope, receive)
-        token = _current_async_request.set(request)
-        try:
-            # Resolve the correlation id before the handler runs, so the request record and the handler's
-            # own records, including those from sync handlers in worker threads, share one id
-            try:
-                json_logging._request_util.get_correlation_id(request)
-            except Exception:
-                pass
-
-            if not is_not_match_any_pattern(request.url.path, self.exclude_url_patterns):
-                await self.app(scope, receive, send)
-                return
-
-            request_response_data = self.request_response_dto_class(request)
-            response = None
-
-            async def send_wrapper(message):
-                nonlocal response
-                if message['type'] == 'http.response.start':
-                    response = _ASGIResponse(message)
-                await send(message)
-
-            await self.app(scope, receive, send_wrapper)
-            if response is not None:
-                request_response_data.on_request_complete(response)
-                self.request_logger.info("", extra={'request_response_data': request_response_data})
-        finally:
-            _current_async_request.reset(token)
+        _ASGIResponse = None
 
 
 def _is_async_request(request):
@@ -275,11 +221,11 @@ class ConnexionResponseInfoExtractor(BaseResponseInfoExtractor):
         return response.status_code
 
     def get_response_size(self, response):
-        if isinstance(response, _ASGIResponse):
+        if _ASGIResponse is not None and isinstance(response, _ASGIResponse):
             return response.headers.get('content-length', json_logging.EMPTY_VALUE)
         return response.calculate_content_length()
 
     def get_content_type(self, response):
-        if isinstance(response, _ASGIResponse):
+        if _ASGIResponse is not None and isinstance(response, _ASGIResponse):
             return response.headers.get('content-type', json_logging.EMPTY_VALUE)
         return response.content_type
