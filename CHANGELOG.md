@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ## Unreleased
 
+## 1.7.0rc0 - 2026-11-10
+
 ### Added
 
 - Connexion 3 `AsyncApp` support: `init_connexion()` plus `init_request_instrument(app)` now accept an `AsyncApp`,
