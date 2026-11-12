@@ -256,7 +256,10 @@ def test_custom_request_response_dto_fields_are_not_duplicated():
     from json_logging.formatters import JSONRequestLogFormatter
 
     class CustomDTO(json_logging.dto.DefaultRequestResponseDTO):
+        """DTO that adds one field of its own"""
+
         def on_request_complete(self, response):
+            """Add the response status code as an extra DTO field"""
             super(CustomDTO, self).on_request_complete(response)
             self["custom_status"] = response.status_code
 
@@ -264,6 +267,7 @@ def test_custom_request_response_dto_fields_are_not_duplicated():
 
     @app.route("/custom-dto")
     def custom_dto():
+        """Endpoint whose request is logged with CustomDTO"""
         return {}
 
     json_logging.init_flask(enable_json=True)
