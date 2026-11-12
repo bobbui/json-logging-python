@@ -71,6 +71,7 @@ def client_and_log_handlers(request, monkeypatch):
 
 
 def test_request_is_logged(client_and_log_handlers):
+    """An AsyncApp request is logged with the request fields, and the DTO fields only at the top level"""
     api_client, _, request_handler = client_and_log_handlers
 
     response = api_client.get("/log/async", headers={"X-Correlation-Id": "abc-def"})

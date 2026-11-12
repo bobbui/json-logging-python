@@ -70,6 +70,7 @@ def test_get_correlation_id_is_generated_when_missing(app_and_handlers):
 
 
 def test_request_instrumentation_writes_request_log(app_and_handlers):
+    """A request log is written with the request fields, and the DTO fields only at the top level"""
     app, _, request_handler = app_and_handlers
 
     _, response = app.test_client.get("/log")
