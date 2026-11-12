@@ -71,6 +71,7 @@ def client_and_log_handlers(request, monkeypatch):
 
 
 def test_request_is_logged(client_and_log_handlers):
+    """An AsyncApp request is logged with the request fields, and the DTO fields only at the top level"""
     api_client, _, request_handler = client_and_log_handlers
 
     response = api_client.get("/log/async", headers={"X-Correlation-Id": "abc-def"})
@@ -86,6 +87,9 @@ def test_request_is_logged(client_and_log_handlers):
     assert msg["response_status"] == 200
     assert msg["response_content_type"] == "application/json"
     assert int(msg["response_size_b"]) == len(response.content)
+    # the DTO fields appear once, at the top level, without a nested copy (#151)
+    assert "request_response_data" not in msg
+    assert "request_received_at" in msg and "response_time_ms" in msg
 
 
 @pytest.mark.parametrize("path", ["/log/async", "/log/sync"])

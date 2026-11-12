@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ## Unreleased
 
+### Changed
+
+- Request logs no longer contain a nested `request_response_data` object. It repeated the request/response fields
+  (`request_received_at`, `response_time_ms`, `response_sent_at` and any field added by a custom
+  `request_response_dto_class`), which are still written once at the top level of the record, as the README
+  documents. If you read the nested object, read the top-level fields instead, for example `response_time_ms` instead
+  of `request_response_data.response_time_ms`. Setting `EXCLUDED_FIELDS = ("request_response_data",)` is no longer
+  needed to drop it, and keeping it in `EXCLUDED_FIELDS` is harmless. A custom request formatter can still read
+  `record.request_response_data`, and can add the nested object back if needed. (#158, fixes #151)
+
 ## 1.7.0rc0 - 2026-11-10
 
 ### Added

@@ -360,6 +360,22 @@ json_logging.config_root_logger()
 A custom JSON log formatter can be passed to the init method. See the examples for more details:
 [non-web](example/custom_log_format.py), [web](example/custom_log_format_request.py).
 
+### Request/response DTO fields in request logs
+
+The fields of the request/response DTO (`request_received_at`, `response_time_ms`, `response_sent_at`, and any field
+a custom `request_response_dto_class` adds) are written once, at the top level of each request log. Version 1.7.0rc0
+and earlier also wrote them a second time in a nested `request_response_data` object; read the top-level fields
+instead. A custom request formatter can still read `record.request_response_data`, and can add the nested object back
+if a log consumer needs it:
+
+```python
+class NestedDTORequestFormatter(json_logging.JSONRequestLogFormatter):
+    def _format_log_object(self, record, request_util):
+        json_log_object = super()._format_log_object(record, request_util)
+        json_log_object["request_response_data"] = dict(record.request_response_data)
+        return json_log_object
+```
+
 ## 2.7 Exclude certain URLs from request instrumentation
 
 Certain URLs can be excluded from request instrumentation by passing a list of regular expressions to

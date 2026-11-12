@@ -185,7 +185,14 @@ class JSONRequestLogFormatter(BaseJSONFormatter):
     """
 
     def _format_log_object(self, record, request_util):
+        """
+        Build the request log object: the common fields, the request and response fields read through the framework
+        adapters, and the fields of record.request_response_data, each written once at the top level
+        """
         json_log_object = super(JSONRequestLogFormatter, self)._format_log_object(record, request_util)
+        # The integrations pass the DTO as extra={'request_response_data': ...}, so the extra fields hold a nested
+        # copy of it. Its fields are merged into the top level below, so drop the copy to write them only once.
+        json_log_object.pop('request_response_data', None)
 
         request_adapter = request_util.request_adapter
         response_adapter = request_util.response_adapter
