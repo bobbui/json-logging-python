@@ -15,6 +15,9 @@ agents should follow [AGENTS.md](AGENTS.md).
    published package when the distinction matters.
 5. Link related issues and explain workarounds. Do not close unresolved
    behavior without clear evidence or the appropriate project decision.
+6. New issues from the templates start with `needs triage`. When an issue is
+   understood and the project wants a fix, swap `needs triage` for `ready`.
+   Only `ready` issues are open for pull requests.
 
 For correlation ID defects, test synchronous and asynchronous handlers,
 requests with and without a correlation header, and behavior across concurrent
@@ -23,7 +26,10 @@ running in a different thread.
 
 ## Pull-request review
 
-- Keep changes small and reviewable, with a linked issue when useful.
+- Every PR must link an issue labeled `ready`, except typo and link fixes,
+  Dependabot updates and maintainer release PRs. PRs without one may be closed
+  without review, pointing the author to [CONTRIBUTING.md](CONTRIBUTING.md).
+- Keep changes small and reviewable.
 - Include reproduction steps for fixes, targeted tests, and compatibility
   notes. State what was *not* tested.
 - Confirm no unintentional changes to log schema, correlation IDs, HTTP
