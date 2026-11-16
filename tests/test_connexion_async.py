@@ -98,7 +98,8 @@ def test_handler_logs_share_the_request_correlation_id(client_and_log_handlers, 
     correlation_id = response.json()["correlation_id"]
     assert len(handler.messages) == 1
     msg = json.loads(handler.messages[0])
-    assert set(msg.keys()) == constants.STANDARD_MSG_ATTRIBUTES
+    expected = constants.ASYNC_TASK_MSG_ATTRIBUTES if path == "/log/async" else constants.STANDARD_MSG_ATTRIBUTES
+    assert set(msg.keys()) == expected
     assert msg["correlation_id"] == correlation_id
     assert json.loads(request_handler.messages[0])["correlation_id"] == correlation_id
 

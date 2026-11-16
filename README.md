@@ -561,6 +561,7 @@ See the following tables for a detailed explanation of the format:
 | line_no | The line number of the logging call | integer | 22 |
 | filename | The file where an exception originated, only present when an exception is logged | string | /path/to/foo.py |
 | exc_info | Traceback information about an exception | string | "Traceback (most recent call last): \n  File "&lt;stdin&gt;", line 1, in &lt;module&gt;\n ValueError: There is something wrong with your input" |
+| taskName | Name of the asyncio task that wrote the log message, only present on Python 3.12+ when logged inside an asyncio task | string | Task-1 |
 | stack_info | Call stack of the logging statement, only present when it was called with `stack_info=True` | string | "Stack (most recent call last):\n  File "app.py", line 10, in &lt;module&gt;\n    logger.info("hello", stack_info=True)" |
 
 **Request logs**

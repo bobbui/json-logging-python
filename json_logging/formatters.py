@@ -113,6 +113,10 @@ class BaseJSONFormatter(logging.Formatter):
                     # try to cast it to a string representation
                     fields[key] = repr(value)
 
+        # Python 3.12+ sets taskName on every record; it is None outside an asyncio task, so leave it out there
+        if 'taskName' in fields and fields['taskName'] is None:
+            del fields['taskName']
+
         # Always add 'props' to the root of the log, assumes props is a dict
         if hasattr(record, 'props') and isinstance(record.props, dict):
             fields.update(record.props)
