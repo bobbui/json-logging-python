@@ -1,6 +1,8 @@
 """Optional fields and value handling in the JSON formatters (issue #137)."""
+import asyncio
 import json
 import logging
+import sys
 
 import pytest
 
@@ -91,3 +93,36 @@ def test_stack_info_is_added_when_requested():
 
 def test_stack_info_is_omitted_by_default():
     assert "stack_info" not in _format()
+
+
+def _record():
+    return logging.LogRecord("formatter-test", logging.INFO, __file__, 1, "hello", None, None)
+
+
+def test_task_name_is_omitted_when_none():
+    assert "taskName" not in _format(taskName=None)
+
+
+def test_task_name_is_kept_when_set():
+    assert _format(taskName="Task-7")["taskName"] == "Task-7"
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason="LogRecord.taskName was added in Python 3.12")
+def test_task_name_is_omitted_outside_an_asyncio_task():
+    record = _record()
+
+    assert record.taskName is None
+    assert "taskName" not in json.loads(JSONLogFormatter().format(record))
+
+
+@pytest.mark.skipif(sys.version_info < (3, 12), reason="LogRecord.taskName was added in Python 3.12")
+def test_task_name_is_logged_inside_an_asyncio_task():
+    async def make_record():
+        return _record()
+
+    async def main():
+        return await asyncio.create_task(make_record(), name="worker-1")
+
+    output = json.loads(JSONLogFormatter().format(asyncio.run(main())))
+
+    assert output["taskName"] == "worker-1"
