@@ -120,7 +120,7 @@ def test_record_format_per_log_level(client_and_log_handler, level):
     assert response.status_code == 200
     assert len(handler.messages) == 1
     msg = json.loads(handler.messages[0])
-    assert set(msg.keys()) == constants.STANDARD_MSG_ATTRIBUTES
+    assert set(msg.keys()) == constants.ASYNC_TASK_MSG_ATTRIBUTES
     assert msg["module"] == __name__
     assert msg["level"] == level.upper()
     assert msg["logger"] == LOGGER_NAME
@@ -140,7 +140,7 @@ def test_correlation_id_given(client_and_log_handler):
     assert response.status_code == 200
     assert len(handler.messages) == 1
     msg = json.loads(handler.messages[0])
-    assert set(msg.keys()) == constants.STANDARD_MSG_ATTRIBUTES
+    assert set(msg.keys()) == constants.ASYNC_TASK_MSG_ATTRIBUTES
     assert msg["correlation_id"] == "abc-def"
 
 
@@ -153,7 +153,7 @@ def test_correlation_id_generated(client_and_log_handler):
     assert response.status_code == 200
     assert len(handler.messages) == 1
     msg = json.loads(handler.messages[0])
-    assert set(msg.keys()) == constants.STANDARD_MSG_ATTRIBUTES
+    assert set(msg.keys()) == constants.ASYNC_TASK_MSG_ATTRIBUTES
     assert re.match(
         r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$",
         msg["correlation_id"],
@@ -477,7 +477,7 @@ def test_extra_property(client_and_log_handler):
     assert response.status_code == 200
     assert len(handler.messages) == 1
     msg = json.loads(handler.messages[0])
-    assert set(msg.keys()) == constants.STANDARD_MSG_ATTRIBUTES.union({"extra_property", "tags"})
+    assert set(msg.keys()) == constants.ASYNC_TASK_MSG_ATTRIBUTES.union({"extra_property", "tags"})
     assert msg["extra_property"] == "extra_value"
     assert msg["tags"] == ["app:name"]
 
@@ -491,7 +491,7 @@ def test_extra_property_no_props(client_and_log_handler):
     assert response.status_code == 200
     assert len(handler.messages) == 1
     msg = json.loads(handler.messages[0])
-    assert set(msg.keys()) == constants.STANDARD_MSG_ATTRIBUTES.union({"extra_property", "tags"})
+    assert set(msg.keys()) == constants.ASYNC_TASK_MSG_ATTRIBUTES.union({"extra_property", "tags"})
     assert msg["extra_property"] == "extra_value2"
     assert msg["tags"] == ["app:name"]
 
@@ -505,7 +505,7 @@ def test_exception_logged_with_stack_trace(client_and_log_handler):
     assert response.status_code == 200
     assert len(handler.messages) == 1
     msg = json.loads(handler.messages[0])
-    assert set(msg.keys()) == constants.STANDARD_MSG_ATTRIBUTES.union({"exc_info", "filename"})
+    assert set(msg.keys()) == constants.ASYNC_TASK_MSG_ATTRIBUTES.union({"exc_info", "filename"})
     assert msg["filename"] == pathlib.Path(__file__).name, "File name for exception not logged"
     assert "Traceback (most recent call last):" in msg["exc_info"], "Not a stack trace"
     assert "RuntimeError" in msg["exc_info"], "Exception type not logged"

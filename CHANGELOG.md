@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ## Unreleased
 
+### Changed
+
+- On Python 3.12+, `taskName` is no longer written as `null` when a record is logged outside an asyncio task. It
+  is still included, with the task name, for records logged inside one (e.g. `async def` FastAPI endpoints).
+  Consumers that expect the field on every record should treat it as optional. (fixes #157)
+
 ## 1.7.0rc0 - 2026-11-10
 
 ### Added
