@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ## Unreleased
 
-## 1.7.0rc0 - 2026-11-10
+## 1.7.0 - 2026-11-16
 
 ### Added
 
