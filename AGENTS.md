@@ -78,6 +78,9 @@ possible. Use reasonable deadlines and always reap child processes.
 
 ## Pull requests and reviews
 
+- Do not open a PR unless it links an issue a maintainer has labeled `ready`.
+  If the issue is missing or still `needs triage`, stop and leave it for triage.
+  See [CONTRIBUTING.md](CONTRIBUTING.md).
 - Read the existing issue, relevant code, and current PR discussion before
   proposing a fix; check for overlapping open PRs.
 - Include a concise problem statement, root cause, focused patch, regression
