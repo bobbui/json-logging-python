@@ -99,8 +99,22 @@ def _record():
     return logging.LogRecord("formatter-test", logging.INFO, __file__, 1, "hello", None, None)
 
 
-def test_task_name_is_omitted_when_none():
-    assert "taskName" not in _format(taskName=None)
+@pytest.mark.skipif(sys.version_info >= (3, 12), reason="taskName is a built-in LogRecord attribute from Python 3.12")
+def test_null_task_name_from_extra_is_kept_before_python_3_12():
+    logger = logging.getLogger("formatter-task-name-extra-test")
+    records = []
+    handler = logging.Handler()
+    handler.emit = records.append
+    logger.addHandler(handler)
+    try:
+        logger.warning("hello", extra={"taskName": None})
+    finally:
+        logger.removeHandler(handler)
+
+    output = json.loads(JSONLogFormatter().format(records[0]))
+
+    assert "taskName" in output
+    assert output["taskName"] is None
 
 
 def test_task_name_is_kept_when_set():
