@@ -23,11 +23,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- Unhandled exceptions from Flask and Connexion apps are emitted as one JSON record with `level` and `exc_info`
-  instead of a plain multi-line traceback. `init_*()` now converts handlers already attached to the root logger, and
-  `init_request_instrument(app)` for Flask and Connexion converts `flask.logging.default_handler`. Applications that
-  attach a root handler with their own formatter before `init_*()` will see that handler emit JSON as well when JSON
-  logging is enabled. `config_root_logger()` is still needed for handlers added after initialisation. (#147)
+- With JSON logging enabled, unhandled exceptions from Flask and Connexion apps are emitted as a JSON record
+  with `level` and `exc_info` when their handlers use JSON formatting, instead of the default plain multi-line
+  traceback. An explicitly plain-text handler can still emit a multi-line traceback. `init_*()` now converts
+  handlers already attached to the root logger, and `init_request_instrument(app)` for Flask and Connexion converts
+  `flask.logging.default_handler`. Applications that attach a root handler with their own formatter before `init_*()`
+  will see that handler emit JSON as well when JSON logging is enabled. `config_root_logger()` is still needed for
+  handlers added after initialisation. (#147)
 
 ### Fixed
 
@@ -61,9 +63,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
   `stack_info=True`, an empty correlation header now yields the next header or a generated ID instead of `-`, and
   pre-existing root logger handlers emit JSON after `init_*()` (#147).
 - **Upgrade guidance for existing log pipelines (#147):** With JSON enabled, root logger handlers attached before
-  `init_*()` are reformatted as JSON. Applications that require a plain-text root handler can attach it after
-  initialization. Unhandled Flask exceptions are now emitted as a single JSON record with `level` and `exc_info`,
-  rather than a plain-text multi-line traceback. Review log parsers and alerts that rely on the previous format.
+  `init_*()` are reformatted as JSON. To preserve a plain-text root handler, attach it after initialization with an
+  **explicit plain-text `logging.Formatter`**; a new handler without a formatter still uses the library's JSON default.
+  Unhandled Flask exceptions emit structured JSON with `level` and `exc_info` when their active handlers use JSON
+  formatting. An explicitly plain-text handler can still emit a multi-line traceback. Review log parsers and alerts
+  that depend on either format.
 - The Connexion AsyncApp middleware lives in its own module and is only imported when Connexion 3 is installed, so
   `import json_logging` is unaffected for everyone else. (#159)
 - `read_request_body` needs Starlette 0.28 or newer. Connexion 2's `AioHttpApp` is not supported; Connexion 3's
