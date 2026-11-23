@@ -60,12 +60,27 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - Default output is unchanged except where listed above: a `stack_info` field appears only for records logged with
   `stack_info=True`, an empty correlation header now yields the next header or a generated ID instead of `-`, and
   pre-existing root logger handlers emit JSON after `init_*()` (#147).
+- **Upgrade guidance for existing log pipelines (#147):** With JSON enabled, root logger handlers attached before
+  `init_*()` are reformatted as JSON. Applications that require a plain-text root handler can attach it after
+  initialization. Unhandled Flask exceptions are now emitted as a single JSON record with `level` and `exc_info`,
+  rather than a plain-text multi-line traceback. Review log parsers and alerts that rely on the previous format.
 - The Connexion AsyncApp middleware lives in its own module and is only imported when Connexion 3 is installed, so
   `import json_logging` is unaffected for everyone else. (#159)
 - `read_request_body` needs Starlette 0.28 or newer. Connexion 2's `AioHttpApp` is not supported; Connexion 3's
   Flask-based app works as before.
 - CI runs the unit tests on Python 3.9 to 3.14 and the Flask, Quart, FastAPI and Sanic smoke tests on Python 3.9 and
   3.14. Python 3.8 and earlier, including Python 2, are not tested.
+
+### Known limitations — Connexion 3 `AsyncApp`
+
+- **Background-task failures:** The ASGI request log is currently emitted after the application call returns. If a
+  background task raises after the response has been sent, the request log may be missing, even if the client
+  received a successful response. This was reproduced in-process with Connexion 3.3.0, but not on a live Uvicorn
+  server.
+- **Response-time measurement:** `response_time_ms` currently includes background-task execution time, which may
+  overstate the time taken to send the HTTP response to the client.
+- **Uvicorn access logging:** Initializing request instrumentation for `AsyncApp` disables the `uvicorn.access`
+  logger process-wide. Applications that also depend on Uvicorn access logging should account for this behavior.
 
 ## 1.6.0 - 2026-10-21
 
