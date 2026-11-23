@@ -28,6 +28,9 @@ else:
     LOG_RECORD_BUILT_IN_ATTRS.append('stack_info')
     EASY_SERIALIZABLE_TYPES = (str, bool, dict, float, int, list, type(None))
 
+# LogRecord.taskName is a built-in attribute from Python 3.12; extra cannot set it there
+OMIT_NULL_TASK_NAME = sys.version_info >= (3, 12)
+
 
 def _sanitize_log_msg(record):
     """
@@ -112,6 +115,11 @@ class BaseJSONFormatter(logging.Formatter):
                 else:
                     # try to cast it to a string representation
                     fields[key] = repr(value)
+
+        # Python 3.12+ sets taskName on every record; it is None outside an asyncio task, so leave it out there.
+        # Before 3.12 taskName can only come from extra, so it is left alone.
+        if OMIT_NULL_TASK_NAME and 'taskName' in fields and fields['taskName'] is None:
+            del fields['taskName']
 
         # Always add 'props' to the root of the log, assumes props is a dict
         if hasattr(record, 'props') and isinstance(record.props, dict):
