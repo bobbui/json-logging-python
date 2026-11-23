@@ -79,6 +79,7 @@ def test_get_correlation_id_returns_given_header(app_and_handlers):
 
 
 def test_request_instrumentation_writes_request_log(app_and_handlers):
+    """A request log is written with the request fields, and the DTO fields only at the top level"""
     app, _, request_handler = app_and_handlers
 
     response = _get(app, "/log")
@@ -90,6 +91,9 @@ def test_request_instrumentation_writes_request_log(app_and_handlers):
     assert msg["request"] == "/log"
     assert msg["response_status"] == 200
     assert msg["type"] == "request"
+    # the DTO fields appear once, at the top level, without a nested copy (#151)
+    assert "request_response_data" not in msg
+    assert "request_received_at" in msg and "response_time_ms" in msg
 
 
 def test_excluded_url_is_not_request_logged(app_and_handlers):
