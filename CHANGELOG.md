@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ## Unreleased
 
-## 1.7.0 - 2026-11-16
+## 1.7.0 - 2026-11-23
 
 ### Added
 
@@ -38,6 +38,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
   `CREATE_CORRELATION_ID_IF_NOT_EXISTS` is enabled. (#152, fixes #149)
 - `get_request_logger()` now raises the documented `RuntimeError` instead of `AttributeError` when called before
   `init_request_instrument()`. (#139)
+- Fix request lookup when tracing or debugging modifies frame-local variables during iteration, preventing
+  `RuntimeError: dictionary changed size during iteration`. Includes a regression test. (#120, fixes #89)
 
 ### Documentation
 
