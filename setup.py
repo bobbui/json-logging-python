@@ -22,7 +22,7 @@ setup(
     keywords=["json", "elastic", "python", "python3", "python2", "logging", "logging-library", "json", "elasticsearch",
               "elk", "elk-stack", "logstash", "kibana"],
     platforms='any',
-    url="https://github.com/bobbui/json-logging",
+    url="https://github.com/bobbui/json-logging-python",
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
